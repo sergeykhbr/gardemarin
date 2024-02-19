@@ -5,6 +5,8 @@ and sensors controlled by a single board with the Arm Cortex M4F processor.
 
 See brief presentation of the development board [.pdf](docs/Gardemarin_Board.pdf).
 
+![Top Side](docs/pics/topside_preview.png)
+
 Board is capable to control:
  
 - Up to 8 motors
