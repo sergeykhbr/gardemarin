@@ -15,6 +15,7 @@
  */
 
 #include <prjtypes.h>
+#include <string.h>
 
 extern void main(void);
 
@@ -99,9 +100,10 @@ extern char __DATA_LOAD_START[];
 
 void copy_data_section(void)
 {
-    for (int i = 0; i < (int)__DATA_SIZE; i++) {
-        __DATA_START[i] = __DATA_LOAD_START[i];
-    }
+    memcpy(__DATA_START, __DATA_LOAD_START, (int)__DATA_SIZE);
+//    for (int i = 0; i < (int)__DATA_SIZE; i++) {
+//        __DATA_START[i] = __DATA_LOAD_START[i];
+//    }
 }
 
 

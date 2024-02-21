@@ -17,14 +17,14 @@
 #include <prjtypes.h>
 #include "system_handlers.h"
 
-extern void SystemInit(void);
+extern void system_init(void);
 extern int __main(void);
 
 void __attribute__ ((section(".hard_reset"), noreturn))
 Reset_Handler()
 {
     DisableIrqGlobal();
-    SystemInit();
+    system_init();
 
     __main();
 

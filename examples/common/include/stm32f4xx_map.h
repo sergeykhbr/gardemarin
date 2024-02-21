@@ -16,8 +16,17 @@
 
 #pragma once
 
+#include <scb.h>
 #include <rcc.h>
 #include <usart.h>
+
+/* System Control Space memory map */
+#define SCS_BASE              ((uint32_t)0xE000E000)
+
+#define SysTick_BASE          (SCS_BASE + 0x0010)
+#define NVIC_BASE             (SCS_BASE + 0x0100)
+#define SCB_BASE              (SCS_BASE + 0x0D00)
+
 
 #define FLASH_BASE            ((uint32_t)0x08000000) /*!< FLASH(up to 1 MB) base address in the alias region                         */
 #define CCMDATARAM_BASE       ((uint32_t)0x10000000) /*!< CCM(core coupled memory) data RAM(64 KB) base address in the alias region  */
