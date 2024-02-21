@@ -23,4 +23,4 @@ Current repository intends to implement
 
   - FreeRTOS with the Web server using LwIP TCP/IP stack.
   - CAN over Ethernet 
-  - And some other teching materials
+  - And some other useful examples
