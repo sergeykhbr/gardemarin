@@ -23,7 +23,7 @@
  */
 typedef struct SCB_registers_type
 {
-    volatile uint32_t CPUID;                  /*!< Offset: 0x000 (R/ )  CPUID Base Register */
+    volatile uint32_t CPUID;                  /*!< Offset: 0x000 (R/ )  CPUID Base Register 0x410FC241 = M4 */
     volatile uint32_t ICSR;                   /*!< Offset: 0x004 (R/W)  Interrupt Control and State Register */
     volatile uint32_t VTOR;                   /*!< Offset: 0x008 (R/W)  Vector Table Offset Register */
     volatile uint32_t AIRCR;                  /*!< Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register */

@@ -23,9 +23,11 @@
 /* System Control Space memory map */
 #define SCS_BASE              ((uint32_t)0xE000E000)
 
+#define SCS_ACTLR             (SCS_BASE + 0x0080)   // [RW] Auxiliary Control Register
 #define SysTick_BASE          (SCS_BASE + 0x0010)
 #define NVIC_BASE             (SCS_BASE + 0x0100)
 #define SCB_BASE              (SCS_BASE + 0x0D00)
+#define SCS_STIR              (SCS_BASE + 0x0F00)   // [WO] Software Trigger Interrupt Register
 
 
 #define FLASH_BASE            ((uint32_t)0x08000000) /*!< FLASH(up to 1 MB) base address in the alias region                         */
