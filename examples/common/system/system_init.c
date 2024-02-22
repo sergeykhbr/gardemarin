@@ -31,9 +31,39 @@ int system_clock_hz() {
 }
 
 void setup_gpio() {
+    GPIO_registers_type *PA = (GPIO_registers_type *)GPIOA_BASE;
     GPIO_registers_type *PC = (GPIO_registers_type *)GPIOC_BASE;
     GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
     uint32_t t1;
+
+    // PORTA:
+    //    PA9  USART1_TX = AF7
+    //    PA10 USART1_RX = AF7
+    t1 = (2 << (10*2))     // [10] alternate: 
+       | (2 << (9*2));     // [9] alternate: 
+    write32(&PA->MODER, t1);
+    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
+    write32(&PA->OTYPER, 0);
+    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
+    t1 = (1 << (10*2))     // [10] medium speed 
+       | (1 << (9*2));     // [9] medium speed 
+    write32(&PA->OSPEEDR, t1);
+    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
+    t1 = 0;
+    write32(&PA->PUPDR, t1);
+    // [15:0] ODRy: port output data
+    write32(&PA->ODR, 0);
+    // Alternate function [3:0] per bit
+    write32(&PA->AFR[0], 0);
+    t1 = (7 << (10 - 8)*4)     // [10] AF7
+       | (7 << (9 - 8)*4);     // [7] AF7
+    write32(&PA->AFR[1], t1);
+    // [16] LCKK: Lock key (whole register)
+    // [15:0] LCKy: Lock bit
+    t1 = (1 << 10)
+       | (1 << 9);
+    write32(&PA->LCKR, t1);
+
 
     // PORTC:
     //    PC13 - User btn (internal pull-up). 0=btn is pressed
@@ -48,13 +78,13 @@ void setup_gpio() {
     write32(&PC->PUPDR, t1);
     // [15:0] ODRy: port output data
     write32(&PC->ODR, 0);
+    // Alternate function [3:0] per bit
+    write32(&PC->AFR[0], 0);
+    write32(&PC->AFR[1], 0);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
     t1 = (1 << 13);
     write32(&PC->LCKR, t1);
-    // Alternate function [3:0] per bit
-    write32(&PC->AFR[0], 0);
-    write32(&PC->AFR[1], 0);
 
     // PORTE
     //    PE2 - User LED (Low=ON; High=Off)
@@ -77,6 +107,9 @@ void setup_gpio() {
     // [15:0] ODRy: port output data
     t1 = (1 << 2);          // User LED is off
     write32(&PE->ODR, t1);
+    // Alternate function [3:0] per bit
+    write32(&PE->AFR[0], 0);
+    write32(&PE->AFR[1], 0);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
     t1 = (1 << 15)
@@ -84,10 +117,41 @@ void setup_gpio() {
        | (1 << 1)
        | (1 << 1);
     write32(&PE->LCKR, t1);
-    // Alternate function [3:0] per bit
-    write32(&PE->AFR[0], 0);
-    write32(&PE->AFR[1], 0);
+}
 
+void setup_uart() {
+    USART_registers_type *UART1 = (USART_registers_type *)USART1_BASE;
+    uint16_t fraction;
+    uint16_t mantissa;
+    uint16_t t1;
+
+    // UART1 on APB2 = 72 MHz
+    // 72000000/(16*115200) = 39.0625
+    fraction = 1;     // 0.0625 * 16
+    mantissa = 39;
+    write16(&UART1->BRR, (mantissa << 4) | fraction);
+
+    // [15] OVER8: Oversampling: 0=16; 1=8
+    // [13] UE: USART enable
+    // [12] M: word length: 0=8 data, 1=9 data
+    // [11] WAKE
+    // [10] PCE: Parity control en
+    // [9] PS: Parity selection
+    // [8] PEIE: PE irq ena
+    // [7] TXEIE: TXE irq ena
+    // [6] TCIE: Transmission complete irq en
+    // [5] RXNEIE: RXNE irq ena
+    // [4] EDLEIE: IDLE irq ena
+    // [3] TE: transmitter ena
+    // [2] RE: receiver ena
+    // [1] RWU: Receiver wake-up
+    // [0] SBRK: send break
+    t1 = (1 << 13)
+       | (1 << 3)
+       | (1 << 2);
+    write16(&UART1->CR1, t1);
+    write16(&UART1->CR2, 0);
+    write16(&UART1->CR3, 0);
 }
 
 void system_init(void)
@@ -273,5 +337,27 @@ void system_init(void)
         | (1 << 2);    // PC
     write32(&RCC->AHB1ENR, t1);
 
+    // [26] LTDCEN: LTDC clock en
+    // [22] SAI1EN: SAI1EN clock en
+    // [21] SAI6EN: SAI6EN clock en
+    // [20] SAI5EN: SAI5EN clock en
+    // [18] TIM11EN:
+    // [17] TIM10EN:
+    // [16] TIM9EN:
+    // [14] SYSCFGEN:
+    // [13] SPI4EN:
+    // [12] SPI1EN:
+    // [11] SDIOEN:
+    // [10] ADC3EN:
+    // [9] ADC2EN:
+    // [8] ADC1EN:
+    // [5] USART6EN:
+    // [4] USART1EN:
+    // [1] TIM8EN:
+    // [0] TIM1EN:
+    t1 = (1 << 4);            // APB2[4] USART1
+    write32(&RCC->APB2ENR, t1);
+
     setup_gpio();
+    setup_uart();
 }

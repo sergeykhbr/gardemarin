@@ -28,8 +28,8 @@ int _write(int file, const void *ptr, int len) {
     USART_registers_type *dev = (USART_registers_type *)USART1_BASE;
 
     for (int i = 0; i < len; i++) {
-        //while (dev->FR & 0x00000020) {}  // FIFO is full
-        dev->DR = ((uint8_t *)ptr)[i];
+        while ((read16(&dev->SR) & (1 << 7)) == 0) {}  // [7] TXE, transmit data register empty
+        write16(&dev->DR, ((uint8_t *)ptr)[i]);
     }
     return len;
 }
