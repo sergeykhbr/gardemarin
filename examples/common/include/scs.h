@@ -19,8 +19,18 @@
 #include <inttypes.h>
 
 /**
-  System Control Block registers, part of the M4 core
+  System Control Space memory registers, part of the M4 core (see M4 trm)
  */
+
+typedef struct SysTick_registers_type
+{
+    volatile uint32_t CSR;       // [RW] SysTick Control and Status Register
+    volatile uint32_t RVR;       // [RW] SysTick Reload Value Register
+    volatile uint32_t CVR;       // [RW] SysTick Current Value Register
+    volatile uint32_t CALIB;     // [RO] SysTick Calibration value Register
+} SysTick_registers_type;
+
+/** System Control Block registers */
 typedef struct SCB_registers_type
 {
     volatile uint32_t CPUID;                  /*!< Offset: 0x000 (R/ )  CPUID Base Register 0x410FC241 = M4 */

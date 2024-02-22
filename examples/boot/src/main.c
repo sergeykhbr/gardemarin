@@ -16,15 +16,58 @@
 
 #include <prjtypes.h>
 #include <stdio.h>
+#include <stm32f4xx_map.h>
 
+extern int system_clock_hz();
 
 int global_cnt = 100000;  // check global var initialization from flash
+int systick_cnt = 0;
+
+void SysTick_Handler() {
+    SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
+//    systick_type *p;
+//    p = (systick_type *)fw_get_ram_data("stick");
+
+    read32(&systick->CSR);     // Clear [16] COUNTFLAG
+    if (++systick_cnt >= 100) {
+        GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
+        systick_cnt = 0;
+        global_cnt++;
+
+        // Switch User LED
+        if (global_cnt & 0x1) {
+            // [15:0] BSy: set bit
+            write16(&PE->BSRRL, (1 << 2));
+        } else {
+            // [31:16] BRy: reset bit
+            write16(&PE->BSRRH, (1 << 2));
+        }
+    }
+}
+
+
+void init_systick() {
+    SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
+    uint32_t t1;
+
+    t1 = system_clock_hz() / 100;     // 100 Hz, SysTick is 24-bits width
+    write32(&systick->RVR, t1);       // reload value
+    write32(&systick->CVR, t1);       // current value
+
+    t1 = (1 << 2)      // CLKSOURCE: SysTick uses CPU clock (default 1)
+       | (1 < 1)       // TICKINT: enable interrupt
+       | 1;            // ENABLE:
+    write32(&systick->CSR, t1);
+}
 
 int main(int argcnt, char *args[]) {
     //fw_malloc_init();
 
+    EnableIrqGlobal();
+    init_systick();
+
     while(1) {
-        printf("Hello World %d\n", global_cnt++);
+        printf("Hello World %d!\n", global_cnt);
     }
     return 0;
 }

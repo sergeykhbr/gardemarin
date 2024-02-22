@@ -16,7 +16,7 @@ STACK_SIZE = DEFINED(__stack_size__) ? __stack_size__ : 0x00000400;
 /* Specify the memory areas */
 MEMORY
 {
-  FLASH                 (RX)  : ORIGIN = 0x08000000, LENGTH = 0x00080000
+  FLASH                 (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00080000
   SRAM                  (RW)  : ORIGIN = 0x20000000, LENGTH = 0x00020000
   CCMRAM                (RW)  : ORIGIN = 0x10000000, LENGTH = 0x00010000
 }

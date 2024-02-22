@@ -16,8 +16,11 @@
 
 #pragma once
 
-#include <scb.h>
+#include <scs.h>
 #include <rcc.h>
+#include <pwr.h>
+#include <flash.h>
+#include <gpio.h>
 #include <usart.h>
 
 /* System Control Space memory map */
