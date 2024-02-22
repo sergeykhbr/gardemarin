@@ -31,92 +31,247 @@ int system_clock_hz() {
 }
 
 void setup_gpio() {
-    GPIO_registers_type *PA = (GPIO_registers_type *)GPIOA_BASE;
-    GPIO_registers_type *PC = (GPIO_registers_type *)GPIOC_BASE;
-    GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
+    GPIO_registers_type *P = (GPIO_registers_type *)GPIOA_BASE;
     uint32_t t1;
 
     // PORTA:
-    //    PA9  USART1_TX = AF7
+    //    PA15 SPI3_NSS = AF6 (JTDI default after reset)
+    //    PA14 JTCK/SWCLK = AF0 (default after reset)
+    //    PA13 JTMS/SWDIO = AF0 (default after reset)
+    //    PA11 Temperature2 input (external pull-up)
     //    PA10 USART1_RX = AF7
-    t1 = (2 << (10*2))     // [10] alternate: 
-       | (2 << (9*2));     // [9] alternate: 
-    write32(&PA->MODER, t1);
+    //    PA9  USART1_TX = AF7
+    //    PA8  Temperature1 input (external pull-up)
+    //    PA2  ETH_MDIO = AF11
+    //    PA1  ETH_REF_CLK = AF11
+    t1 = (2 << (15*2))     // [14] alternate: 
+       | (2 << (14*2))     // [14] alternate: 
+       | (2 << (13*2))     // [13] alternate: 
+       | (2 << (10*2))     // [10] alternate: 
+       | (2 << (9*2))      // [9] alternate: 
+       | (2 << (2*2))      // [2] alternate: 
+       | (2 << (1*2));     // [1] alternate: 
+    write32(&P->MODER, t1);
     // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
-    write32(&PA->OTYPER, 0);
+    write32(&P->OTYPER, 0);
     // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
-    t1 = (1 << (10*2))     // [10] medium speed 
-       | (1 << (9*2));     // [9] medium speed 
-    write32(&PA->OSPEEDR, t1);
+    t1 = (1 << 11)         // [11] Temp2 medium
+       | (1 << 8);         // [8] Temp1 medium
+    write32(&P->OSPEEDR, t1);
     // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
-    t1 = 0;
-    write32(&PA->PUPDR, t1);
+    write32(&P->PUPDR, 0);
     // [15:0] ODRy: port output data
-    write32(&PA->ODR, 0);
+    write32(&P->ODR, 0);
     // Alternate function [3:0] per bit
-    write32(&PA->AFR[0], 0);
-    t1 = (7 << (10 - 8)*4)     // [10] AF7
-       | (7 << (9 - 8)*4);     // [7] AF7
-    write32(&PA->AFR[1], t1);
+    t1 = (11 << 2*4)           // [2]  AF11 ETH_MDIO
+       | (11 << 1*4);          // [1]  AF11 ETH_REF_CLK
+    write32(&P->AFR[0], t1);
+    t1 = (6 << (15 - 8)*4)     // [15] AF6 SPI3_NSS
+       | (0 << (14 - 8)*4)     // [14] AF0 SWCLK
+       | (0 << (13 - 8)*4)     // [13] AF0 SWDIO
+       | (7 << (10 - 8)*4)     // [10] AF7 USART1_RX
+       | (7 << (9 - 8)*4);     // [9]  AF7 USART1_TX
+    write32(&P->AFR[1], t1);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
-    t1 = (1 << 10)
-       | (1 << 9);
-    write32(&PA->LCKR, t1);
+    t1 = (1 << 15)
+       | (1 << 14)
+       | (1 << 13)
+       | (1 << 11)
+       | (1 << 10)
+       | (1 << 9)
+       | (1 << 8)
+       | (1 << 2)
+       | (1 << 1);
+    write32(&P->LCKR, t1);
 
+    // PORTB
+    //    PB13 ETH_D1     AF11
+    //    PB12 ETH_D0     AF11
+    //    PB11 ETH_TX_EN  AF11
+    //    PB6  CAN2_RX    AF9
+    //    PB5  CAN2_TX    AF9
+    //    PB4  NJTRST unused
+    //    PB3  JTDO   unused
+    P = (GPIO_registers_type *)GPIOB_BASE;
+    t1 = (2 << (13*2))     // [13] alternate: 
+       | (2 << (12*2))     // [12] alternate: 
+       | (2 << (11*2))     // [11] alternate: 
+       | (2 << (6*2))     // [6] alternate: 
+       | (2 << (5*2));    // [5] alternate: 
+    write32(&P->MODER, t1);
+    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
+    write32(&P->OTYPER, 0);
+    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
+    write32(&P->OSPEEDR, 0);
+    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
+    write32(&P->PUPDR, 0);
+    // [15:0] ODRy: port output data
+    write32(&P->ODR, 0);
+    // Alternate function [3:0] per bit
+    t1 = (9 << 6*4)     // [6] AF9 CAN2_RX
+       | (9 << 5*4);    // [5] AF9 CAN2_TX
+    write32(&P->AFR[0], t1);
+    t1 = (11 << (13 - 8)*4)     // [13] AF11 ETH_TX_D1
+       | (11 << (12 - 8)*4)     // [12] AF11 ETH_TX_D0
+       | (11 << (11 - 8)*4);    // [11] AF11 ETH_TX_EN
+    write32(&P->AFR[1], t1);
+    // [16] LCKK: Lock key (whole register)
+    // [15:0] LCKy: Lock bit
+    t1 = (1 << 13)
+       | (1 << 12)
+       | (1 << 11)
+       | (1 << 6)
+       | (1 << 5);
+    write32(&P->LCKR, t1);
 
     // PORTC:
     //    PC13 - User btn (internal pull-up). 0=btn is pressed
-    t1 = (0 << (13*2));     // [13] input: User btn (internal pull-up). 0=btn is pressed
-    write32(&PC->MODER, t1);
+    //    PC12 SPI3_MOSI  AF6
+    //    PC11 SPI3_MISO  AF6
+    //    PC10 SPI3_SCK   AF6
+    //    PC5  ETH_RX_D1  AF11
+    //    PC4  ETH_RX_D0  AF11
+    //    PC1  ETH_MDC    AF11
+    P = (GPIO_registers_type *)GPIOC_BASE;
+    t1 = (0 << (13*2))     // [13] input: User btn (internal pull-up). 0=btn is pressed
+       | (2 << (12*2))     // [12] alternate: SPI3_MOSI
+       | (2 << (11*2))     // [11] alternate: SPI3_MISO
+       | (2 << (10*2))     // [10] alternate: SPI3_SCK
+       | (2 << (5*2))      // [5] alternate: ETH_RX_D1
+       | (2 << (4*2))      // [4] alternate: ETH_RX_D0
+       | (2 << (1*2));     // [1] alternate: ETH_MDC
+    write32(&P->MODER, t1);
     // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
-    write32(&PC->OTYPER, 0);
+    write32(&P->OTYPER, 0);
     // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
-    write32(&PC->OSPEEDR, 0);
+    write32(&P->OSPEEDR, 0);
     // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
-    t1 = (1 << (13*2));   // [13] pull-up
-    write32(&PC->PUPDR, t1);
+    t1 = (1 << (13*2));   // [13] pull-up: User Btn
+    write32(&P->PUPDR, t1);
     // [15:0] ODRy: port output data
-    write32(&PC->ODR, 0);
+    write32(&P->ODR, 0);
     // Alternate function [3:0] per bit
-    write32(&PC->AFR[0], 0);
-    write32(&PC->AFR[1], 0);
+    t1 = (11 << 5*4)           // [5] AF11 ETH_RX_D1
+       | (11 << 4*4)           // [4] AF11 ETH_RX_D0
+       | (11 << 1*4);          // [1] AF11 ETH_MDC
+    write32(&P->AFR[0], t1);
+    t1 = (6 << (12 - 8)*4)     // [12] AF6 SPI3_MOSI
+       | (6 << (11 - 8)*4)     // [11] AF6 SPI3_MISO
+       | (6 << (10 - 8)*4);    // [10] AF6 SPI3_SCK
+    write32(&P->AFR[1], t1);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
-    t1 = (1 << 13);
-    write32(&PC->LCKR, t1);
+    t1 = (1 << 13)
+       | (1 << 12)
+       | (1 << 11)
+       | (1 << 10)
+       | (1 << 5)
+       | (1 << 4)
+       | (1 << 1);
+    write32(&P->LCKR, t1);
+
+    // PORTD:
+    //    PD14 RELAY1 output
+    //    PD13 RELAY0 output
+    //    PD11 DRV3_MODE output
+    //    PD10 DRV2_MODE output
+    //    PD9  DRV1_MODE output
+    //    PD8  DRV0_MODE output
+    //    PD7  SPI_CS3 output
+    //    PD6  USART2_TX  AF7
+    //    PD5  USART2_TX  AF7
+    //    PD4  SPI_CS2 output
+    //    PD3  SPI_CS1 output
+    //    PD2  SPI_CS0 output
+    //    PD1  CAN1_TX    AF9
+    //    PD0  CAN1_RX    AF9
+    P = (GPIO_registers_type *)GPIOD_BASE;
+    t1 = (1 << (14*2))     // [14] output: RELAY1
+       | (1 << (13*2))     // [13] output: RELAY0
+       | (1 << (11*2))     // [11] output: DRV3_MODE
+       | (1 << (10*2))     // [10] output: DRV2_MODE
+       | (1 << (9*2))      // [9]  output: DRV1_MODE
+       | (1 << (8*2))      // [8]  output: DRV0_MODE
+       | (1 << (7*2))      // [7]  output: SPI_CS3
+       | (2 << (6*2))      // [6] alternate: USART2_TX
+       | (2 << (5*2))      // [5] alternate: USART2_RX
+       | (1 << (4*2))      // [4]  output: SPI_CS2
+       | (1 << (3*2))      // [3]  output: SPI_CS1
+       | (1 << (2*2))      // [2]  output: SPI_CS0
+       | (2 << (1*2))      // [1] alternate: CAN1_TX
+       | (2 << (0*2));     // [0] alternate: CAN1_RX
+    write32(&P->MODER, t1);
+    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
+    write32(&P->OTYPER, 0);
+    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
+    t1 = (2 << 7*2)        // SPI_CS3 high
+       | (2 << 4*2)        // SPI_CS2 high
+       | (2 << 3*2)        // SPI_CS1 high
+       | (2 << 2*2);       // SPI_CS0 high
+    write32(&P->OSPEEDR, t1);
+    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
+    t1 = (1 << (13*2));   // [13] pull-up: User Btn
+    write32(&P->PUPDR, t1);
+    // [15:0] ODRy: port output data
+    t1 = (0 << 14)       // RELAY1
+       | (0 << 13)       // RELAY0
+       | (1 << 11)       // DRV3_MODE
+       | (1 << 10)       // DRV2_MODE
+       | (1 << 9)        // DRV1_MODE
+       | (1 << 8)        // DRV0_MODE
+       | (1 << 7)        // SPI_CS3 high
+       | (1 << 4)        // SPI_CS2 high
+       | (1 << 3)        // SPI_CS1 high
+       | (1 << 2);       // SPI_CS0 high
+    write32(&P->ODR, t1);
+    // Alternate function [3:0] per bit
+    t1 = (7 << 6*4)            // [6] AF7 USART2_RX
+       | (7 << 5*4)            // [5] AF7 USART2_TX
+       | (9 << 1*4)            // [1] AF9 CAN1_TX
+       | (9 << 0*4);           // [0] AF9 CAN1_RX
+    write32(&P->AFR[0], t1);
+    t1 = 0;
+    write32(&P->AFR[1], t1);
+    // [16] LCKK: Lock key (whole register)
+    // [15:0] LCKy: Lock bit
+    write32(&P->LCKR, 0x006FFFFF);
 
     // PORTE
+    //    PE15 LED DRV3 output
     //    PE2 - User LED (Low=ON; High=Off)
+    //    PE1  LED DRV2 output
+    //    PE0  LED DRV1 output
+    P = (GPIO_registers_type *)GPIOE_BASE;
     t1 = (0x1 << (15*2))    // [15] ouptut: LED DRV3 (0=LED PWR disabled; 1=enabled)
        | (0x1 << (2*2))     // [2] output: User LED (Low=ON; High=Off)
        | (0x1 << (1*2))     // [1] output: LED DRV2 (0=LED PWR disabled; 1=enabled)
        | (0x1 << (0*2));    // [0] output: LED DRV1 (0=LED PWR disabled; 1=enabled)
-    write32(&PE->MODER, t1);
+    write32(&P->MODER, t1);
     // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
-    write32(&PE->OTYPER, 0);
+    write32(&P->OTYPER, 0);
     // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
     t1 = (0x1 << (15*2))    // [15] medium speed
        | (0x0 << (2*2))     // [2] low speed
        | (0x1 << (1*2))     // [1] medium speed
        | (0x1 << (0*2));    // [0] medium speed
-    write32(&PE->OSPEEDR, t1);
+    write32(&P->OSPEEDR, t1);
     // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
     t1 = 0;                 // 
-    write32(&PE->PUPDR, t1);
+    write32(&P->PUPDR, t1);
     // [15:0] ODRy: port output data
     t1 = (1 << 2);          // User LED is off
-    write32(&PE->ODR, t1);
+    write32(&P->ODR, t1);
     // Alternate function [3:0] per bit
-    write32(&PE->AFR[0], 0);
-    write32(&PE->AFR[1], 0);
+    write32(&P->AFR[0], 0);
+    write32(&P->AFR[1], 0);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
     t1 = (1 << 15)
        | (1 << 2)
        | (1 << 1)
-       | (1 << 1);
-    write32(&PE->LCKR, t1);
+       | (1 << 0);
+    write32(&P->LCKR, t1);
 }
 
 void setup_uart() {
