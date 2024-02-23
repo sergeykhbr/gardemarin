@@ -25,8 +25,6 @@ int systick_cnt = 0;
 
 void SysTick_Handler() {
     SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
-//    systick_type *p;
-//    p = (systick_type *)fw_get_ram_data("stick");
 
     read32(&systick->CSR);     // Clear [16] COUNTFLAG
     if (++systick_cnt >= 100) {
@@ -61,8 +59,6 @@ void init_systick() {
 }
 
 int main(int argcnt, char *args[]) {
-    //fw_malloc_init();
-
     EnableIrqGlobal();
     init_systick();
 
@@ -71,4 +67,3 @@ int main(int argcnt, char *args[]) {
     }
     return 0;
 }
-

@@ -15,6 +15,9 @@ DIR_KEY=-B
 INCL_PATH = \
 	$(TOP_DIR)/../common/include \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../freertos \
+	$(TOP_DIR)/../freertos/ARM_CM4F \
+	$(TOP_DIR)/../freertos/include \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/src
 
@@ -22,6 +25,9 @@ INCL_PATH = \
 SRC_PATH = \
 	$(TOP_DIR)/../common/system \
 	$(TOP_DIR)/src/system \
+	$(TOP_DIR)/../freertos \
+	$(TOP_DIR)/../freertos/ARM_CM4F \
+	$(TOP_DIR)/../freertos/MemMang \
 	$(TOP_DIR)/src
 
 LIB_NAMES = \
@@ -37,19 +43,30 @@ SOURCES = isr_vector \
 	gcc_startup \
 	gcc_newlib \
 	memanager \
+	vprintfmt \
+	app_handlers \
+	event_groups \
+	list \
+	queue \
+	stream_buffer \
+	tasks \
+	timers \
+	port \
+	heap_1 \
+	app_hooks \
 	main
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))
-COMMONNAME = boot
+COMMONNAME = app_os_simple
 ELFFILE = $(COMMONNAME).elf
 DUMPFILE = $(COMMONNAME).dump
 LSTFILE = $(COMMONNAME).lst
 
-all: boot
+all: app_os_simple
 
 .PHONY: $(ELFFILE)
 
-boot: $(ELFFILE) $(DUMPFILE)
+app_os_simple: $(ELFFILE) $(DUMPFILE)
 
 $(DUMPFILE): $(ELFFILE)
 	echo $(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)

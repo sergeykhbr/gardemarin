@@ -25,6 +25,8 @@
 //   Scale 2 for F_HCLK <= 144 MHz
 //   Scale 1 for F_HCLK <= 168 MHz
 
+uint32_t SystemCoreClock = 144000000;
+
 int system_clock_hz() {
     int ret = 144000000;   // 144MHz, max is 168 MHz (higher power consumption +1 flash wait state)
     return ret;
@@ -38,19 +40,31 @@ void setup_gpio() {
     //    PA15 SPI3_NSS = AF6 (JTDI default after reset)
     //    PA14 JTCK/SWCLK = AF0 (default after reset)
     //    PA13 JTMS/SWDIO = AF0 (default after reset)
+    //    PA12 none
     //    PA11 Temperature2 input (external pull-up)
     //    PA10 USART1_RX = AF7
     //    PA9  USART1_TX = AF7
     //    PA8  Temperature1 input (external pull-up)
+    //    PA7  none
+    //    PA6  MOTOR_I_SENSOR4 = Analog ADC_IN6
+    //    PA5  MOTOR_I_SENSOR3 = Analog ADC_IN5
+    //    PA4  MOTOR_I_SENSOR2 = Analog ADC_IN4
+    //    PA3  MOTOR_I_SENSOR1 = Analog ADC_IN3
     //    PA2  ETH_MDIO = AF11
     //    PA1  ETH_REF_CLK = AF11
-    t1 = (2 << (15*2))     // [14] alternate: 
-       | (2 << (14*2))     // [14] alternate: 
-       | (2 << (13*2))     // [13] alternate: 
-       | (2 << (10*2))     // [10] alternate: 
-       | (2 << (9*2))      // [9] alternate: 
-       | (2 << (2*2))      // [2] alternate: 
-       | (2 << (1*2));     // [1] alternate: 
+    //    PA0  MOTOR_I_SENSOR0 = Analog ADC_IN0
+    t1 = (2 << (15*2))     // [15] alternate:  SPI3_NSS
+       | (2 << (14*2))     // [14] alternate:  SWCLK
+       | (2 << (13*2))     // [13] alternate: SWDIO
+       | (2 << (10*2))     // [10] alternate: USART1_RX
+       | (2 << (9*2))      // [9] alternate: USART1_TX
+       | (3 << (6*2))      // [6] analog ADC_IN6
+       | (3 << (5*2))      // [5] analog ADC_IN5
+       | (3 << (4*2))      // [4] analog ADC_IN4
+       | (3 << (3*2))      // [3] analog ADC_IN3
+       | (2 << (2*2))      // [2] alternate: ETH_MDIO
+       | (2 << (1*2))      // [1] alternate: ETH_REF_CLK
+       | (3 << (0*2));     // [0] analog ADC_IN0
     write32(&P->MODER, t1);
     // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
     write32(&P->OTYPER, 0);
@@ -81,8 +95,13 @@ void setup_gpio() {
        | (1 << 10)
        | (1 << 9)
        | (1 << 8)
+       | (1 << 6)
+       | (1 << 5)
+       | (1 << 4)
+       | (1 << 3)
        | (1 << 2)
-       | (1 << 1);
+       | (1 << 1)
+       | (1 << 0);
     write32(&P->LCKR, t1);
 
     // PORTB
@@ -93,12 +112,16 @@ void setup_gpio() {
     //    PB5  CAN2_TX    AF9
     //    PB4  NJTRST unused
     //    PB3  JTDO   unused
+    //    PB1  MOTOR_I_SENSOR6 = Analog ADC_IN9
+    //    PB0  MOTOR_I_SENSOR5 = Analog ADC_IN8
     P = (GPIO_registers_type *)GPIOB_BASE;
     t1 = (2 << (13*2))     // [13] alternate: 
        | (2 << (12*2))     // [12] alternate: 
        | (2 << (11*2))     // [11] alternate: 
        | (2 << (6*2))     // [6] alternate: 
-       | (2 << (5*2));    // [5] alternate: 
+       | (2 << (5*2))     // [5] alternate: 
+       | (3 << (1*2))     // [1] analog:  ADC_IN9
+       | (3 << (0*2));    // [0] analog:  ADC_IN8
     write32(&P->MODER, t1);
     // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
     write32(&P->OTYPER, 0);
@@ -122,7 +145,9 @@ void setup_gpio() {
        | (1 << 12)
        | (1 << 11)
        | (1 << 6)
-       | (1 << 5);
+       | (1 << 5)
+       | (1 << 1)
+       | (1 << 0);
     write32(&P->LCKR, t1);
 
     // PORTC:
@@ -133,6 +158,7 @@ void setup_gpio() {
     //    PC5  ETH_RX_D1  AF11
     //    PC4  ETH_RX_D0  AF11
     //    PC1  ETH_MDC    AF11
+    //    PC0  MOTOR_I_SENSOR7 = Analog ADC_IN10
     P = (GPIO_registers_type *)GPIOC_BASE;
     t1 = (0 << (13*2))     // [13] input: User btn (internal pull-up). 0=btn is pressed
        | (2 << (12*2))     // [12] alternate: SPI3_MOSI
@@ -140,7 +166,8 @@ void setup_gpio() {
        | (2 << (10*2))     // [10] alternate: SPI3_SCK
        | (2 << (5*2))      // [5] alternate: ETH_RX_D1
        | (2 << (4*2))      // [4] alternate: ETH_RX_D0
-       | (2 << (1*2));     // [1] alternate: ETH_MDC
+       | (2 << (1*2))      // [1] alternate: ETH_MDC
+       | (3 << (0*2));     // [0] analog: ADC_IN10
     write32(&P->MODER, t1);
     // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
     write32(&P->OTYPER, 0);
@@ -168,7 +195,8 @@ void setup_gpio() {
        | (1 << 10)
        | (1 << 5)
        | (1 << 4)
-       | (1 << 1);
+       | (1 << 1)
+       | (1 << 0);
     write32(&P->LCKR, t1);
 
     // PORTD:
@@ -211,7 +239,7 @@ void setup_gpio() {
        | (2 << 2*2);       // SPI_CS0 high
     write32(&P->OSPEEDR, t1);
     // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down
-    t1 = (1 << (13*2));   // [13] pull-up: User Btn
+    t1 = 0;
     write32(&P->PUPDR, t1);
     // [15:0] ODRy: port output data
     t1 = (0 << 14)       // RELAY1
@@ -235,7 +263,7 @@ void setup_gpio() {
     write32(&P->AFR[1], t1);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
-    write32(&P->LCKR, 0x006FFFFF);
+    write32(&P->LCKR, 0x00006FFF);
 
     // PORTE
     //    PE15 LED DRV3 output
@@ -307,6 +335,16 @@ void setup_uart() {
     write16(&UART1->CR1, t1);
     write16(&UART1->CR2, 0);
     write16(&UART1->CR3, 0);
+}
+
+void setup_eth() {
+    // The mode, MII or RMII, is selected using the configuration bit 23, MII_RMII_SEL, in the
+    // SYSCFG_PMC register. The application has to set the MII/RMII mode while the Ethernet
+    // controller is under reset or before enabling the clocks.
+    SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
+    uint32_t t1 = read32(&SYSCFG->PMC);
+    t1 |= (1 << 23);    // RMII PHY selected
+    write32(&SYSCFG->PMC, t1);
 }
 
 void system_init(void)
@@ -460,12 +498,12 @@ void system_init(void)
     while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
 
     // Vector table rellocation apply here: SCB->VTOR
-    nvic_irq_disable(0xffffffff);
-    nvic_irq_clear(0xffffffff);
+    nvic_irq_disable(-1);
+    nvic_irq_clear(-1);
 
     // [30] OTGHSULPIEN: USB OTG HSULPI clock enable
     // [29] OTGHSEN: USB OTG HS clock enable
-    // [28] ETHMACPTPEN: Ethernet PTP clock enable
+    // [28] ETHMACPTPEN: Ethernet PTP clock enable. !Clock must be enabled after RMII selection
     // [27] ETHMACRXEN: Ethernet Rx clock enable
     // [26] ETHMACTXEN: Ethernet Tx clock enable
     // [25] ETHMACEN: Ethernet MAC clock enable
@@ -489,7 +527,10 @@ void system_init(void)
     t1 = read32(&RCC->AHB1ENR);
     t1 |= (1 << 18)    // Backup SRAM
         | (1 << 4)     // PE
-        | (1 << 2);    // PC
+        | (1 << 3)     // PD
+        | (1 << 2)     // PC
+        | (1 << 1)     // PB
+        | (1 << 0);    // PA
     write32(&RCC->AHB1ENR, t1);
 
     // [26] LTDCEN: LTDC clock en
@@ -515,4 +556,5 @@ void system_init(void)
 
     setup_gpio();
     setup_uart();
+    setup_eth();
 }

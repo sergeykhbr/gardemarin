@@ -17,6 +17,7 @@
 #pragma once
 
 #include <scs.h>
+#include <syscfg.h>
 #include <rcc.h>
 #include <pwr.h>
 #include <flash.h>
@@ -31,6 +32,45 @@
 #define NVIC_BASE             (SCS_BASE + 0x0100)
 #define SCB_BASE              (SCS_BASE + 0x0D00)
 #define SCS_STIR              (SCS_BASE + 0x0F00)   // [WO] Software Trigger Interrupt Register
+
+static inline void nvic_irq_enable(int idx) {
+    NVIC_registers_type *NVIC = (NVIC_registers_type *)NVIC_BASE;
+    if (idx == -1) {
+        // Enable all interrupts
+        write32(&NVIC->ISER[0], ~0ul);
+        write32(&NVIC->ISER[1], ~0ul);
+        write32(&NVIC->ISER[2], ~0ul);
+        write32(&NVIC->ISER[3], ~0ul);
+    } else {
+        write32(&NVIC->ISER[idx >> 5], (1ul << (idx & 0x1F)));
+    }
+}
+
+static inline void nvic_irq_disable(int idx) {
+    NVIC_registers_type *NVIC = (NVIC_registers_type *)NVIC_BASE;
+    if (idx == -1) {
+        // Disable all interrupts
+        write32(&NVIC->ICER[0], ~0ul);
+        write32(&NVIC->ICER[1], ~0ul);
+        write32(&NVIC->ICER[2], ~0ul);
+        write32(&NVIC->ICER[3], ~0ul);
+    } else {
+        write32(&NVIC->ICER[idx >> 5], (1ul << (idx & 0x1F)));
+    }
+}
+
+static inline void nvic_irq_clear(int idx) {
+    NVIC_registers_type *NVIC = (NVIC_registers_type *)NVIC_BASE;
+    if (idx == -1) {
+        // Clear all pending interrupts
+        write32(&NVIC->ICPR[0], ~0ul);
+        write32(&NVIC->ICPR[1], ~0ul);
+        write32(&NVIC->ICPR[2], ~0ul);
+        write32(&NVIC->ICPR[3], ~0ul);
+    } else {
+        write32(&NVIC->ICPR[idx >> 5], (1ul << (idx & 0x1F)));
+    }
+}
 
 
 #define FLASH_BASE            ((uint32_t)0x08000000) /*!< FLASH(up to 1 MB) base address in the alias region                         */

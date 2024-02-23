@@ -90,20 +90,6 @@ static inline void DisableIrqGlobal(void)
 #endif
 }
 
-static inline void nvic_irq_enable(int idx) {
-    uint32_t *ISER = (uint32_t *)0xE000E100;
-    write32(ISER, (1ul << idx));
-}
-
-static inline void nvic_irq_disable(int idx) {
-    uint32_t *ICER = (uint32_t *)0xE000E180;
-    write32(ICER, (1ul << idx));
-}
-
-static inline void nvic_irq_clear(int idx) {
-    uint32_t *ICPR = (uint32_t *)0xE000E280;
-    write32(ICPR, (1ul << idx));
-}
 
 static inline void memory_barrier() {
    __asm("DSB");

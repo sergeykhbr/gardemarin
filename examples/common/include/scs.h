@@ -30,6 +30,7 @@ typedef struct SysTick_registers_type
     volatile uint32_t CALIB;     // [RO] SysTick Calibration value Register
 } SysTick_registers_type;
 
+
 /** System Control Block registers */
 typedef struct SCB_registers_type
 {
@@ -55,3 +56,18 @@ typedef struct SCB_registers_type
     uint32_t RESERVED0[5U];
     volatile uint32_t CPACR;                  /*!< Offset: 0x088 (R/W)  Coprocessor Access Control Register */
 } SCB_registers_type;
+
+typedef struct NVIC_registers_type {
+    volatile uint32_t ISER[16];  // 0xE000E100 [RW] Interrupt Set-Enable Registers
+    uint8_t rsrv1[0x40];
+    volatile uint32_t ICER[16];  // 0xE000E180 [RW] Interrupt Clear-Enable Registers
+    uint8_t rsrv2[0x40];
+    volatile uint32_t ISPR[16];  // 0xE000E200 [RW] Interrupt Set-Pending Registers
+    uint8_t rsrv3[0x40];
+    volatile uint32_t ICPR[16];  // 0xE000E280 [RW] Interrupt Clear-Pending Registers
+    uint8_t rsrv4[0x40];
+    volatile uint32_t IABR[16];  // 0xE000E300 [RO] Interrupt Active Bit Registers
+    uint8_t rsrv5[0xC0];
+    volatile uint32_t IPR[124];  // 0xE000E400 [RW] Interrupt Priority Registers
+} NVIC_registers_type;
+
