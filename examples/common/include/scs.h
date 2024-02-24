@@ -68,6 +68,6 @@ typedef struct NVIC_registers_type {
     uint8_t rsrv4[0x40];
     volatile uint32_t IABR[16];  // 0xE000E300 [RO] Interrupt Active Bit Registers
     uint8_t rsrv5[0xC0];
-    volatile uint32_t IPR[124];  // 0xE000E400 [RW] Interrupt Priority Registers
+    volatile uint8_t IPR[97];    // 0xE000E400 [RW] Interrupt Priority Registers
 } NVIC_registers_type;
 

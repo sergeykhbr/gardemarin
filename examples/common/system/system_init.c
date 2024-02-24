@@ -32,6 +32,23 @@ int system_clock_hz() {
     return ret;
 }
 
+void setup_nvic() {
+    SCB_registers_type *SCB = (SCB_registers_type *)SCB_BASE;
+
+    // Vector table rellocation apply here: SCB->VTOR
+    nvic_irq_disable(-1);
+    nvic_irq_clear(-1);
+
+    // [10:8] PRIGROUP
+    //     111 0 bits for pre-emption prio, 4 bits for subprpiority (M3 TRM 0 vs 256)
+    //     110 1 bits for pre-emption prio, 3 bits for subprpiority (M3 TRM 2 vs 128)
+    //     ..
+    //     011 4 bits for pre-emption prio, 0 bits for subprpiority (M3 TRM 16 vs 16)
+    write32(&SCB->AIRCR, (3 << 8));   // by unclear reason only PRIORITY[7:4] bits are used in FreeRTOS
+
+    //write32(&SCB->VTOR, NVIC_VectTab | (Offset & (uint32_t)0x1FFFFF80);
+}
+
 void setup_gpio() {
     GPIO_registers_type *P = (GPIO_registers_type *)GPIOA_BASE;
     uint32_t t1;
@@ -362,6 +379,7 @@ void system_init(void)
         | (3UL << 11*2);
     write32(&SCB->CPACR, t1);
 
+
     /* Reset the RCC clock configuration to the default reset state*/
     /* Set HSION bit */
     t1 = read32(&RCC->CR);
@@ -497,9 +515,8 @@ void system_init(void)
     /* Wait till the main PLL is used as system clock source */
     while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
 
-    // Vector table rellocation apply here: SCB->VTOR
-    nvic_irq_disable(-1);
-    nvic_irq_clear(-1);
+    setup_nvic();
+
 
     // [30] OTGHSULPIEN: USB OTG HSULPI clock enable
     // [29] OTGHSEN: USB OTG HS clock enable

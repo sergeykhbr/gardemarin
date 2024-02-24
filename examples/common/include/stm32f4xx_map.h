@@ -33,7 +33,10 @@
 #define SCB_BASE              (SCS_BASE + 0x0D00)
 #define SCS_STIR              (SCS_BASE + 0x0F00)   // [WO] Software Trigger Interrupt Register
 
-static inline void nvic_irq_enable(int idx) {
+// All interrupts configures as preemptive
+// prio = 0 highest priority
+// prio = 7 lowest
+static inline void nvic_irq_enable(int idx, uint8_t prio) {
     NVIC_registers_type *NVIC = (NVIC_registers_type *)NVIC_BASE;
     if (idx == -1) {
         // Enable all interrupts
@@ -43,6 +46,8 @@ static inline void nvic_irq_enable(int idx) {
         write32(&NVIC->ISER[3], ~0ul);
     } else {
         write32(&NVIC->ISER[idx >> 5], (1ul << (idx & 0x1F)));
+        // FreeRTOS demo does not use lower 4 bits
+        write8(&NVIC->IPR[idx], prio << 4);
     }
 }
 
