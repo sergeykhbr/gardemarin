@@ -16,38 +16,36 @@
 
 #include <prjtypes.h>
 #include <stdio.h>
+#include <string.h>
 #include <stm32f4xx_map.h>
+#include "task500ms.h"
 
-#include <FreeRTOS.h>
-#include <task.h>
-#include <timers.h>
-#include <semphr.h>
 
-static portTASK_FUNCTION_PROTO(vLEDFlashTask, pvParameters);
+typedef struct app_data_type  {
+    task500ms_data_type task500ms_arg;
+} app_data_type;
 
 int main(int argcnt, char *args[]) {
-    //fw_malloc_init();
+    app_data_type *appdata;
 
     printf("%s\n", "Starting FreeRTOS scheduler!");
 
-    xTaskCreate(vLEDFlashTask,
-                "LEDx",
+    appdata = pvPortMalloc(sizeof(app_data_type));
+    memset(appdata, 0, sizeof(app_data_type));
+
+    xTaskCreate(task500ms,
+                "10ms",
                  configMINIMAL_STACK_SIZE,
-                 NULL,
+                 &appdata->task500ms_arg,
                  tskIDLE_PRIORITY + 1UL,
                  (TaskHandle_t *) NULL);
 
     vTaskStartScheduler();
 
     // NEVER REACH THIS CODE
-    while(1) {}
-    return 0;
-}
-
-static portTASK_FUNCTION(vLEDFlashTask, pvParameters)
-{
-    while (1) {
-        // do something
+    while(1) {
+        printf("FreerRTOS failed %s %s\n", __FILE__, __LINE__);
     }
+    return 0;
 }
 

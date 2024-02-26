@@ -52,8 +52,9 @@ SOURCES = isr_vector \
 	tasks \
 	timers \
 	port \
-	heap_1 \
+	heap_4 \
 	app_hooks \
+	task500ms \
 	main
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))
