@@ -17,6 +17,7 @@
 #include <prjtypes.h>
 #include <stdio.h>
 #include <stm32f4xx_map.h>
+#include <uart.h>
 
 extern int system_clock_hz();
 
@@ -50,20 +51,28 @@ void init_systick() {
 
     t1 = system_clock_hz() / 100;     // 100 Hz, SysTick is 24-bits width
     write32(&systick->RVR, t1);       // reload value
-    write32(&systick->CVR, t1);       // current value
+    write32(&systick->CVR, t1);        // current value
 
     t1 = (1 << 2)      // CLKSOURCE: SysTick uses CPU clock (default 1)
-       | (1 < 1)       // TICKINT: enable interrupt
+       | (1 << 1)       // TICKINT: enable interrupt
        | 1;            // ENABLE:
     write32(&systick->CSR, t1);
 }
 
 int main(int argcnt, char *args[]) {
+    GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
+    int cnt_z = 0;
+
     EnableIrqGlobal();
     init_systick();
 
+    write16(&PE->BSRRH, (1 << 2));
+
     while(1) {
-        printf("Hello World %d!\n", global_cnt);
+        if (cnt_z != global_cnt) {
+            uart_printf("Hello World %d!\r\n", global_cnt);
+            cnt_z = global_cnt;
+        }
     }
     return 0;
 }

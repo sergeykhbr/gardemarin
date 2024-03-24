@@ -62,6 +62,7 @@ COMMONNAME = app_os_simple
 ELFFILE = $(COMMONNAME).elf
 DUMPFILE = $(COMMONNAME).dump
 LSTFILE = $(COMMONNAME).lst
+BINFILE = $(COMMONNAME).bin
 
 all: app_os_simple
 
@@ -73,6 +74,7 @@ $(DUMPFILE): $(ELFFILE)
 	echo $(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)
 	$(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)
 	$(OBJDUMP) -S $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$(LSTFILE))
+	$(OBJCOPY) -O binary $(addprefix $(ELF_DIR)/,$<) $(addprefix $(ELF_DIR)/,$(BINFILE))
 
 $(ELFFILE): $(OBJ_FILES)
 	$(ECHO) $(CPP) $(LDFLAGS) $(addprefix $(OBJ_DIR)/,$(OBJ_FILES)) -o $(addprefix $(ELF_DIR)/,$@) $(addprefix -l,$(LIB_NAMES))

@@ -90,7 +90,7 @@ PendSV_Handler() {
     }
 }
 
-void __attribute__ ((section(".hard_reset"), weak))
-SysTick_Handler() {
-}
+//void __attribute__ ((section(".hard_reset"), weak))
+//SysTick_Handler() {
+//}
 

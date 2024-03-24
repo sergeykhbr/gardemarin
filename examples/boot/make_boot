@@ -5,7 +5,7 @@ CC=arm-none-eabi-gcc
 OBJDUMP=arm-none-eabi-objdump
 OBJCOPY=arm-none-eabi-objcopy
 
-CFLAGS= -c -g -static -std=gnu99 -Os -mcpu=cortex-m4 -mfloat-abi=hard
+CFLAGS= -c -g -static -std=gnu99 -O0 -mcpu=cortex-m4 -mfloat-abi=hard
 CFLAGS+=-fno-common
 
 LDFLAGS=-T ../common/system/stm32f4xx.ld -nostartfiles -mcpu=cortex-m4 -mfloat-abi=hard
@@ -36,6 +36,8 @@ SOURCES = isr_vector \
 	system_init \
 	gcc_startup \
 	gcc_newlib \
+	vprintfmt \
+	uart \
 	memanager \
 	main
 
@@ -44,6 +46,7 @@ COMMONNAME = boot
 ELFFILE = $(COMMONNAME).elf
 DUMPFILE = $(COMMONNAME).dump
 LSTFILE = $(COMMONNAME).lst
+BINFILE = $(COMMONNAME).bin
 
 all: boot
 
@@ -55,6 +58,7 @@ $(DUMPFILE): $(ELFFILE)
 	echo $(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)
 	$(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)
 	$(OBJDUMP) -S $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$(LSTFILE))
+	$(OBJCOPY) -O binary $(addprefix $(ELF_DIR)/,$<) $(addprefix $(ELF_DIR)/,$(BINFILE))
 
 $(ELFFILE): $(OBJ_FILES)
 	$(ECHO) $(CPP) $(LDFLAGS) $(addprefix $(OBJ_DIR)/,$(OBJ_FILES)) -o $(addprefix $(ELF_DIR)/,$@) $(addprefix -l,$(LIB_NAMES))

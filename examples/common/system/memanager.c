@@ -17,6 +17,7 @@
 #include <prjtypes.h>
 #include <string.h>
 #include <stdio.h>
+#include <uart.h>
 
 #ifdef _WIN32
 char __heap_start__[1 << 19];
@@ -58,9 +59,9 @@ char *_sbrk(int incr) {
     pool->allocated_sz += incr;
     pool->end += incr;
 
-    if (pool->end >= (uint32_t)__stack_limit) {
-        printf("heap limit reached %08x\n", pool->end);
-    }
+//    if (pool->end >= (uint32_t)__stack_limit) {
+//        uart_printf("heap limit reached %08x\n", pool->end);
+//    }
     return ret;
 }
 
@@ -84,9 +85,9 @@ void fw_register_ram_data(const char *name, void *data) {
     memcpy(p->name, name, 8);
     p->name[7] = 0;
     p->pattern = data;
-    if (pool->data_cnt >= RAM_ENTRIES_MAX) {
-        printf("mempool limit reached %d\n", RAM_ENTRIES_MAX);
-    }
+//    if (pool->data_cnt >= RAM_ENTRIES_MAX) {
+//        uart_printf("mempool limit reached %d\n", RAM_ENTRIES_MAX);
+//    }
 }
 
 void *fw_get_ram_data(const char *name) {

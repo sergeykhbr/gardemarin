@@ -17,6 +17,8 @@
 #include "prjtypes.h"
 #include <stm32f4xx_map.h>
 
+//#define PLL_ENABLE
+
 // Typical power consumption at 25 C:
 //   168 MHz 87 mA
 //   144 MHz 67 mA   - make sense to reduce frequency lower 150 MHz,
@@ -28,7 +30,11 @@
 uint32_t SystemCoreClock = 144000000;
 
 int system_clock_hz() {
+#ifdef PLL_ENABLE
     int ret = 144000000;   // 144MHz, max is 168 MHz (higher power consumption +1 flash wait state)
+#else
+    int ret = 16000000;
+#endif
     return ret;
 }
 
@@ -119,7 +125,7 @@ void setup_gpio() {
        | (1 << 2)
        | (1 << 1)
        | (1 << 0);
-    write32(&P->LCKR, t1);
+    //write32(&P->LCKR, t1);
 
     // PORTB
     //    PB13 ETH_D1     AF11
@@ -165,7 +171,7 @@ void setup_gpio() {
        | (1 << 5)
        | (1 << 1)
        | (1 << 0);
-    write32(&P->LCKR, t1);
+    //write32(&P->LCKR, t1);
 
     // PORTC:
     //    PC13 - User btn (internal pull-up). 0=btn is pressed
@@ -214,7 +220,7 @@ void setup_gpio() {
        | (1 << 4)
        | (1 << 1)
        | (1 << 0);
-    write32(&P->LCKR, t1);
+    //write32(&P->LCKR, t1);
 
     // PORTD:
     //    PD14 RELAY1 output
@@ -280,7 +286,7 @@ void setup_gpio() {
     write32(&P->AFR[1], t1);
     // [16] LCKK: Lock key (whole register)
     // [15:0] LCKy: Lock bit
-    write32(&P->LCKR, 0x00006FFF);
+    //write32(&P->LCKR, 0x00006FFF);
 
     // PORTE
     //    PE15 LED DRV3 output
@@ -316,7 +322,7 @@ void setup_gpio() {
        | (1 << 2)
        | (1 << 1)
        | (1 << 0);
-    write32(&P->LCKR, t1);
+    //write32(&P->LCKR, t1);
 }
 
 void setup_uart() {
@@ -329,7 +335,10 @@ void setup_uart() {
     // 72000000/(16*115200) = 39.0625
     fraction = 1;     // 0.0625 * 16
     mantissa = 39;
-    write16(&UART1->BRR, (mantissa << 4) | fraction);
+    // APB2 = HCLK / 2
+    uint32_t t2 = system_clock_hz() / 2 / 115200;
+//    write16(&UART1->BRR, (mantissa << 4) | fraction);
+    write16(&UART1->BRR, (uint16_t)t2);
 
     // [15] OVER8: Oversampling: 0=16; 1=8
     // [13] UE: USART enable
@@ -446,7 +455,7 @@ void system_init(void)
     // [1] PDDS: Power-down deepsleep
     // [0] LPDS: Low power deepsleep.
     t1 = read32(&PWR->CR);
-    t1 &= ~(1 << 14);       // 0=Scale 2 mode at 144 MHz (default is 1 =Scale 1 mode at reset 168 MHz)
+    //t1 &= ~(1 << 14);       // 0=Scale 2 mode at 144 MHz (default is 1 =Scale 1 mode at reset 168 MHz)
     t1 |= (1 << 8);         // Write access to RTC backup registers and backup SRAM
     write32(&PWR->CR, t1);
 
@@ -479,7 +488,8 @@ void system_init(void)
     /* Wait till the main PLL is ready */
     // [25] PLLRDY: Main PLL clock ready flag
     while((read32(&RCC->CR) & (1 << 25)) == 0) {}
-   
+
+#ifdef PLL_ENABLE   
     /* Configure Flash prefetch, Instruction cache, Data cache and wait state */
     // at Vdd = 2.7 .. 3.6 V Max flash memorya ccess freq with no wait state = 30 MHz (see table 15, page 81)
     // ART accelerator speed-up access. at 144MHz = 4 wait states, at 150-168 Mhz with 5 wait-states
@@ -489,10 +499,10 @@ void system_init(void)
     // [9] ICEN: Data cache enable
     // [8] PRFTEN: Prefetch enable
     // [2:0] LATENCY: number of wait-states
-    t1 = (1 << 10)     // dcache ea
-       | (1 << 9)      // icache ena
+    t1 = (0 << 10)     // dcache ena
+       | (0 << 9)      // icache ena
        | (0 << 8)      // prefetch disabled
-       | (4 << 0);     // 4 wstates at 144 MHz
+       | (15 << 0);     // 15 wstates before pll switch
     write32(&FLASH->ACR, t1);
 
     /* Select the main PLL as system clock source */
@@ -510,10 +520,19 @@ void system_init(void)
     t1 = read32(&RCC->CFGR);
     t1 &= ~(0x3);
     t1 |= 0x2;      // Select PLL
-    write32(&RCC->CFGR, t1);
+    //write32(&RCC->CFGR, t1);
+    RCC->CFGR = t1;
 
     /* Wait till the main PLL is used as system clock source */
-    while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
+    //while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
+    while ((RCC->CFGR & 0xF) != 0xA) {}
+
+    t1 = (1 << 10)     // dcache ena
+       | (1 << 9)      // icache ena
+       | (0 << 8)      // prefetch disabled
+       | (4 << 0);     // 4 wstates 144 mhz
+    write32(&FLASH->ACR, t1);
+#endif
 
     setup_nvic();
 
@@ -568,7 +587,7 @@ void system_init(void)
     // [4] USART1EN:
     // [1] TIM8EN:
     // [0] TIM1EN:
-    t1 = (1 << 4);            // APB2[4] USART1
+    t1 = (1 << 14) | (1 << 4);            // APB2[4] USART1
     write32(&RCC->APB2ENR, t1);
 
     setup_gpio();
