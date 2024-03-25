@@ -17,8 +17,6 @@
 #include "prjtypes.h"
 #include <stm32f4xx_map.h>
 
-//#define PLL_ENABLE
-
 // Typical power consumption at 25 C:
 //   168 MHz 87 mA
 //   144 MHz 67 mA   - make sense to reduce frequency lower 150 MHz,
@@ -30,11 +28,7 @@
 uint32_t SystemCoreClock = 144000000;
 
 int system_clock_hz() {
-#ifdef PLL_ENABLE
     int ret = 144000000;   // 144MHz, max is 168 MHz (higher power consumption +1 flash wait state)
-#else
-    int ret = 16000000;
-#endif
     return ret;
 }
 
@@ -378,7 +372,7 @@ void system_init(void)
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SCB_registers_type *SCB = (SCB_registers_type *)SCB_BASE;
     PWR_registers_type *PWR = (PWR_registers_type *)PWR_BASE;
-    FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_BASE;
+    FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
     uint32_t t1;
 
     /* FPU settings */
@@ -425,10 +419,10 @@ void system_init(void)
     //              16 / 16 * 168 = 336 MHz (VCO input frequency)
     // [5:0] PLLM: Division factor for the main PLL before VCO = 16. In range 1..2 MHz to limit jitter
     t1 = (3 << 24)    // 144 / 3 = 48 MHz
-       | (0 << 22)    // HSI
+       | (1 << 22)    // HSE
        | (0 << 16)    // PLL output = VCO/2
        | (288 << 6)   // to form 144 MHz on PLL output
-       | (16 << 0);   // HSI /16 = 16 / 16 = 1MHz
+       | (8 << 0);   // HSE /8 = 8 / 8 = 1MHz
     write32(&RCC->PLLCFGR, t1); // 0x24003010);
 
     /* Reset HSEBYP bit could be disabled only if HSE is OFF */
@@ -476,20 +470,24 @@ void system_init(void)
        | (0 << 4);       // AHB = PLL = 144 MHz
     write32(&RCC->CFGR, t1);
 
+    /* Enable the HSE 8 MHz */
+    // [16] HSEON: HSE clock enable (RTC source)
+    t1 = read32(&RCC->CR);
+    t1 |=  (1 << 16);
+    write32(&RCC->CR, t1);
+    // [17] HSERDY: HSE clock ready flag
+    while((read32(&RCC->CR) & (1 << 17)) == 0) {}
+
 
     /* Enable the main PLL */
     // [24] PLLON: Main PLL enable
-    // [16] HSEON: HSE clock enable (RTC source)
     t1 = read32(&RCC->CR);
-    t1 |= (1 << 24)
-        | (1 << 16);
+    t1 |= (1 << 24);
     write32(&RCC->CR, t1);
-
     /* Wait till the main PLL is ready */
     // [25] PLLRDY: Main PLL clock ready flag
     while((read32(&RCC->CR) & (1 << 25)) == 0) {}
 
-#ifdef PLL_ENABLE   
     /* Configure Flash prefetch, Instruction cache, Data cache and wait state */
     // at Vdd = 2.7 .. 3.6 V Max flash memorya ccess freq with no wait state = 30 MHz (see table 15, page 81)
     // ART accelerator speed-up access. at 144MHz = 4 wait states, at 150-168 Mhz with 5 wait-states
@@ -499,10 +497,10 @@ void system_init(void)
     // [9] ICEN: Data cache enable
     // [8] PRFTEN: Prefetch enable
     // [2:0] LATENCY: number of wait-states
-    t1 = (0 << 10)     // dcache ena
-       | (0 << 9)      // icache ena
+    t1 = (1 << 10)     // dcache ena
+       | (1 << 9)      // icache ena
        | (0 << 8)      // prefetch disabled
-       | (15 << 0);     // 15 wstates before pll switch
+       | (4 << 0);     // 4 wstates for 144 mhz
     write32(&FLASH->ACR, t1);
 
     /* Select the main PLL as system clock source */
@@ -520,19 +518,10 @@ void system_init(void)
     t1 = read32(&RCC->CFGR);
     t1 &= ~(0x3);
     t1 |= 0x2;      // Select PLL
-    //write32(&RCC->CFGR, t1);
-    RCC->CFGR = t1;
+    write32(&RCC->CFGR, t1);
 
     /* Wait till the main PLL is used as system clock source */
-    //while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
-    while ((RCC->CFGR & 0xF) != 0xA) {}
-
-    t1 = (1 << 10)     // dcache ena
-       | (1 << 9)      // icache ena
-       | (0 << 8)      // prefetch disabled
-       | (4 << 0);     // 4 wstates 144 mhz
-    write32(&FLASH->ACR, t1);
-#endif
+    while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
 
     setup_nvic();
 

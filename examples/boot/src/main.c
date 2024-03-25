@@ -60,18 +60,26 @@ void init_systick() {
 }
 
 int main(int argcnt, char *args[]) {
-    GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
+
     int cnt_z = 0;
+    uint32_t t1;
 
     EnableIrqGlobal();
     init_systick();
-
-    write16(&PE->BSRRH, (1 << 2));
 
     while(1) {
         if (cnt_z != global_cnt) {
             uart_printf("Hello World %d!\r\n", global_cnt);
             cnt_z = global_cnt;
+
+            t1 = read32(&RCC->CR);
+            uart_printf("RCC_CR %08x\r\n", t1);
+
+            t1 = read32(&FLASH->ACR);
+            uart_printf("FLASH_ACR %08x\r\n", t1);
+
         }
     }
     return 0;

@@ -1,6 +1,6 @@
 ## How to build
 
-Set environment variable: ARMGCC_DIR=/your_path_to_compiler/bin
+Set environment variable: ARMGCC_DIR=/your_path_to_compiler
 
         $ cd <git_repo>/examples/boot
         $ make

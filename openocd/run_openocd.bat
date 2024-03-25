@@ -1,0 +1,1 @@
+C:\soft\openocd-v0.12.0-i686-w64-mingw32\bin\openocd.exe -f stm32f4-gardemarin.cfg
