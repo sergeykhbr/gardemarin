@@ -1,6 +1,6 @@
 rem ---------------------------------------------------------------------------
 
-set PATH=%ARMGCC_DIR%;%PATH%
+set PATH=%ARMGCC_DIR%\bin;%PATH%
 
 set TOP_DIR=.
 set OBJ_DIR=%TOP_DIR%\obj

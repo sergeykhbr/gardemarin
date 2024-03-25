@@ -17,6 +17,7 @@
 #include <prjtypes.h>
 #include <stdio.h>
 #include <stm32f4xx_map.h>
+#include <uart.h>
 #include "task500ms.h"
 
 static int is_button_pressed() {
@@ -52,8 +53,10 @@ portTASK_FUNCTION(task500ms, args)
         btn_state = is_button_pressed();
         if (btn_state && !btn_state_z) {
             task_data->service_mode = !task_data->service_mode;
-        } else if (btn_state && !btn_state_z) {
+            uart_printf("User btn %s\r\n", "pressed");
+        } else if (!btn_state && btn_state_z) {
             // negedge
+            uart_printf("User btn %s\r\n", "released");
         }
         btn_state_z = btn_state;
 

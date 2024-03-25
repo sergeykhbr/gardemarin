@@ -9,7 +9,7 @@ ELF_DIR = $(TOP_DIR)/bin
 .SILENT:
   TEA = 2>&1 | tee _$@-comp.err
 
-all: test
+all: app_os_simple
 	$(ECHO) "    All done.\n"
 
 app_os_simple:

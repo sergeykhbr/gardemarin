@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stm32f4xx_map.h>
+#include <uart.h>
 #include "task500ms.h"
-
 
 typedef struct app_data_type  {
     task500ms_data_type task500ms_arg;
@@ -28,7 +28,7 @@ typedef struct app_data_type  {
 int main(int argcnt, char *args[]) {
     app_data_type *appdata;
 
-    printf("%s\n", "Starting FreeRTOS scheduler!");
+    uart_printf("%s\n", "Starting FreeRTOS scheduler!\r\n");
 
     appdata = pvPortMalloc(sizeof(app_data_type));
     memset(appdata, 0, sizeof(app_data_type));
@@ -44,7 +44,7 @@ int main(int argcnt, char *args[]) {
 
     // NEVER REACH THIS CODE
     while(1) {
-        printf("FreerRTOS failed %s %s\n", __FILE__, __LINE__);
+        uart_printf("FreerRTOS failed %s %s\r\n", __FILE__, __LINE__);
     }
     return 0;
 }
