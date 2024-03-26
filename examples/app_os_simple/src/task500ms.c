@@ -41,6 +41,90 @@ static void set_led_state(int on) {
     }
 }
 
+static void relay_on(int idx) {
+    GPIO_registers_type *PD = (GPIO_registers_type *)GPIOD_BASE;
+    // BSRR[15:0] Set bit (set to HIGH)
+    if (idx == 0) {
+        // PD[13] Relay0
+        write16(&PD->BSRRL, (1 << 13));
+    } else {
+        // PD[14] Relay1
+        write16(&PD->BSRRL, (1 << 14));
+    }
+}
+
+static void relay_off(int idx) {
+    GPIO_registers_type *PD = (GPIO_registers_type *)GPIOD_BASE;
+    // BSRR[31:16] Reset bit (set to LOW)
+    if (idx == 0) {
+        // PD[13] Relay0
+        write16(&PD->BSRRH, (1 << 13));
+    } else {
+        // PD[14] Relay1
+        write16(&PD->BSRRH, (1 << 14));
+    }
+}
+
+// current task is 0.5 sec
+#define SERVICE_SEC_TO_COUNT(sec) (2 * sec)
+
+void update_service_state(task500ms_data_type *data) {
+    if (data->service_mode == 0) {
+        set_led_state(1);
+        data->service_start_time = data->cnt;
+        data->service_state = SERVICE_STATE_INIT;
+        data->pause_cnt = 0;
+        return;
+    }
+    // LED blinking in service mode:
+    set_led_state((int)(data->cnt & 1));
+
+    if (data->pause_cnt) {
+        data->pause_cnt--;
+        return;
+    }
+
+    // Expected current through the Relay at 5V is 89.3 mA
+    // Relay[0]=off; Relay[1]=off; I=60 mA
+    // Relay[0]=off; Relay[1]=on;  I=150 mA
+    // Relay[0]=on;  Relay[1]=off; I=150 mA
+    // Relay[0]=on;  Relay[1]=on;  I=230 mA
+    
+    switch (data->service_state) {
+    case SERVICE_STATE_INIT:
+        data->service_state = SERVICE_STATE_RELAY0_ENA;
+        uart_printf("[%d] Start service demo\r\n", xTaskGetTickCount());
+        break;
+    case SERVICE_STATE_RELAY0_ENA:
+        relay_on(0);
+        uart_printf("[%d] Relay[0] is on\r\n", xTaskGetTickCount());
+        data->pause_cnt = SERVICE_SEC_TO_COUNT(2);
+        data->service_state = SERVICE_STATE_RELAY1_ENA;
+        break;
+    case SERVICE_STATE_RELAY1_ENA:
+        relay_on(1);
+        uart_printf("[%d] Relay[1] is on\r\n", xTaskGetTickCount());
+        data->pause_cnt = SERVICE_SEC_TO_COUNT(4);
+        data->service_state = SERVICE_STATE_RELAYS_DIS;
+        break;
+    case SERVICE_STATE_RELAYS_DIS:
+        relay_off(0);
+        relay_off(1);
+        uart_printf("[%d] Relay[0] and Relay[1] are off\r\n", xTaskGetTickCount());
+        data->service_state = SERVICE_STATE_READ_LOAD0;
+        break;
+    case SERVICE_STATE_READ_LOAD0:
+        data->service_state = SERVICE_STATE_END;
+        break;
+    case SERVICE_STATE_END:
+        uart_printf("[%d] End of service\r\n", xTaskGetTickCount());
+        data->service_mode = 0;
+        break;
+    default:;
+    }
+}
+
+
 portTASK_FUNCTION(task500ms, args)
 {
     task500ms_data_type *task_data = (task500ms_data_type *)args;
@@ -60,14 +144,9 @@ portTASK_FUNCTION(task500ms, args)
         }
         btn_state_z = btn_state;
 
-        if (task_data->service_mode) {
-            // LED blinking in service mode:
-            set_led_state(task_data->cnt & 1);
-        } else {
-            set_led_state(1);
-        }
-  
-        vTaskDelay(delay_ms);
+        update_service_state(task_data);
+ 
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
         task_data->cnt++;
     }
 }

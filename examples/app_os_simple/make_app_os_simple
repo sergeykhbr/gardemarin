@@ -15,6 +15,7 @@ DIR_KEY=-B
 INCL_PATH = \
 	$(TOP_DIR)/../common/include \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/drivers \
 	$(TOP_DIR)/../freertos \
 	$(TOP_DIR)/../freertos/ARM_CM4F \
 	$(TOP_DIR)/../freertos/include \
@@ -24,6 +25,7 @@ INCL_PATH = \
 # source files directories list:
 SRC_PATH = \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/drivers \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/../freertos \
 	$(TOP_DIR)/../freertos/ARM_CM4F \
@@ -55,6 +57,7 @@ SOURCES = isr_vector \
 	port \
 	heap_4 \
 	app_hooks \
+	loadsensor \
 	task500ms \
 	main
 

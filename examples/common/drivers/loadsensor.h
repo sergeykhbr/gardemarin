@@ -15,26 +15,12 @@
  */
 
 #include <prjtypes.h>
-#include <FreeRTOS.h>
-#include <task.h>
-#include <timers.h>
-#include <semphr.h>
+#include <stm32f4xx_map.h>
 
 #pragma once
 
-#define SERVICE_STATE_INIT 0
-#define SERVICE_STATE_RELAY0_ENA 1 
-#define SERVICE_STATE_RELAY1_ENA 2
-#define SERVICE_STATE_RELAYS_DIS 3
-#define SERVICE_STATE_READ_LOAD0 4
-#define SERVICE_STATE_END        5
-
-typedef struct task500ms_data_type {
-    uint64_t cnt;
-    uint64_t service_start_time;
-    int service_mode;      //
-    int service_state;
-    int pause_cnt;
-} task500ms_data_type;
-
-portTASK_FUNCTION(task500ms, args);
+typedef struct load_sensor_type {
+    int idx;
+    GPIO_registers_type *csn_port;
+    int csn_bitidx;
+} load_sensor_type;
