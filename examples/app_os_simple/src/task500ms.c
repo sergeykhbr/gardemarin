@@ -74,7 +74,12 @@ void update_service_state(task500ms_data_type *data) {
         data->service_start_time = data->cnt;
         data->service_state = SERVICE_STATE_INIT;
         data->pause_cnt = 0;
-        return;
+        if (data->btnevent & BTN_EVENT_PRESSED) {
+            data->btnevent = 0;
+            data->service_mode = 1;
+        } else {
+            return;
+        }
     }
     // LED blinking in service mode:
     set_led_state((int)(data->cnt & 1));
@@ -111,10 +116,34 @@ void update_service_state(task500ms_data_type *data) {
         relay_off(0);
         relay_off(1);
         uart_printf("[%d] Relay[0] and Relay[1] are off\r\n", xTaskGetTickCount());
-        data->service_state = SERVICE_STATE_READ_LOAD0;
+        data->service_state = SERVICE_STATE_LED_ON;
         break;
-    case SERVICE_STATE_READ_LOAD0:
-        data->service_state = SERVICE_STATE_END;
+    case SERVICE_STATE_LED_ON:
+        led_init(&data->led_data);
+        led_on(&data->led_data);
+        data->service_state = SERVICE_STATE_LED_OFF;
+        data->pause_cnt = SERVICE_SEC_TO_COUNT(2);
+        uart_printf("[%d] LED Line[0] turn on\r\n", xTaskGetTickCount());
+        break;
+    case SERVICE_STATE_LED_OFF:
+        led_off(&data->led_data);
+        uart_printf("[%d] LED Line[0] turn off\r\n", xTaskGetTickCount());
+        data->service_state = SERVICE_STATE_SCALES_INIT;
+        break;
+    case SERVICE_STATE_SCALES_INIT:
+        uart_printf("[%d] Init scales\r\n", xTaskGetTickCount());
+        load_sensor_init(&data->load_sensor_data);
+        data->service_state = SERVICE_STATE_SCALES_READ;
+        break;
+    case SERVICE_STATE_SCALES_READ:
+        if (data->btnevent & BTN_EVENT_PRESSED) {
+            data->btnevent = 0;
+            data->service_state = SERVICE_STATE_END;
+            load_sensor_sleep(&data->load_sensor_data);
+        } else {
+            load_sensor_read(&data->load_sensor_data);
+            data->pause_cnt = SERVICE_SEC_TO_COUNT(1);
+        }
         break;
     case SERVICE_STATE_END:
         uart_printf("[%d] End of service\r\n", xTaskGetTickCount());
@@ -136,10 +165,11 @@ portTASK_FUNCTION(task500ms, args)
         // do something
         btn_state = is_button_pressed();
         if (btn_state && !btn_state_z) {
-            task_data->service_mode = !task_data->service_mode;
+            task_data->btnevent |= BTN_EVENT_PRESSED;
             uart_printf("User btn %s\r\n", "pressed");
         } else if (!btn_state && btn_state_z) {
             // negedge
+            task_data->btnevent |= BTN_EVENT_RELEASED;
             uart_printf("User btn %s\r\n", "released");
         }
         btn_state_z = btn_state;

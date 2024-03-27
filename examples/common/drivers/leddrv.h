@@ -23,15 +23,13 @@
 extern "C" {
 #endif
 
-typedef struct load_sensor_type {
-    char hx711_not_found;  // [3:0] mask
-    char ready;            // [3:0] mask
-    uint32_t value[4];
-} load_sensor_type;
+typedef struct led_channel_type {
+    uint32_t enable;
+} led_channel_type;
 
-void load_sensor_init(load_sensor_type *data);
-void load_sensor_read(load_sensor_type *data);
-void load_sensor_sleep(load_sensor_type *data);
+void led_init(led_channel_type *data);
+void led_on(led_channel_type *data);
+void led_off(led_channel_type *data);
 
 #ifdef __cplusplus
 }

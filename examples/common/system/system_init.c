@@ -32,6 +32,23 @@ int system_clock_hz() {
     return ret;
 }
 
+void system_delay_ns(int nsec) {
+    // 1 lock at 144 mhz = 7nsec
+    SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
+    uint32_t curval = read32(&systick->CVR);        // current value
+    uint32_t curval_z = curval;
+    uint32_t accval = 0;
+
+    while (accval < (uint32_t)nsec / 7) {
+        curval = read32(&systick->CVR);
+        if (curval < curval_z) {
+            accval += curval_z - curval;
+        } else {
+            accval += curval_z + (read32(&systick->RVR) - curval); // reload value
+        }
+    }
+}
+
 void setup_nvic() {
     SCB_registers_type *SCB = (SCB_registers_type *)SCB_BASE;
 

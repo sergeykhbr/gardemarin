@@ -19,15 +19,23 @@
 #include <task.h>
 #include <timers.h>
 #include <semphr.h>
+#include <loadsensor.h>
+#include <leddrv.h>
 
 #pragma once
 
 #define SERVICE_STATE_INIT 0
-#define SERVICE_STATE_RELAY0_ENA 1 
-#define SERVICE_STATE_RELAY1_ENA 2
-#define SERVICE_STATE_RELAYS_DIS 3
-#define SERVICE_STATE_READ_LOAD0 4
-#define SERVICE_STATE_END        5
+#define SERVICE_STATE_RELAY0_ENA  1 
+#define SERVICE_STATE_RELAY1_ENA  2
+#define SERVICE_STATE_RELAYS_DIS  3
+#define SERVICE_STATE_LED_ON      4
+#define SERVICE_STATE_LED_OFF     5
+#define SERVICE_STATE_SCALES_INIT 6
+#define SERVICE_STATE_SCALES_READ 7
+#define SERVICE_STATE_END         8
+
+#define BTN_EVENT_PRESSED  0x01
+#define BTN_EVENT_RELEASED 0x02
 
 typedef struct task500ms_data_type {
     uint64_t cnt;
@@ -35,6 +43,10 @@ typedef struct task500ms_data_type {
     int service_mode;      //
     int service_state;
     int pause_cnt;
+
+    int btnevent;
+    load_sensor_type load_sensor_data;
+    led_channel_type led_data;
 } task500ms_data_type;
 
 portTASK_FUNCTION(task500ms, args);

@@ -58,6 +58,7 @@ SOURCES = isr_vector \
 	heap_4 \
 	app_hooks \
 	loadsensor \
+	leddrv \
 	task500ms \
 	main
 

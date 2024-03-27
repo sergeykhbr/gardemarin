@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 typedef void (*irq_handler_type)(void);
+void system_delay_ns(int nsec);
 
 #ifdef WIN32
 #define __attribute__(x)
