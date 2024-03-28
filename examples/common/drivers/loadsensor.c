@@ -122,7 +122,6 @@ void load_sensor_init(load_sensor_type *data) {
     // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down; 11=reserved
     t1 = read32(&P->PUPDR);
     t1 &= ~(0x3F << (2*10));
-    t1 |= (0x1 << (2*11));   // MISO pull-up
     write32(&P->PUPDR, t1);
 
     // [15:0] ODRy: port output data
@@ -149,9 +148,8 @@ void load_sensor_init(load_sensor_type *data) {
                 data->hx711_not_found |= 1 << i;
             }
         }
-        // restore pull-up:
+        // restore no pull/push-ups:
         t1 &= ~(0x3 << (2*11));
-        t1 |= (0x1 << (2*11));   // pull-up
         write32(&P->PUPDR, t1);
         
         if (data->hx711_not_found & (1 << i)) {
@@ -199,9 +197,12 @@ void load_sensor_read(load_sensor_type *data) {
 
 
     for (int i = 0; i < 4; i++) {
-        uart_printf("Scales[%d], rdy:%d, val:%08x\r\n", 
+        if (((data->ready >> i) & 1) == 0) {
+            continue;
+        }
+        uart_printf("%d %08x %d\r\n", 
                     i,
-                    (data->ready >> i) & 1,
+                    data->value[i],
                     data->value[i]);
     }
 }
