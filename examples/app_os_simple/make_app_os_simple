@@ -57,6 +57,7 @@ SOURCES = isr_vector \
 	port \
 	heap_4 \
 	app_hooks \
+	btn_usr \
 	loadsensor \
 	leddrv \
 	task500ms \

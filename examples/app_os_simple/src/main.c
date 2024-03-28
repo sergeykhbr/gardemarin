@@ -18,7 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stm32f4xx_map.h>
+#include <memanager.h>
 #include <uart.h>
+#include <btn_usr.h>
 #include "task500ms.h"
 
 typedef struct app_data_type  {
@@ -28,13 +30,25 @@ typedef struct app_data_type  {
 int main(int argcnt, char *args[]) {
     app_data_type *appdata;
 
+    fw_malloc_init();
+
+    appdata = (app_data_type *)fw_get_ram_data(APP_TASK_NAME);
+    if (appdata == 0) {
+        appdata = (app_data_type *)fw_malloc(sizeof(app_data_type));
+        //appdata = pvPortMalloc(sizeof(app_data_type));
+        memset(appdata, 0, sizeof(app_data_type));
+
+        fw_register_ram_data(APP_TASK_NAME, appdata);
+        fw_register_ram_data(BTN_USR_DRV_NAME, &appdata->task500ms_arg.user_btn);
+    }
+
+    usr_btn_init();
+    EnableIrqGlobal();
+
     uart_printf("%s\n", "Starting FreeRTOS scheduler!\r\n");
 
-    appdata = pvPortMalloc(sizeof(app_data_type));
-    memset(appdata, 0, sizeof(app_data_type));
-
     xTaskCreate(task500ms,
-                "10ms",
+                 APP_TASK_NAME,
                  configMINIMAL_STACK_SIZE,
                  &appdata->task500ms_arg,
                  tskIDLE_PRIORITY + 1UL,

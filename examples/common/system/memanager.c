@@ -28,7 +28,7 @@ extern char __stack_limit[];
 #endif
 
 #define SP_MAGIC_VALUE 0xCCCCCCCC
-#define RAM_ENTRIES_MAX 128
+#define RAM_ENTRIES_MAX 32
 
 typedef struct ram_data_type {
     char name[8];
@@ -43,9 +43,10 @@ typedef struct memanager_type {
     ram_data_type data[RAM_ENTRIES_MAX];          // registered RAM modules
 } memanager_type;
 
+static memanager_type memanager_;
 
 static memanager_type *get_root_data() {
-    return (memanager_type *)__heap_start__;
+    return &memanager_;
 }
 
 /*
@@ -67,12 +68,12 @@ char *_sbrk(int incr) {
 
 void fw_malloc_init() {
     memanager_type *pool = get_root_data();
-   // 4-bytes alignment
-    memset(pool, 0, sizeof(memanager_type));
-    pool->allocated_sz = (sizeof(memanager_type) + 3) & ~0x3ull;
-    pool->end = ((uint32_t)__heap_start__) + pool->allocated_sz;
-    pool->data_cnt = 0;
-    pool->magic = pool;
+    // Do not clear memory if it was already initialzed to continue after reset
+    if (pool->magic != pool) {
+        memset(pool, 0, sizeof(memanager_type));
+        pool->end = (uint32_t)__heap_start__;
+        pool->magic = pool;
+    }
 }
 
 void *fw_malloc(int size) {

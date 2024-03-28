@@ -20,16 +20,6 @@
 #include <uart.h>
 #include "task500ms.h"
 
-static int is_button_pressed() {
-    GPIO_registers_type *PC = (GPIO_registers_type *)GPIOC_BASE;
-    int ret = 0;
-
-    ret = (read32(&PC->IDR) >> 13) & 1;
-
-    // inversed, if LOW btn is pressed
-    return ret == 0 ? 1 : 0;
-}
-
 static void set_led_state(int on) {
     GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
     if (on) {
@@ -65,24 +55,32 @@ static void relay_off(int idx) {
     }
 }
 
+
 // current task is 0.5 sec
 #define SERVICE_SEC_TO_COUNT(sec) (2 * sec)
 
 void update_service_state(task500ms_data_type *data) {
-    if (data->service_mode == 0) {
+    if (data->user_btn.event & BTN_EVENT_PRESSED) {
+        if (data->service_state < SERVICE_STATE_END) {
+            data->service_state++;
+            data->wait_btn = 0;
+        }
+        data->user_btn.event = 0;
+    }
+
+    // LED blinking in service mode:
+    if (data->service_state == SERVICE_STATE_IDLE) {
         set_led_state(1);
         data->service_start_time = data->cnt;
-        data->service_state = SERVICE_STATE_INIT;
         data->pause_cnt = 0;
-        if (data->btnevent & BTN_EVENT_PRESSED) {
-            data->btnevent = 0;
-            data->service_mode = 1;
-        } else {
-            return;
-        }
+        return;
+    } else {
+        set_led_state((int)(data->cnt & 1));
     }
-    // LED blinking in service mode:
-    set_led_state((int)(data->cnt & 1));
+
+    if (data->wait_btn) {
+        return;
+    }
 
     if (data->pause_cnt) {
         data->pause_cnt--;
@@ -97,20 +95,18 @@ void update_service_state(task500ms_data_type *data) {
     
     switch (data->service_state) {
     case SERVICE_STATE_INIT:
-        data->service_state = SERVICE_STATE_RELAY0_ENA;
         uart_printf("[%d] Start service demo\r\n", xTaskGetTickCount());
+        data->service_state = SERVICE_STATE_RELAY0_ENA;
         break;
     case SERVICE_STATE_RELAY0_ENA:
         relay_on(0);
         uart_printf("[%d] Relay[0] is on\r\n", xTaskGetTickCount());
-        data->pause_cnt = SERVICE_SEC_TO_COUNT(2);
-        data->service_state = SERVICE_STATE_RELAY1_ENA;
+        data->wait_btn = 1;
         break;
     case SERVICE_STATE_RELAY1_ENA:
         relay_on(1);
         uart_printf("[%d] Relay[1] is on\r\n", xTaskGetTickCount());
-        data->pause_cnt = SERVICE_SEC_TO_COUNT(4);
-        data->service_state = SERVICE_STATE_RELAYS_DIS;
+        data->wait_btn = 1;
         break;
     case SERVICE_STATE_RELAYS_DIS:
         relay_off(0);
@@ -121,9 +117,8 @@ void update_service_state(task500ms_data_type *data) {
     case SERVICE_STATE_LED_ON:
         led_init(&data->led_data);
         led_on(&data->led_data);
-        data->service_state = SERVICE_STATE_LED_OFF;
-        data->pause_cnt = SERVICE_SEC_TO_COUNT(2);
         uart_printf("[%d] LED Line[0] turn on\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
         break;
     case SERVICE_STATE_LED_OFF:
         led_off(&data->led_data);
@@ -136,18 +131,11 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state = SERVICE_STATE_SCALES_READ;
         break;
     case SERVICE_STATE_SCALES_READ:
-        if (data->btnevent & BTN_EVENT_PRESSED) {
-            data->btnevent = 0;
-            data->service_state = SERVICE_STATE_END;
-            load_sensor_sleep(&data->load_sensor_data);
-        } else {
-            load_sensor_read(&data->load_sensor_data);
-            data->pause_cnt = SERVICE_SEC_TO_COUNT(1);
-        }
+        data->wait_btn = 1;
         break;
     case SERVICE_STATE_END:
         uart_printf("[%d] End of service\r\n", xTaskGetTickCount());
-        data->service_mode = 0;
+        data->service_state = SERVICE_STATE_IDLE;
         break;
     default:;
     }
@@ -158,22 +146,9 @@ portTASK_FUNCTION(task500ms, args)
 {
     task500ms_data_type *task_data = (task500ms_data_type *)args;
     const TickType_t delay_ms = 500 / portTICK_PERIOD_MS;
-    int btn_state_z = 0;
-    int btn_state = 0;
 
     while (1) {
         // do something
-        btn_state = is_button_pressed();
-        if (btn_state && !btn_state_z) {
-            task_data->btnevent |= BTN_EVENT_PRESSED;
-            uart_printf("User btn %s\r\n", "pressed");
-        } else if (!btn_state && btn_state_z) {
-            // negedge
-            task_data->btnevent |= BTN_EVENT_RELEASED;
-            uart_printf("User btn %s\r\n", "released");
-        }
-        btn_state_z = btn_state;
-
         update_service_state(task_data);
  
         vTaskDelay(pdMS_TO_TICKS(delay_ms));

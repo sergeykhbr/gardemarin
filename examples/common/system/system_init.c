@@ -593,7 +593,8 @@ void system_init(void)
     // [4] USART1EN:
     // [1] TIM8EN:
     // [0] TIM1EN:
-    t1 = (1 << 14) | (1 << 4);            // APB2[4] USART1
+    t1 = (1 << 14)            // APB2[14] SYSCFGEN includes EXTI control registers
+       | (1 << 4);            // APB2[4] USART1
     write32(&RCC->APB2ENR, t1);
 
     setup_gpio();

@@ -15,7 +15,25 @@
  */
 
 #include <prjtypes.h>
-#include <btn_usr.h>
-#include "system_handlers.h"
+#include <stm32f4xx_map.h>
 
+#pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define BTN_USR_DRV_NAME "ubtn"
+
+#define BTN_EVENT_PRESSED  0x01
+#define BTN_EVENT_RELEASED 0x02
+
+typedef struct btn_user_type {
+    uint32_t event;
+} btn_user_type;
+
+void usr_btn_init();
+
+#ifdef __cplusplus
+}
+#endif

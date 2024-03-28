@@ -21,6 +21,8 @@ extern "C"
 {
 #endif
 
+extern void Btn_IRQHandler();
+
 #define WWDG_IRQHandler DefaultISR
 #define PVD_IRQHandler DefaultISR
 #define TAMP_STAMP_IRQHandler DefaultISR
@@ -61,7 +63,7 @@ extern "C"
 #define USART1_IRQHandler DefaultISR
 #define USART2_IRQHandler DefaultISR
 #define USART3_IRQHandler DefaultISR
-#define EXTI15_10_IRQHandler DefaultISR
+#define EXTI15_10_IRQHandler Btn_IRQHandler
 #define RTC_Alarm_IRQHandler DefaultISR
 #define OTG_FS_WKUP_IRQHandler DefaultISR
 #define TIM8_BRK_TIM12_IRQHandler DefaultISR
