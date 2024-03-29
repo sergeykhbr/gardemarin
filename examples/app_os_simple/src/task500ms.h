@@ -13,17 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
 #include <prjtypes.h>
 #include <FreeRTOS.h>
 #include <task.h>
 #include <timers.h>
 #include <semphr.h>
-#include <btn_usr.h>
+#include <user_btn.h>
+#include <user_led.h>
+#include <relais.h>
 #include <loadsensor.h>
-#include <leddrv.h>
-
-#pragma once
+#include <ledstrip.h>
+#include <motor.h>
 
 #define APP_TASK_NAME "app"
 
@@ -36,7 +38,10 @@
 #define SERVICE_STATE_LED_OFF     6
 #define SERVICE_STATE_SCALES_INIT 7
 #define SERVICE_STATE_SCALES_READ 8
-#define SERVICE_STATE_END         9
+#define SERVICE_STATE_MOTOR0_ENA  9
+#define SERVICE_STATE_MOTOR1_ENA  10
+#define SERVICE_STATE_MOTOR_DIS   11
+#define SERVICE_STATE_END         12
 
 typedef struct task500ms_data_type {
     uint64_t cnt;
@@ -45,9 +50,12 @@ typedef struct task500ms_data_type {
     int pause_cnt;
     int wait_btn;
 
-    btn_user_type user_btn;
+    user_btn_type user_btn;
+    user_led_type user_led;
+    relais_type relais_data;
     load_sensor_type load_sensor_data;
-    led_channel_type led_data;
+    led_strip_type led_data;
+    motor_driver_type motor_data;
 } task500ms_data_type;
 
 portTASK_FUNCTION(task500ms, args);

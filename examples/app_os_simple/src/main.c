@@ -20,7 +20,6 @@
 #include <stm32f4xx_map.h>
 #include <memanager.h>
 #include <uart.h>
-#include <btn_usr.h>
 #include "task500ms.h"
 
 typedef struct app_data_type  {
@@ -39,10 +38,18 @@ int main(int argcnt, char *args[]) {
         memset(appdata, 0, sizeof(app_data_type));
 
         fw_register_ram_data(APP_TASK_NAME, appdata);
-        fw_register_ram_data(BTN_USR_DRV_NAME, &appdata->task500ms_arg.user_btn);
+        fw_register_ram_data(USER_BTN_DRV_NAME, &appdata->task500ms_arg.user_btn);
+        fw_register_ram_data(USER_LED_DRV_NAME, &appdata->task500ms_arg.user_led);
+        fw_register_ram_data(LED_STRIP_DRV_NAME, &appdata->task500ms_arg.led_data);
+        fw_register_ram_data(RELAIS_DRV_NAME, &appdata->task500ms_arg.relais_data);
+        fw_register_ram_data(MOTOR_DRV_NAME, &appdata->task500ms_arg.motor_data);
     }
 
-    usr_btn_init();
+    user_btn_init();
+    user_led_init();
+    relais_init();
+    led_strip_init();
+    motor_driver_init();
     EnableIrqGlobal();
 
     uart_printf("%s\n", "Starting FreeRTOS scheduler!\r\n");

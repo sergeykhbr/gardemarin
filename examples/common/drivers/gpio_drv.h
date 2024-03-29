@@ -16,6 +16,7 @@
 
 #include <prjtypes.h>
 #include <stm32f4xx_map.h>
+#include <gpio.h>
 
 #pragma once
 
@@ -23,13 +24,31 @@
 extern "C" {
 #endif
 
-typedef struct led_channel_type {
-    uint32_t enable;
-} led_channel_type;
+typedef struct gpio_pin_type {
+    GPIO_registers_type *port;
+    int pinidx;
+} gpio_pin_type;
 
-void led_init(led_channel_type *data);
-void led_on(led_channel_type *data);
-void led_off(led_channel_type *data);
+#define GPIO_NO_OPEN_DRAIN  0
+#define GPIO_OPEN_DRAIN     1
+
+#define GPIO_SLOW           0
+#define GPIO_MEDIUM         1
+#define GPIO_FAST           2
+#define GPIO_VERY_FAST      3
+
+#define GPIO_NO_PUSH_PULL   0
+#define GPIO_PULL_UP        1
+#define GPIO_PULL_DOWN      2
+
+void gpio_pin_as_output(gpio_pin_type *p,
+                        uint32_t odrain,
+                        uint32_t speed,
+                        uint32_t pushpull);
+
+void gpio_pin_set(gpio_pin_type *p);
+void gpio_pin_clear(gpio_pin_type *p);
+//uint32_t gpio_pin_get(gpio_pin_type *p);
 
 #ifdef __cplusplus
 }

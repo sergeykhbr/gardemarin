@@ -594,6 +594,7 @@ void system_init(void)
     // [1] TIM8EN:
     // [0] TIM1EN:
     t1 = (1 << 14)            // APB2[14] SYSCFGEN includes EXTI control registers
+       | (1 << 8)             // APB2[8] ADC1
        | (1 << 4);            // APB2[4] USART1
     write32(&RCC->APB2ENR, t1);
 

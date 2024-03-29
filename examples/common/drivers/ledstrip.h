@@ -14,7 +14,28 @@
  *  limitations under the License.
  */
 
+#include <gardemarin.h>
 #include <prjtypes.h>
-#include "system_handlers.h"
+#include <stm32f4xx_map.h>
+#include <gpio_drv.h>
 
+#pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define LED_STRIP_DRV_NAME "ledstr"
+
+typedef struct led_strip_type {
+    gpio_pin_type gpio_cfg[GARDEMARIN_LED_STRIP_TOTAL];
+    uint32_t enable;
+} led_strip_type;
+
+void led_strip_init();
+void led_strip_on(int idx, int dimrate);
+void led_strip_off(int idx);
+
+#ifdef __cplusplus
+}
+#endif

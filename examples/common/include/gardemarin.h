@@ -14,7 +14,10 @@
  *  limitations under the License.
  */
 
-#include <prjtypes.h>
-#include "system_handlers.h"
+#pragma once
 
+#define GARDEMARIN_RELAIS_TOTAL 2
 
+#define GARDEMARIN_HBRDIGE_MOTOR_TOTAL 4
+
+#define GARDEMARIN_LED_STRIP_TOTAL 4

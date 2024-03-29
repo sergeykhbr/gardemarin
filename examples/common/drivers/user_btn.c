@@ -19,10 +19,10 @@
 #include <stm32f4xx_map.h>
 #include <memanager.h>
 #include <uart.h>
-#include "btn_usr.h"
+#include "user_btn.h"
 
 //    PC13 - User btn (internal pull-up). 0=btn is pressed
-void usr_btn_init() {
+void user_btn_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
     GPIO_registers_type *P = (GPIO_registers_type *)GPIOC_BASE;
@@ -82,7 +82,7 @@ void usr_btn_init() {
 void Btn_IRQHandler() {
     GPIO_registers_type *PC = (GPIO_registers_type *)GPIOC_BASE;
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
-    btn_user_type *p = (btn_user_type *)fw_get_ram_data(BTN_USR_DRV_NAME);
+    user_btn_type *p = (user_btn_type *)fw_get_ram_data(USER_BTN_DRV_NAME);
     uint32_t state;
 
     write32(&EXTI->PR, 1 << 13);   // Pending register, cleared by programming it to 1

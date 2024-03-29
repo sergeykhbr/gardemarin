@@ -24,6 +24,7 @@
 #include <gpio.h>
 #include <usart.h>
 #include <exti.h>
+#include <adc.h>
 
 /* System Control Space memory map */
 #define SCS_BASE              ((uint32_t)0xE000E000)

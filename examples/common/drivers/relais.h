@@ -14,7 +14,28 @@
  *  limitations under the License.
  */
 
+#include <gardemarin.h>
 #include <prjtypes.h>
-#include "system_handlers.h"
+#include <stm32f4xx_map.h>
+#include <gpio_drv.h>
 
+#pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define RELAIS_DRV_NAME "rel"
+
+typedef struct relais_type {
+    gpio_pin_type gpio_cfg[GARDEMARIN_RELAIS_TOTAL];
+    uint32_t state[GARDEMARIN_RELAIS_TOTAL];
+} relais_type;
+
+void relais_init();
+void relais_on(int idx);
+void relais_off(int idx);
+
+#ifdef __cplusplus
+}
+#endif

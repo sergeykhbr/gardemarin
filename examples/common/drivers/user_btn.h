@@ -23,16 +23,16 @@
 extern "C" {
 #endif
 
-#define BTN_USR_DRV_NAME "ubtn"
+#define USER_BTN_DRV_NAME "ubtn"
 
 #define BTN_EVENT_PRESSED  0x01
 #define BTN_EVENT_RELEASED 0x02
 
-typedef struct btn_user_type {
+typedef struct user_btn_type {
     uint32_t event;
-} btn_user_type;
+} user_btn_type;
 
-void usr_btn_init();
+void user_btn_init();
 
 #ifdef __cplusplus
 }

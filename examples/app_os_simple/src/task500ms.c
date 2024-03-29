@@ -20,42 +20,6 @@
 #include <uart.h>
 #include "task500ms.h"
 
-static void set_led_state(int on) {
-    GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
-    if (on) {
-        // PE[2] = LOW led is on
-        write16(&PE->BSRRH, (1 << 2));
-    } else {
-        // PE[2] = HIGH led is off
-        write16(&PE->BSRRL, (1 << 2));
-    }
-}
-
-static void relay_on(int idx) {
-    GPIO_registers_type *PD = (GPIO_registers_type *)GPIOD_BASE;
-    // BSRR[15:0] Set bit (set to HIGH)
-    if (idx == 0) {
-        // PD[13] Relay0
-        write16(&PD->BSRRL, (1 << 13));
-    } else {
-        // PD[14] Relay1
-        write16(&PD->BSRRL, (1 << 14));
-    }
-}
-
-static void relay_off(int idx) {
-    GPIO_registers_type *PD = (GPIO_registers_type *)GPIOD_BASE;
-    // BSRR[31:16] Reset bit (set to LOW)
-    if (idx == 0) {
-        // PD[13] Relay0
-        write16(&PD->BSRRH, (1 << 13));
-    } else {
-        // PD[14] Relay1
-        write16(&PD->BSRRH, (1 << 14));
-    }
-}
-
-
 // current task is 0.5 sec
 #define SERVICE_SEC_TO_COUNT(sec) (2 * sec)
 
@@ -70,12 +34,12 @@ void update_service_state(task500ms_data_type *data) {
 
     // LED blinking in service mode:
     if (data->service_state == SERVICE_STATE_IDLE) {
-        set_led_state(1);
+        user_led_set_state(1);
         data->service_start_time = data->cnt;
         data->pause_cnt = 0;
         return;
     } else {
-        set_led_state((int)(data->cnt & 1));
+        user_led_set_state((int)(data->cnt & 1));
     }
 
     if (data->wait_btn) {
@@ -99,30 +63,29 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state = SERVICE_STATE_RELAY0_ENA;
         break;
     case SERVICE_STATE_RELAY0_ENA:
-        relay_on(0);
-        uart_printf("[%d] Relay[0] is on\r\n", xTaskGetTickCount());
+        relais_on(0);
+        uart_printf("[%d] Relais[0] is on\r\n", xTaskGetTickCount());
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_RELAY1_ENA:
-        relay_on(1);
-        uart_printf("[%d] Relay[1] is on\r\n", xTaskGetTickCount());
+        relais_on(1);
+        uart_printf("[%d] Relais[1] is on\r\n", xTaskGetTickCount());
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_RELAYS_DIS:
-        relay_off(0);
-        relay_off(1);
-        uart_printf("[%d] Relay[0] and Relay[1] are off\r\n", xTaskGetTickCount());
+        relais_off(0);
+        relais_off(1);
+        uart_printf("[%d] Relais[0] and Relais[1] are off\r\n", xTaskGetTickCount());
         data->service_state = SERVICE_STATE_LED_ON;
         break;
     case SERVICE_STATE_LED_ON:
-        led_init(&data->led_data);
-        led_on(&data->led_data);
-        uart_printf("[%d] LED Line[0] turn on\r\n", xTaskGetTickCount());
+        led_strip_on(0, 100);
+        uart_printf("[%d] LED Strip[0] turn on, dim=100\r\n", xTaskGetTickCount());
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_LED_OFF:
-        led_off(&data->led_data);
-        uart_printf("[%d] LED Line[0] turn off\r\n", xTaskGetTickCount());
+        led_strip_off(0);
+        uart_printf("[%d] LED Strip[0] turn off\r\n", xTaskGetTickCount());
         data->service_state = SERVICE_STATE_SCALES_INIT;
         break;
     case SERVICE_STATE_SCALES_INIT:
@@ -132,6 +95,22 @@ void update_service_state(task500ms_data_type *data) {
         break;
     case SERVICE_STATE_SCALES_READ:
         data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_MOTOR0_ENA:
+        motor_dc_start(0);
+        uart_printf("[%d] Pump[0] started\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_MOTOR1_ENA:
+        motor_dc_stop(0);
+        motor_dc_start(1);
+        uart_printf("[%d] Pump[0] stopped; Pump[1] started\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_MOTOR_DIS:
+        motor_dc_stop(1);
+        uart_printf("[%d] Pump[1] stopped\r\n", xTaskGetTickCount());
+        data->service_state++;
         break;
     case SERVICE_STATE_END:
         uart_printf("[%d] End of service\r\n", xTaskGetTickCount());

@@ -15,6 +15,25 @@
  */
 
 #include <prjtypes.h>
-#include "system_handlers.h"
+#include <stm32f4xx_map.h>
+#include <gpio_drv.h>
 
+#pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define USER_LED_DRV_NAME "uled"
+
+typedef struct user_led_type {
+    gpio_pin_type gpio_cfg;
+    uint32_t state;
+} user_led_type;
+
+void user_led_init();
+void user_led_set_state(int on);
+
+#ifdef __cplusplus
+}
+#endif

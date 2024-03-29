@@ -57,9 +57,13 @@ SOURCES = isr_vector \
 	port \
 	heap_4 \
 	app_hooks \
-	btn_usr \
+	gpio_drv \
+	user_btn \
+	user_led \
+	relais \
 	loadsensor \
-	leddrv \
+	ledstrip \
+	motor \
 	task500ms \
 	main
 
