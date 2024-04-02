@@ -46,6 +46,9 @@ void gpio_pin_as_output(gpio_pin_type *p,
                         uint32_t speed,
                         uint32_t pushpull);
 
+void gpio_pin_as_alternate(gpio_pin_type *p,
+                           uint32_t ADx);
+
 void gpio_pin_set(gpio_pin_type *p);
 void gpio_pin_clear(gpio_pin_type *p);
 //uint32_t gpio_pin_get(gpio_pin_type *p);

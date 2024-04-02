@@ -14,12 +14,32 @@
  *  limitations under the License.
  */
 
+#include <gardemarin.h>
+#include <prjtypes.h>
+#include <stm32f4xx_map.h>
+#include <gpio_drv.h>
+
 #pragma once
 
-#define GARDEMARIN_RELAIS_TOTAL 2
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define GARDEMARIN_HBRDIGE_MOTOR_TOTAL 4
+#define CAN_DRV_NAME "can"
 
-#define GARDEMARIN_LED_STRIP_TOTAL 4
+typedef struct can_controller_type {
+    gpio_pin_type gpio_cfg_rx;
+    gpio_pin_type gpio_cfg_tx;
 
-#define GARDEMARIN_CAN_TOTAL 2
+} can_controller_type;
+
+typedef struct can_type {
+    can_controller_type ctrl[GARDEMARIN_CAN_TOTAL];
+    uint32_t enable;
+} can_type;
+
+void can_init();
+
+#ifdef __cplusplus
+}
+#endif

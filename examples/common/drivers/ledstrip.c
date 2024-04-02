@@ -56,7 +56,13 @@ void led_strip_on(int idx, int dimrate) {
     if (p == 0) {
          return;
     }
-    gpio_pin_set(&p->gpio_cfg[idx]);
+    if (idx < 0 || idx >= GARDEMARIN_LED_STRIP_TOTAL) {
+        for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
+            gpio_pin_set(&p->gpio_cfg[i]);
+        }
+    } else {
+        gpio_pin_set(&p->gpio_cfg[idx]);
+    }
 }
 
 void led_strip_off(int idx) {
@@ -64,5 +70,11 @@ void led_strip_off(int idx) {
     if (p == 0) {
          return;
     }
-    gpio_pin_clear(&p->gpio_cfg[idx]);
+    if (idx < 0 || idx >= GARDEMARIN_LED_STRIP_TOTAL) {
+        for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
+            gpio_pin_clear(&p->gpio_cfg[i]);
+        }
+    } else {
+        gpio_pin_clear(&p->gpio_cfg[idx]);
+    }
 }

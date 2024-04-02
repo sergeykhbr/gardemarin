@@ -64,6 +64,7 @@ SOURCES = isr_vector \
 	loadsensor \
 	ledstrip \
 	motor \
+	can_drv \
 	task500ms \
 	main
 

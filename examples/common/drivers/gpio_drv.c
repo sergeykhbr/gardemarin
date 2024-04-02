@@ -49,6 +49,23 @@ void gpio_pin_as_output(gpio_pin_type *p,
     write32(&p->port->PUPDR, t1);
 }
 
+void gpio_pin_as_alternate(gpio_pin_type *p,
+                           uint32_t ADx) {
+
+    uint32_t t1;
+
+    // 00 input; 01 output; 10 alternate; 11 analog
+    t1 = read32(&p->port->MODER);
+    t1 &= ~(0x3 << 2*p->pinidx);
+    t1 |= (0x2 << 2*p->pinidx);
+    write32(&p->port->MODER, t1);
+
+    t1 = read32(&p->port->AFR[p->pinidx >> 3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    t1 |= (ADx << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->AFR[p->pinidx >> 3], t1);
+}
+
 void gpio_pin_set(gpio_pin_type *p) {
     write16(&p->port->BSRRL, (1 << p->pinidx));
 }

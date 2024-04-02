@@ -76,16 +76,39 @@ void update_service_state(task500ms_data_type *data) {
         relais_off(0);
         relais_off(1);
         uart_printf("[%d] Relais[0] and Relais[1] are off\r\n", xTaskGetTickCount());
-        data->service_state = SERVICE_STATE_LED_ON;
+        data->service_state = SERVICE_STATE_LED0_ON;
         break;
-    case SERVICE_STATE_LED_ON:
+    case SERVICE_STATE_LED0_ON:
         led_strip_on(0, 100);
         uart_printf("[%d] LED Strip[0] turn on, dim=100\r\n", xTaskGetTickCount());
         data->wait_btn = 1;
         break;
-    case SERVICE_STATE_LED_OFF:
+    case SERVICE_STATE_LED1_ON:
         led_strip_off(0);
-        uart_printf("[%d] LED Strip[0] turn off\r\n", xTaskGetTickCount());
+        led_strip_on(1, 100);
+        uart_printf("[%d] LED Strip[1] turn on, dim=100\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_LED2_ON:
+        led_strip_off(1);
+        led_strip_on(2, 100);
+        uart_printf("[%d] LED Strip[2] turn on, dim=100\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_LED3_ON:
+        led_strip_off(2);
+        led_strip_on(3, 100);
+        uart_printf("[%d] LED Strip[3] turn on, dim=100\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_LEDALL_ON:
+        led_strip_on(-1, 100);
+        uart_printf("[%d] LED strips all on, dim=100\r\n", xTaskGetTickCount());
+        data->wait_btn = 1;
+        break;
+    case SERVICE_STATE_LEDALL_OFF:
+        led_strip_off(-1);
+        uart_printf("[%d] LED Strips off\r\n", xTaskGetTickCount());
         data->service_state = SERVICE_STATE_SCALES_INIT;
         break;
     case SERVICE_STATE_SCALES_INIT:
