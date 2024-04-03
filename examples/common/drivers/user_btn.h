@@ -30,6 +30,8 @@ extern "C" {
 
 typedef struct user_btn_type {
     uint32_t event;
+    uint32_t tm_count;     // copied from task 500 ms (for now)
+    uint32_t tm_pressed;
 } user_btn_type;
 
 void user_btn_init();

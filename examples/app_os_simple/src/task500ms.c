@@ -25,11 +25,11 @@
 
 void update_service_state(task500ms_data_type *data) {
     if (data->user_btn.event & BTN_EVENT_PRESSED) {
-        if (data->service_state < SERVICE_STATE_END) {
+        if (data->service_state == SERVICE_STATE_IDLE || data->wait_btn) {
             data->service_state++;
-            data->wait_btn = 0;
+            data->user_btn.event = 0;
         }
-        data->user_btn.event = 0;
+        data->wait_btn = 0;
     }
 
     // LED blinking in service mode:
@@ -109,7 +109,7 @@ void update_service_state(task500ms_data_type *data) {
     case SERVICE_STATE_LEDALL_OFF:
         led_strip_off(-1);
         uart_printf("[%d] LED Strips off\r\n", xTaskGetTickCount());
-        data->service_state = SERVICE_STATE_SCALES_INIT;
+        data->service_state++;
         break;
     case SERVICE_STATE_SCALES_INIT:
         uart_printf("[%d] Init scales\r\n", xTaskGetTickCount());
@@ -117,7 +117,16 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state = SERVICE_STATE_SCALES_READ;
         break;
     case SERVICE_STATE_SCALES_READ:
-        data->wait_btn = 1;
+        load_sensor_read(&data->load_sensor_data);
+        if (data->user_btn.event & BTN_EVENT_PRESSED) {
+            data->user_btn.event = 0;
+            data->service_state = SERVICE_STATE_SCALES_SLEEP;
+        }
+        break;
+    case SERVICE_STATE_SCALES_SLEEP:
+        load_sensor_sleep(&data->load_sensor_data);
+        uart_printf("[%d] Scales turned off\r\n", xTaskGetTickCount());
+        data->service_state++;
         break;
     case SERVICE_STATE_MOTOR0_ENA:
         motor_dc_start(0);
@@ -154,7 +163,7 @@ portTASK_FUNCTION(task500ms, args)
         update_service_state(task_data);
  
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
-        task_data->cnt++;
+        task_data->user_btn.tm_count = ++task_data->cnt;
     }
 }
 

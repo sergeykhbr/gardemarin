@@ -18,6 +18,7 @@
 #include <prjtypes.h>
 #include <stm32f4xx_map.h>
 #include <gpio_drv.h>
+#include <can.h>
 
 #pragma once
 
@@ -30,12 +31,11 @@ extern "C" {
 typedef struct can_controller_type {
     gpio_pin_type gpio_cfg_rx;
     gpio_pin_type gpio_cfg_tx;
-
+    CAN_registers_type *dev;
 } can_controller_type;
 
 typedef struct can_type {
     can_controller_type ctrl[GARDEMARIN_CAN_TOTAL];
-    uint32_t enable;
 } can_type;
 
 void can_init();

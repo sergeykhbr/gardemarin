@@ -17,8 +17,42 @@
 #include <prjtypes.h>
 #include <stm32f4xx_map.h>
 #include <memanager.h>
-#include <can.h>
+#include <uart.h>
 #include "can_drv.h"
+
+void can_set_baudrated(can_type *p, int idx, uint32_t baud) {
+    CAN_registers_type *dev = p->ctrl[idx].dev;
+    CAN_MCR_type mcr;
+    CAN_MSR_type msr;
+    CAN_BTR_type btr;
+
+    mcr.val = 0;
+    mcr.b.INRQ = 1;
+    write32(&dev->MCR.val, mcr.val);
+
+    // wait entering initialzation stage
+    do {
+        msr.val = read32(&dev->MSR.val);
+    } while (msr.b.INAK == 0);
+
+    // Let's make 12 samples per bit (example 500KBaud * 12 = 6MHz)
+    uint32_t pclk = (uint32_t)system_clock_hz() / 4;    // APB1: 144/4 = 36 MHz 
+    // sync = 1
+    // bs1 = 8
+    // bs2 = 3
+    // sync + bs1 + bs2 = 12 samples per bit
+    btr.val = 0;
+    btr.b.BRP = pclk / (12 * baud) - 1;
+    btr.b.TS1 = 8 - 1;
+    btr.b.TS2 = 3 - 1;
+    btr.b.SJW = 1 - 1;   // tuning value of BS1/BS2 if the edge detected outside of sync interval
+    btr.b.SILM = 1;      // silent mode
+    write32(&dev->BTR.val, btr.val);
+
+    // Switch to Normal mode
+    mcr.val = 0;
+    write32(&dev->MCR.val, mcr.val);
+}
 
 void can_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
@@ -27,6 +61,9 @@ void can_init() {
     if (p == 0) {
          return;
     }
+
+    p->ctrl[0].dev = (CAN_registers_type *)CAN1_BASE;
+    p->ctrl[1].dev = (CAN_registers_type *)CAN2_BASE;
 
     //    PD1  CAN1_TX    AF9
     //    PD0  CAN1_RX    AF9
@@ -55,4 +92,5 @@ void can_init() {
     write32(&RCC->APB1ENR, t1);
 
 
+    can_set_baudrated(p, 0, 500000);
 }

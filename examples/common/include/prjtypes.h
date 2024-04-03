@@ -24,6 +24,7 @@ extern "C" {
 
 typedef void (*irq_handler_type)(void);
 void system_delay_ns(int nsec);
+int system_clock_hz();
 
 #ifdef WIN32
 #define __attribute__(x)

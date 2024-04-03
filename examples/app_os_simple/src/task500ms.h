@@ -26,6 +26,7 @@
 #include <loadsensor.h>
 #include <ledstrip.h>
 #include <motor.h>
+#include <can_drv.h>
 
 #define APP_TASK_NAME "app"
 
@@ -42,10 +43,11 @@
 #define SERVICE_STATE_LEDALL_OFF  10
 #define SERVICE_STATE_SCALES_INIT 11
 #define SERVICE_STATE_SCALES_READ 12
-#define SERVICE_STATE_MOTOR0_ENA  13
-#define SERVICE_STATE_MOTOR1_ENA  14
-#define SERVICE_STATE_MOTOR_DIS   15
-#define SERVICE_STATE_END         16
+#define SERVICE_STATE_SCALES_SLEEP 13
+#define SERVICE_STATE_MOTOR0_ENA  14
+#define SERVICE_STATE_MOTOR1_ENA  15
+#define SERVICE_STATE_MOTOR_DIS   16
+#define SERVICE_STATE_END         17
 
 typedef struct task500ms_data_type {
     uint64_t cnt;
@@ -60,6 +62,7 @@ typedef struct task500ms_data_type {
     load_sensor_type load_sensor_data;
     led_strip_type led_data;
     motor_driver_type motor_data;
+    can_type can_data;
 } task500ms_data_type;
 
 portTASK_FUNCTION(task500ms, args);

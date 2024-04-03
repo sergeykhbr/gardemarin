@@ -43,6 +43,7 @@ int main(int argcnt, char *args[]) {
         fw_register_ram_data(LED_STRIP_DRV_NAME, &appdata->task500ms_arg.led_data);
         fw_register_ram_data(RELAIS_DRV_NAME, &appdata->task500ms_arg.relais_data);
         fw_register_ram_data(MOTOR_DRV_NAME, &appdata->task500ms_arg.motor_data);
+        fw_register_ram_data(CAN_DRV_NAME, &appdata->task500ms_arg.can_data);
     }
 
     user_btn_init();
@@ -50,6 +51,7 @@ int main(int argcnt, char *args[]) {
     relais_init();
     led_strip_init();
     motor_driver_init();
+    can_init();
     EnableIrqGlobal();
 
     uart_printf("%s\n", "Starting FreeRTOS scheduler!\r\n");

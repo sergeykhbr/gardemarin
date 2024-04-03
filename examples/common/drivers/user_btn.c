@@ -97,7 +97,10 @@ void Btn_IRQHandler() {
 
     // inversed, if LOW btn is pressed
     if (state == 0) {
-        p->event |= BTN_EVENT_PRESSED;
+        if ((p->tm_count - p->tm_pressed) >= 2) {   // 1=500ms
+            p->event |= BTN_EVENT_PRESSED;
+        }
+        p->tm_pressed = p->tm_count;
     } else {
         p->event |= BTN_EVENT_RELEASED;
     }
