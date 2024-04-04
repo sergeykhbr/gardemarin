@@ -28,17 +28,37 @@ extern "C" {
 
 #define CAN_DRV_NAME "can"
 
-typedef struct can_controller_type {
+#define CAN_RX_FRAMES_MAX 4
+
+typedef union can_payload_type {
+    uint32_t u32[2];
+    uint8_t u8[8];
+} can_payload_type;
+
+typedef struct can_frame_type {
+    uint32_t timestamp;
+    uint32_t id;
+    uint8_t dlc;
+    uint8_t busid;
+    can_payload_type data;
+} can_frame_type;
+
+typedef struct can_bus_type {
     gpio_pin_type gpio_cfg_rx;
     gpio_pin_type gpio_cfg_tx;
     CAN_registers_type *dev;
-} can_controller_type;
+} can_bus_type;
 
 typedef struct can_type {
-    can_controller_type ctrl[GARDEMARIN_CAN_TOTAL];
+    can_bus_type bus[GARDEMARIN_CAN_BUS_TOTAL];
+
+    int rx_frame_cnt;
+    can_frame_type rxframes[CAN_RX_FRAMES_MAX];
 } can_type;
 
 void can_init();
+void can_bus_listener_start(can_type *p, int busid);
+void can_bus_listener_stop(can_type *p, int busid);
 
 #ifdef __cplusplus
 }

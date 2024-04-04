@@ -62,6 +62,38 @@ typedef union CAN_MSR_type {
 
 
 // Transmit Status Register
+typedef struct CAN_TSR_bits_type {
+    volatile uint32_t RQCP0 : 1;       // [0] RC_W1: Request completed mailbox 0
+    volatile uint32_t TXOK0 : 1;       // [1] RC_W1: Tx OK of amilbox 0
+    volatile uint32_t ALST0 : 1;       // [2] RC_W1: Arbitration lost of mailbox 0
+    volatile uint32_t TERR0 : 1;       // [3] RC_W1: Tx error of mailbox 0
+    volatile uint32_t rsrv6_4 : 3;     // [6:4]
+    volatile uint32_t ABRQ0 : 1;       // [7] RS: Abort request for mailbox 0. Set by SW, cleared by HW
+    volatile uint32_t RQCP1 : 1;       // [8] RC_W1: Request completed mailbox 1
+    volatile uint32_t TXOK1 : 1;       // [9] RC_W1: Tx OK of amilbox 1
+    volatile uint32_t ALST1 : 1;       // [10] RC_W1: Arbitration lost of mailbox 1
+    volatile uint32_t TERR1 : 1;       // [11] RC_W1: Tx error of mailbox 1
+    volatile uint32_t rsrv14_12 : 3;   // [14:12]
+    volatile uint32_t ABRQ1 : 1;       // [15] RS: Abort request for mailbox 1. Set by SW, cleared by HW
+    volatile uint32_t RQCP2 : 1;       // [16] RC_W1: Request completed mailbox 2
+    volatile uint32_t TXOK2 : 1;       // [17] RC_W1: Tx OK of amilbox 2
+    volatile uint32_t ALST2 : 1;       // [18] RC_W1: Arbitration lost of mailbox 2
+    volatile uint32_t TERR2 : 1;       // [19] RC_W1: Tx error of mailbox 2
+    volatile uint32_t rsrv22_20 : 3;   // [22:20]
+    volatile uint32_t ABRQ2 : 1;       // [23] RS: Abort request for mailbox 2. Set by SW, cleared by HW
+    volatile uint32_t CODE : 2;        // [25:24] R: Next free tx mailbox code. When all pending code is equal to the lowest prio mailbox
+    volatile uint32_t TME0 : 1;        // [26] R: tx mailbox 0 is empty
+    volatile uint32_t TME1 : 1;        // [27] R: tx mailbox 1 is empty
+    volatile uint32_t TME2 : 1;        // [28] R: tx mailbox 2 is empty
+    volatile uint32_t LOW0 : 1;        // [29] R: Lowest prio flag for mailbox 0. Is set when more than one mailbox are pending for tx and mail0 has the lowset prio
+    volatile uint32_t LOW1 : 1;        // [30] R: Lowest prio flag for mailbox 1. Is set when more than one mailbox are pending for tx and mail1 has the lowset prio
+    volatile uint32_t LOW2 : 1;        // [31] R: Lowest prio flag for mailbox 2. Is set when more than one mailbox are pending for tx and mail2 has the lowset prio
+} CAN_TSR_bits_type;
+
+typedef union CAN_TSR_type {
+    volatile uint32_t val;
+    CAN_TSR_bits_type b;
+} CAN_TSR_type;
 
 // Bit Timing Register
 typedef struct CAN_BTR_bits_type {
@@ -80,6 +112,64 @@ typedef union CAN_BTR_type {
     volatile uint32_t val;
     CAN_BTR_bits_type b;
 } CAN_BTR_type;
+
+// Receive FIFO 0/1 Register
+typedef struct CAN_RF_bits_type {
+    volatile uint32_t FMP : 2;        // [1:0] R: How many messages are pending in the Rx FIFO. Decremented on release.
+    uint32_t rsrv2 : 1;               // [2]
+    volatile uint32_t FULL : 1;       // [3] RC_W1: FIFO is full. Cleared by SW
+    volatile uint32_t FOVR : 1;       // [4] RC_W1: FIFO overrun. Cleared by SW
+    volatile uint32_t RFOM : 1;       // [5] RS: Release FIFO output mailbox. Set by SW, cleared by Hw
+    volatile uint32_t rsrv31_6 : 26;  // [31:6]
+} CAN_RF_bits_type;
+
+typedef union CAN_RF_type {
+    volatile uint32_t val;
+    CAN_RF_bits_type b;
+} CAN_RF_type;
+
+// Interrupt Enable Register
+typedef struct CAN_IER_bits_type {
+    volatile uint32_t TMEIE : 1;      // [0] RW: Tx mailbox is empty (when RQCPx is set)
+    volatile uint32_t FMPIE0 : 1;     // [1] RW: FIFO0 msg pending irq enable (FMP != 0)
+    volatile uint32_t FFIE0 : 1;      // [2] RW: FIFO0 full irq enable
+    volatile uint32_t FOVIE0 : 1;     // [3] RW: FIFO0 overrun irq enable
+    volatile uint32_t FMPIE1 : 1;     // [4] RW: FIFO1 msg pending irq enable (FMP != 0)
+    volatile uint32_t FFIE1 : 1;      // [5] RW: FIFO1 full irq enable
+    volatile uint32_t FOVIE1 : 1;     // [6] RW: FIFO1 overrun irq enable
+    uint32_t rsrv7 : 1;               // [7]
+    volatile uint32_t EWGIE : 1;      // [8] RW: Error warning irq enable
+    volatile uint32_t EPVIE : 1;      // [9] RW: Error passive irq enable
+    volatile uint32_t BOFIE : 1;      // [10] RW: Bus-off irq enable
+    volatile uint32_t LECIE : 1;      // [11] RW: Last error code irq enable
+    uint32_t rsrv14_12 : 3;           // [14:12]
+    volatile uint32_t ERRIE : 1;      // [15] RW: Error interrupt enable
+    volatile uint32_t WKUIE : 1;      // [16] RW: Wake-up irq enable
+    volatile uint32_t SLKIE : 1;      // [17] RW: Sleep irq enable
+    uint32_t rsrv31_18 : 14;          // [31:18]
+} CAN_IER_bits_type;
+
+typedef union CAN_IER_type {
+    volatile uint32_t val;
+    CAN_IER_bits_type b;
+} CAN_IER_type;
+
+// Error status Register
+typedef struct CAN_ESR_bits_type {
+    volatile uint32_t EWGF : 1;        // [0] R: Error warning flag
+    volatile uint32_t EPVF : 1;        // [1] R: Error passive flag
+    volatile uint32_t BOFF : 1;        // [2] R: Bus-of flag. Entered on TEC overflow (> 255)
+    uint32_t rsrv3 : 1;                // [3]
+    volatile uint32_t LEC : 3;         // [6:4] RW: Last error code: 0=no; 1=Stuff; 2=Form; 3=Ack; 4=Recessive bit; 5=Dominant bit; 6=CRC; 7=set by SW
+    uint32_t rsrv15_7 : 9;             // [15:7]
+    volatile uint32_t TEC : 8;         // [23:16] R: LSB byte of the 9-bit tx error counter
+    volatile uint32_t REC : 8;         // [31:24] R: Receive error counter. Reception error counter.
+} CAN_ESR_bits_type;
+
+typedef union CAN_ESR_type {
+    volatile uint32_t val;
+    CAN_ESR_bits_type b;
+} CAN_ESR_type;
 
 /** 
   * @brief Controller Area Network TxMailBox 
@@ -122,11 +212,10 @@ typedef struct CAN_registers_type
 {
     CAN_MCR_type MCR;                 /*!< CAN master control register,         Address offset: 0x00          */
     CAN_MSR_type MSR;                 /*!< CAN master status register,          Address offset: 0x04          */
-    volatile uint32_t TSR;                 /*!< CAN transmit status register,        Address offset: 0x08          */
-    volatile uint32_t RF0R;                /*!< CAN receive FIFO 0 register,         Address offset: 0x0C          */
-    volatile uint32_t RF1R;                /*!< CAN receive FIFO 1 register,         Address offset: 0x10          */
-    volatile uint32_t IER;                 /*!< CAN interrupt enable register,       Address offset: 0x14          */
-    volatile uint32_t ESR;                 /*!< CAN error status register,           Address offset: 0x18          */
+    CAN_TSR_type TSR;                 /*!< CAN transmit status register,        Address offset: 0x08          */
+    CAN_RF_type RF[2];                /*!< CAN receive FIFO 0/1 register,         Address offset: 0x0C/0x10          */
+    CAN_IER_type IER;                 /*!< CAN interrupt enable register,       Address offset: 0x14          */
+    CAN_ESR_bits_type ESR;                 /*!< CAN error status register,           Address offset: 0x18          */
     CAN_BTR_type BTR;                 /*!< CAN bit timing register,             Address offset: 0x1C          */
     uint32_t RESERVED0[88];       /*!< Reserved, 0x020 - 0x17F                                            */
     CAN_txmailbox_type sTxMailBox[3];       /*!< CAN Tx MailBox,                      Address offset: 0x180 - 0x1AC */

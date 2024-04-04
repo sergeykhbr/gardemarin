@@ -20,8 +20,58 @@
 #include <uart.h>
 #include "can_drv.h"
 
-void can_set_baudrated(can_type *p, int idx, uint32_t baud) {
-    CAN_registers_type *dev = p->ctrl[idx].dev;
+uint32_t hwid2canid(uint32_t hwid) {
+    uint32_t ret = (hwid >> 3) & 0x3FFFF;  // EXID[17:0]
+    ret = (ret << 11) | (hwid >> 18);
+    return ret;
+}
+
+/** Generic interrupt handler
+ */
+void can_rx_generic_handler(int busid,
+                            int fifoidx,
+                            int irqidx) {
+    can_type *p = (can_type *)fw_get_ram_data(CAN_DRV_NAME);
+    can_bus_type *bus = &p->bus[busid];
+    CAN_registers_type *dev = bus->dev;
+    CAN_RF_type rf;
+
+    do {
+        if (p->rx_frame_cnt < CAN_RX_FRAMES_MAX) {
+            can_frame_type *f = &p->rxframes[p->rx_frame_cnt++];
+            f->busid = busid;
+            f->id = read32(&dev->sFIFOMailBox[fifoidx].RIR);
+            f->id = hwid2canid(f->id);
+
+            f->timestamp = read32(&dev->sFIFOMailBox[fifoidx].RDTR);
+            f->dlc = (uint8_t)(f->timestamp & 0xF);
+            f->timestamp >>= 16;
+
+            f->data.u32[0] = read32(&dev->sFIFOMailBox[fifoidx].RDLR);
+            f->data.u32[1] = read32(&dev->sFIFOMailBox[fifoidx].RDHR);
+        }
+
+        rf.val = 0;
+        rf.b.RFOM = 1;   // release bit to decrement pending messages
+        write32(&dev->RF[fifoidx].val, rf.val);
+
+        rf.val = read32(&dev->RF[fifoidx].val);
+    } while (rf.b.FMP != 0);
+
+    nvic_irq_clear(irqidx);
+}
+
+void CAN1_FIFO0_irq_handler() {
+    can_rx_generic_handler(0, 0, 20);
+}
+
+void CAN1_FIFO1_irq_handler() {
+    can_rx_generic_handler(0, 1, 21);
+}
+
+
+void can_set_baudrated(can_type *p, int busid, uint32_t baud) {
+    CAN_registers_type *dev = p->bus[busid].dev;
     CAN_MCR_type mcr;
     CAN_MSR_type msr;
     CAN_BTR_type btr;
@@ -54,6 +104,40 @@ void can_set_baudrated(can_type *p, int idx, uint32_t baud) {
     write32(&dev->MCR.val, mcr.val);
 }
 
+// Total 18 filters available
+void can_bus_listener_start(can_type *p, int busid) {
+    CAN_registers_type *dev = p->bus[busid].dev;
+    CAN_IER_type ier;
+    uint32_t t1;
+
+    // [13:8] CAN2FSB: 0=no assigned filters to CAN1, 28=all filters assigned to CAN1
+    // [0] FINIT
+    write32(&dev->FMR, (14 << 8) | 1);          // Assign filters[0..13] to CAN1; [14..27] to CAN2
+    write32(&dev->FM1R, 0);                     // all filters in Mask mode=0; 1=List mode
+    write32(&dev->FFA1R, 0x3f80 << (14*busid)); // 0 Filleter assigned to FIFO0; 1 assigned to FIFO1
+
+    write32(&dev->sFilterRegister[14*busid].FR1, 0);   // identifier
+    write32(&dev->sFilterRegister[14*busid].FR2, 0);   // mask in mask mode
+
+    write32(&dev->FA1R, 1 << (14*busid));   // [0] FACT0: activate filter 0 (or 14 for CAN1)
+
+    t1 = read32(&dev->FMR);
+    t1 &= ~1;   // FINIT = 0
+    write32(&dev->FMR, t1);
+
+
+    // Enable Rx interrupts in FIFO0 and FIFO1
+    ier.val = 0;
+    ier.b.FMPIE0 = 1;
+    ier.b.FMPIE1 = 1;
+    write32(&dev->IER.val, ier.val);
+}
+
+void can_bus_listener_stop(can_type *p, int busid) {
+    CAN_registers_type *dev = p->bus[busid].dev;
+    write32(&dev->IER.val, 0);  // disable all interrupts
+}
+
 void can_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     can_type *p = (can_type *)fw_get_ram_data(CAN_DRV_NAME);
@@ -62,28 +146,28 @@ void can_init() {
          return;
     }
 
-    p->ctrl[0].dev = (CAN_registers_type *)CAN1_BASE;
-    p->ctrl[1].dev = (CAN_registers_type *)CAN2_BASE;
+    p->bus[0].dev = (CAN_registers_type *)CAN1_BASE;
+    p->bus[1].dev = (CAN_registers_type *)CAN2_BASE;
 
     //    PD1  CAN1_TX    AF9
     //    PD0  CAN1_RX    AF9
-    p->ctrl[0].gpio_cfg_tx.port = (GPIO_registers_type *)GPIOD_BASE;
-    p->ctrl[0].gpio_cfg_tx.pinidx = 1;
-    gpio_pin_as_alternate(&p->ctrl[0].gpio_cfg_tx, 9);
+    p->bus[0].gpio_cfg_tx.port = (GPIO_registers_type *)GPIOD_BASE;
+    p->bus[0].gpio_cfg_tx.pinidx = 1;
+    gpio_pin_as_alternate(&p->bus[0].gpio_cfg_tx, 9);
 
-    p->ctrl[0].gpio_cfg_rx.port = (GPIO_registers_type *)GPIOD_BASE;
-    p->ctrl[0].gpio_cfg_rx.pinidx = 0;
-    gpio_pin_as_alternate(&p->ctrl[0].gpio_cfg_rx, 9);
+    p->bus[0].gpio_cfg_rx.port = (GPIO_registers_type *)GPIOD_BASE;
+    p->bus[0].gpio_cfg_rx.pinidx = 0;
+    gpio_pin_as_alternate(&p->bus[0].gpio_cfg_rx, 9);
 
     //    PB6  CAN2_RX    AF9
     //    PB5  CAN2_TX    AF9
-    p->ctrl[1].gpio_cfg_tx.port = (GPIO_registers_type *)GPIOB_BASE;
-    p->ctrl[1].gpio_cfg_tx.pinidx = 5;
-    gpio_pin_as_alternate(&p->ctrl[1].gpio_cfg_tx, 9);
+    p->bus[1].gpio_cfg_tx.port = (GPIO_registers_type *)GPIOB_BASE;
+    p->bus[1].gpio_cfg_tx.pinidx = 5;
+    gpio_pin_as_alternate(&p->bus[1].gpio_cfg_tx, 9);
 
-    p->ctrl[1].gpio_cfg_rx.port = (GPIO_registers_type *)GPIOB_BASE;
-    p->ctrl[1].gpio_cfg_rx.pinidx = 6;
-    gpio_pin_as_alternate(&p->ctrl[1].gpio_cfg_rx, 9);
+    p->bus[1].gpio_cfg_rx.port = (GPIO_registers_type *)GPIOB_BASE;
+    p->bus[1].gpio_cfg_rx.pinidx = 6;
+    gpio_pin_as_alternate(&p->bus[1].gpio_cfg_rx, 9);
 
 
     // Enable clock CAN1 and CAN2
@@ -93,4 +177,8 @@ void can_init() {
 
 
     can_set_baudrated(p, 0, 500000);
+
+    // prio: 0 highest; 7 is lowest
+    nvic_irq_enable(20, 3);   // CAN1_RX0
+    nvic_irq_enable(21, 3);   // CAN1_RX1
 }

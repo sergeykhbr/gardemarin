@@ -23,6 +23,25 @@
 // current task is 0.5 sec
 #define SERVICE_SEC_TO_COUNT(sec) (2 * sec)
 
+/** Print CAN frames
+*/
+void output_can_messages(can_type *data) {
+    can_frame_type *f;
+    for (int i = 0; i < data->rx_frame_cnt; i++) {
+        f = &data->rxframes[i];
+        uart_printf("%d=>%08x %d",
+                    f->busid,
+                    f->id,
+                    f->dlc);
+        for (uint8_t n = 0; n < f->dlc; n++) {
+            uart_printf(" %02x", f->data.u8[n]);
+        }
+        uart_printf("%s", "\r\n");
+    }
+    data->rx_frame_cnt = 0;
+}
+
+
 void update_service_state(task500ms_data_type *data) {
     if (data->user_btn.event & BTN_EVENT_PRESSED) {
         if (data->service_state == SERVICE_STATE_IDLE || data->wait_btn) {
@@ -60,7 +79,22 @@ void update_service_state(task500ms_data_type *data) {
     switch (data->service_state) {
     case SERVICE_STATE_INIT:
         uart_printf("[%d] Start service demo\r\n", xTaskGetTickCount());
-        data->service_state = SERVICE_STATE_RELAY0_ENA;
+        data->service_state = SERVICE_STATE_CAN_START;
+        break;
+    case SERVICE_STATE_CAN_START:
+        uart_printf("[%d] CAN0 listener started\r\n", xTaskGetTickCount());
+        can_bus_listener_start(&data->can_data, 0);
+        data->service_state++;
+        break;
+    case SERVICE_STATE_CAN_SNIFFER:
+        if (data->user_btn.event & BTN_EVENT_PRESSED) {
+            data->service_state++;
+        }
+        break;
+    case SERVICE_STATE_CAN_STOP:
+        can_bus_listener_stop(&data->can_data, 0);
+        uart_printf("[%d] CAN0 stopped\r\n", xTaskGetTickCount());
+        data->service_state++;
         break;
     case SERVICE_STATE_RELAY0_ENA:
         relais_on(0);
@@ -118,10 +152,6 @@ void update_service_state(task500ms_data_type *data) {
         break;
     case SERVICE_STATE_SCALES_READ:
         load_sensor_read(&data->load_sensor_data);
-        if (data->user_btn.event & BTN_EVENT_PRESSED) {
-            data->user_btn.event = 0;
-            data->service_state = SERVICE_STATE_SCALES_SLEEP;
-        }
         break;
     case SERVICE_STATE_SCALES_SLEEP:
         load_sensor_sleep(&data->load_sensor_data);
@@ -150,8 +180,9 @@ void update_service_state(task500ms_data_type *data) {
         break;
     default:;
     }
-}
 
+    data->user_btn.event = 0;
+}
 
 portTASK_FUNCTION(task500ms, args)
 {
@@ -161,7 +192,7 @@ portTASK_FUNCTION(task500ms, args)
     while (1) {
         // do something
         update_service_state(task_data);
- 
+
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
         task_data->user_btn.tm_count = ++task_data->cnt;
     }
