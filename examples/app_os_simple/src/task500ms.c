@@ -43,33 +43,27 @@ void output_can_messages(can_type *data) {
 
 
 void update_service_state(task500ms_data_type *data) {
+    // LED blinking in service mode:
+    int btnClick = 0;
     if (data->user_btn.event & BTN_EVENT_PRESSED) {
-        if (data->service_state == SERVICE_STATE_IDLE || data->wait_btn) {
-            data->service_state++;
-            data->user_btn.event = 0;
-        }
-        data->wait_btn = 0;
+        data->user_btn.event = 0;
+        btnClick = 1;
     }
 
-    // LED blinking in service mode:
     if (data->service_state == SERVICE_STATE_IDLE) {
         user_led_set_state(1);
-        data->service_start_time = data->cnt;
-        data->pause_cnt = 0;
-        return;
     } else {
         user_led_set_state((int)(data->cnt & 1));
     }
 
     if (data->wait_btn) {
-        return;
+        if (btnClick == 0) {
+            return;
+        } else {
+            data->wait_btn = 0;
+            data->service_state++;
+        }
     }
-
-    if (data->pause_cnt) {
-        data->pause_cnt--;
-        return;
-    }
-
     // Expected current through the Relay at 5V is 89.3 mA
     // Relay[0]=off; Relay[1]=off; I=60 mA
     // Relay[0]=off; Relay[1]=on;  I=150 mA
@@ -77,23 +71,42 @@ void update_service_state(task500ms_data_type *data) {
     // Relay[0]=on;  Relay[1]=on;  I=230 mA
     
     switch (data->service_state) {
-    case SERVICE_STATE_INIT:
-        uart_printf("[%d] Start service demo\r\n", xTaskGetTickCount());
-        data->service_state = SERVICE_STATE_CAN_START;
-        break;
-    case SERVICE_STATE_CAN_START:
-        uart_printf("[%d] CAN0 listener started\r\n", xTaskGetTickCount());
-        can_bus_listener_start(&data->can_data, 0);
-        data->service_state++;
-        break;
-    case SERVICE_STATE_CAN_SNIFFER:
-        if (data->user_btn.event & BTN_EVENT_PRESSED) {
+    case SERVICE_STATE_IDLE:
+        data->service_start_time = data->cnt;
+        if (btnClick) {
             data->service_state++;
         }
         break;
-    case SERVICE_STATE_CAN_STOP:
+    case SERVICE_STATE_INIT:
+        uart_printf("[%d] Start service demo\r\n", xTaskGetTickCount());
+        data->service_state++;
+        break;
+    case SERVICE_STATE_CAN1_START:
+        can_bus_listener_start(&data->can_data, 0);
+        uart_printf("[%d] CAN1 sniffer started\r\n", xTaskGetTickCount());
+        data->service_state++;
+        break;
+    case SERVICE_STATE_CAN1_SNIFFER:
+        output_can_messages(&data->can_data);
+        if (btnClick) {
+            data->service_state++;
+        }
+        break;
+    case SERVICE_STATE_CAN2_SWITCH:
         can_bus_listener_stop(&data->can_data, 0);
-        uart_printf("[%d] CAN0 stopped\r\n", xTaskGetTickCount());
+        can_bus_listener_start(&data->can_data, 1);
+        uart_printf("[%d] CAN1 stopped, CAN2 sniffer started\r\n", xTaskGetTickCount());
+        data->service_state++;
+        break;
+    case SERVICE_STATE_CAN2_SNIFFER:
+        output_can_messages(&data->can_data);
+        if (btnClick) {
+            data->service_state++;
+        }
+        break;
+    case SERVICE_STATE_CAN2_STOP:
+        can_bus_listener_stop(&data->can_data, 1);
+        uart_printf("[%d] CAN2 stopped\r\n", xTaskGetTickCount());
         data->service_state++;
         break;
     case SERVICE_STATE_RELAY0_ENA:
@@ -110,7 +123,7 @@ void update_service_state(task500ms_data_type *data) {
         relais_off(0);
         relais_off(1);
         uart_printf("[%d] Relais[0] and Relais[1] are off\r\n", xTaskGetTickCount());
-        data->service_state = SERVICE_STATE_LED0_ON;
+        data->service_state++;
         break;
     case SERVICE_STATE_LED0_ON:
         led_strip_on(0, 100);
@@ -152,6 +165,9 @@ void update_service_state(task500ms_data_type *data) {
         break;
     case SERVICE_STATE_SCALES_READ:
         load_sensor_read(&data->load_sensor_data);
+        if (btnClick) {
+            data->service_state++;
+        }
         break;
     case SERVICE_STATE_SCALES_SLEEP:
         load_sensor_sleep(&data->load_sensor_data);
@@ -180,8 +196,6 @@ void update_service_state(task500ms_data_type *data) {
         break;
     default:;
     }
-
-    data->user_btn.event = 0;
 }
 
 portTASK_FUNCTION(task500ms, args)

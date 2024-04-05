@@ -69,6 +69,14 @@ void CAN1_FIFO1_irq_handler() {
     can_rx_generic_handler(0, 1, 21);
 }
 
+void CAN2_FIFO0_irq_handler() {
+    can_rx_generic_handler(1, 0, 64);
+}
+
+void CAN2_FIFO1_irq_handler() {
+    can_rx_generic_handler(1, 1, 65);
+}
+
 
 void can_set_baudrated(can_type *p, int busid, uint32_t baud) {
     CAN_registers_type *dev = p->bus[busid].dev;
@@ -149,8 +157,8 @@ void can_init() {
     p->bus[0].dev = (CAN_registers_type *)CAN1_BASE;
     p->bus[1].dev = (CAN_registers_type *)CAN2_BASE;
 
-    //    PD1  CAN1_TX    AF9
-    //    PD0  CAN1_RX    AF9
+    //    81 PD0  CAN1_RX    AF9
+    //    82 PD1  CAN1_TX    AF9
     p->bus[0].gpio_cfg_tx.port = (GPIO_registers_type *)GPIOD_BASE;
     p->bus[0].gpio_cfg_tx.pinidx = 1;
     gpio_pin_as_alternate(&p->bus[0].gpio_cfg_tx, 9);
@@ -159,8 +167,8 @@ void can_init() {
     p->bus[0].gpio_cfg_rx.pinidx = 0;
     gpio_pin_as_alternate(&p->bus[0].gpio_cfg_rx, 9);
 
-    //    PB6  CAN2_RX    AF9
-    //    PB5  CAN2_TX    AF9
+    //    91 PB5  CAN2_RX    AF9
+    //    92 PB6  CAN2_TX    AF9
     p->bus[1].gpio_cfg_tx.port = (GPIO_registers_type *)GPIOB_BASE;
     p->bus[1].gpio_cfg_tx.pinidx = 5;
     gpio_pin_as_alternate(&p->bus[1].gpio_cfg_tx, 9);
@@ -177,8 +185,12 @@ void can_init() {
 
 
     can_set_baudrated(p, 0, 500000);
+    can_set_baudrated(p, 1, 500000);
 
     // prio: 0 highest; 7 is lowest
     nvic_irq_enable(20, 3);   // CAN1_RX0
     nvic_irq_enable(21, 3);   // CAN1_RX1
+
+    nvic_irq_enable(64, 3);   // CAN2_RX0
+    nvic_irq_enable(65, 3);   // CAN2_RX1
 }

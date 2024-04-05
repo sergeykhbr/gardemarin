@@ -24,6 +24,8 @@ extern "C"
 extern void Btn_IRQHandler();
 extern void CAN1_FIFO0_irq_handler();
 extern void CAN1_FIFO1_irq_handler();
+extern void CAN2_FIFO0_irq_handler();
+extern void CAN2_FIFO1_irq_handler();
 
 #define WWDG_IRQHandler DefaultISR
 #define PVD_IRQHandler DefaultISR
@@ -89,8 +91,8 @@ extern void CAN1_FIFO1_irq_handler();
 #define ETH_IRQHandler DefaultISR
 #define ETH_WKUP_IRQHandler DefaultISR
 #define CAN2_TX_IRQHandler DefaultISR
-#define CAN2_RX0_IRQHandler DefaultISR
-#define CAN2_RX1_IRQHandler DefaultISR
+#define CAN2_RX0_IRQHandler CAN2_FIFO0_irq_handler
+#define CAN2_RX1_IRQHandler CAN2_FIFO1_irq_handler
 #define CAN2_SCE_IRQHandler DefaultISR
 #define OTG_FS_IRQHandler DefaultISR
 #define DMA2_Stream5_IRQHandler DefaultISR
