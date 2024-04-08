@@ -60,10 +60,8 @@ extern "C" FwList *fw_empty_list_item() {
  *                objects.
  * @todo Implement alphabetically sorted list to improve list search
  */
-extern "C" void fw_register_object(CommonInterface *obj) {
-    FwList *pnew = fw_empty_list_item();
-    fwlist_init(pnew, obj);
-    GetKernelInterface()->RegisterObject(pnew);
+extern "C" void fw_register_object(void *obj) {
+    GetKernelInterface()->RegisterObject(static_cast<FwObject *>(obj));
 }
 
 /**

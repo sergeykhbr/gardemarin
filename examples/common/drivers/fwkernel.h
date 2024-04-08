@@ -20,6 +20,7 @@
 #include <fwobject.h>
 #include <FwAttribute.h>
 #include <KernelInterface.h>
+#include "relais.h"
 
 class KernelClass : public FwObject,
                     public KernelInterface {
@@ -33,7 +34,7 @@ class KernelClass : public FwObject,
     // KernelInterface interface:
     virtual FwList *GetObjectList() override { return objlist_; }
     virtual FwList *GetEmptyListItem() override ;
-    virtual void RegisterObject(FwList *pnew) override;
+    virtual void RegisterObject(FwObject *obj) override;
 
  private:
     /**
@@ -65,4 +66,6 @@ class KernelClass : public FwObject,
     /** @brief Statically allocated maximum number of the List Items */
     FwAttribute listMax_;
 
+    RelaisDriver relais0_;
+    RelaisDriver relais1_;
 };

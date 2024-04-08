@@ -58,10 +58,9 @@ FwList *fw_empty_list_item();
 
 /**
  * @brief register new FwObject casted tp CommonInterface
- * @param[in] obj Pointer that should be registered in the linked list of
- *                objects.
+ * @param[in] obj Pointer to FwObject.
  */
-void fw_register_object(CommonInterface *obj);
+void fw_register_object(void *obj);
 
 /**
  * @brief Get single linked list of all registered objects

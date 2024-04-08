@@ -22,7 +22,6 @@
 #include <semphr.h>
 #include <user_btn.h>
 #include <user_led.h>
-#include <relais.h>
 #include <loadsensor.h>
 #include <ledstrip.h>
 #include <motor.h>
@@ -66,7 +65,6 @@ typedef struct task500ms_data_type {
 
     user_btn_type user_btn;
     user_led_type user_led;
-    relais_type relais_data;
     load_sensor_type load_sensor_data;
     led_strip_type led_data;
     motor_driver_type motor_data;

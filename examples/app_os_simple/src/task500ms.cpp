@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stm32f4xx_map.h>
 #include <uart.h>
+#include <fwapi.h>
+#include <BinInterface.h>
 #include "task500ms.h"
 
 // current task is 0.5 sec
@@ -44,6 +46,7 @@ void output_can_messages(can_type *data) {
 
 void update_service_state(task500ms_data_type *data) {
     // LED blinking in service mode:
+    CommonInterface *iface;
     int btnClick = 0;
     if (data->user_btn.event & BTN_EVENT_PRESSED) {
         data->user_btn.event = 0;
@@ -110,18 +113,36 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state++;
         break;
     case SERVICE_STATE_RELAY0_ENA:
-        relais_on(0);
-        uart_printf("[%d] Relais[0] is on\r\n", xTaskGetTickCount());
-        data->wait_btn = 1;
+        iface = fw_get_object_interface("relais0", "BinInterface");
+        if (iface) {
+            static_cast<BinInterface *>(iface)->setBinEnabled();
+            uart_printf("[%d] relais0 is on\r\n", xTaskGetTickCount());
+            data->wait_btn = 1;
+        } else {
+            uart_printf("[%d] relais0 interface not found\r\n", xTaskGetTickCount());
+            data->service_state++;
+        }
         break;
     case SERVICE_STATE_RELAY1_ENA:
-        relais_on(1);
-        uart_printf("[%d] Relais[1] is on\r\n", xTaskGetTickCount());
-        data->wait_btn = 1;
+        iface = fw_get_object_interface("relais1", "BinInterface");
+        if (iface) {
+            static_cast<BinInterface *>(iface)->setBinEnabled();
+            uart_printf("[%d] relais1 is on\r\n", xTaskGetTickCount());
+            data->wait_btn = 1;
+        } else {
+            uart_printf("[%d] relais1 interface not found\r\n", xTaskGetTickCount());
+            data->service_state++;
+        }
         break;
     case SERVICE_STATE_RELAYS_DIS:
-        relais_off(0);
-        relais_off(1);
+        iface = fw_get_object_interface("relais0", "BinInterface");
+        if (iface) {
+            static_cast<BinInterface *>(iface)->setBinDisabled();
+        }
+        iface = fw_get_object_interface("relais1", "BinInterface");
+        if (iface) {
+            static_cast<BinInterface *>(iface)->setBinDisabled();
+        }
         uart_printf("[%d] Relais[0] and Relais[1] are off\r\n", xTaskGetTickCount());
         data->service_state++;
         break;
@@ -198,7 +219,7 @@ void update_service_state(task500ms_data_type *data) {
     }
 }
 
-portTASK_FUNCTION(task500ms, args)
+extern "C" portTASK_FUNCTION(task500ms, args)
 {
     task500ms_data_type *task_data = (task500ms_data_type *)args;
     const TickType_t delay_ms = 500 / portTICK_PERIOD_MS;

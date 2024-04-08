@@ -26,6 +26,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LD_FLAGS} -fno-use-cxa-a
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include/devs
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/system
     ${CMAKE_CURRENT_SOURCE_DIR}/src

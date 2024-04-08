@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "CommonInterface.h"
+#include "FwObject.h"
 
 class KernelInterface : public CommonInterface {
  public:
@@ -34,7 +34,7 @@ class KernelInterface : public CommonInterface {
     virtual FwList *GetEmptyListItem() = 0;
 
     /**
-     * @brief Register new FwObject as the payload of the FwList structure
+     * @brief Register new FwObject
      */
-    virtual void RegisterObject(FwList *pnew) = 0;
+    virtual void RegisterObject(FwObject *obj) = 0;
 };

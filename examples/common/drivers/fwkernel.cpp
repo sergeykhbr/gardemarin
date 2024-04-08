@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-
-#include "fwkernel.h"
+#include <fwapi.h>
 #include <uart.h>
+#include "fwkernel.h"
 
 /**
  * @brief Single tone variable that creates all other modules and drivers
@@ -40,7 +40,9 @@ extern "C" KernelInterface *GetKernelInterface()
 KernelClass::KernelClass() : FwObject("kernel"),
     version_("Version"),
     listCnt_("ListCnt"),
-    listMax_("ListMax")
+    listMax_("ListMax"),
+    relais0_("relais0", 0),
+    relais1_("relais1", 1)
 {
     // Add First element of the linked list to kernel itself
     objlist_ = &list_array_[0];
@@ -56,6 +58,8 @@ KernelClass::KernelClass() : FwObject("kernel"),
  * @brief Overrided FwObject method to register attribtues and interface
  */
 void KernelClass::Init() {
+    RegisterInterface(static_cast<KernelInterface *>(this));
+
     RegisterAttribute(&version_);
     RegisterAttribute(&listCnt_);
     RegisterAttribute(&listMax_);
@@ -157,7 +161,10 @@ FwList *KernelClass::GetEmptyListItem() {
  * @note Nice optimization is to implement sorting algorithm to speed-up
  *       list search.
  */
-void KernelClass::RegisterObject(FwList *pnew) {
+void KernelClass::RegisterObject(FwObject *obj) {
+    FwList *pnew = fw_empty_list_item();
+    fwlist_init(pnew, obj);
+
     if (objlist_ == 0) {
         objlist_ = pnew;
     } else {

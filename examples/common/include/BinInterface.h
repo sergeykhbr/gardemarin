@@ -13,29 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-#include <prjtypes.h>
-#include <fwlist.h>
-#include <fwobject.h>
-#include <FwAttribute.h>
-#include <BinInterface.h>
-#include <gpio_drv.h>
-
 #pragma once
 
-class RelaisDriver : public FwObject,
-                     public BinInterface {
+#include "CommonInterface.h"
+
+class BinInterface : public CommonInterface {
  public:
-    RelaisDriver(const char *name, int instidx);
+    BinInterface() : CommonInterface("BinInterface") {}
 
-    // FwObject interface:
-    virtual void Init() override;
-
-    // BinInterface:
-    virtual void setBinEnabled() override;
-    virtual void setBinDisabled() override;
-
- protected:
-    gpio_pin_type gpio_cfg_;
-    FwAttribute state_;
+    virtual void setBinEnabled() = 0;
+    virtual void setBinDisabled() = 0;
 };
+
