@@ -54,6 +54,10 @@
 #define SERVICE_STATE_MOTOR_DIS    21
 #define SERVICE_STATE_END          22
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct task500ms_data_type {
     uint64_t cnt;
     uint64_t service_start_time;
@@ -70,3 +74,7 @@ typedef struct task500ms_data_type {
 } task500ms_data_type;
 
 portTASK_FUNCTION(task500ms, args);
+
+#ifdef __cplusplus
+}
+#endif

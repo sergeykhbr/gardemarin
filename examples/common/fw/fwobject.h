@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <FwAttribute.h>
+#include <fwattribute.h>
 #include <fwlist.h>
 
 class FwObject : public CommonInterface {
@@ -24,22 +24,16 @@ class FwObject : public CommonInterface {
     explicit FwObject(const char *name);
 
     /**
-     * @brief Register all available attributes and interface implemented by
-     *        inherited class.
-     *
-     * @note  It is possible to register all interfaces and attributes of the
-     *        FwObject directly in constructor but in this case is undefined
-     *        the order of object creation and it is not possible to create
-     *        kernel object as the first FwObject created in the system.
-     */
-    virtual void Registration() {}
-
-    /**
      * @brief Initialize object generic method. Any parent FwObject should
      *        override this method to implement initialization code called from
      *        firmware kernel initialization procedure.
      */
     virtual void Init() {}
+
+    /**
+     * @brief Post Initialize stage. Can be used for debug output or similar.
+     */
+    virtual void PostInit() {}
 
     /**
      * @brief Get list of all registered attributes of this object.
@@ -72,7 +66,7 @@ class FwObject : public CommonInterface {
      */
     const char *ObjectName() { return objname_; }
 
-protected:
+ protected:
     /**
      * @brief Write attribtue into attribute list of the current object
      * @param[in] attr Pointer to CommonInterface tha can be statically case

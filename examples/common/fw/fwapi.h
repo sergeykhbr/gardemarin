@@ -44,6 +44,10 @@ static const uint32_t CAN_MSG_ID_WRITE_DATA = 0x778;
 extern "C" {
 #endif
 
+/** Main initialzation method before fw-methods becomes available
+ */
+void fw_init();
+
 /**
  * @brief Get pointer to an empty FwList element. FW allocates items
  *        from the static array of the fixed size and check that number

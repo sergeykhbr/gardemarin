@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stm32f4xx_map.h>
 #include <memanager.h>
+#include <fwapi.h>
 #include <uart.h>
 #include "task500ms.h"
 
@@ -26,10 +27,11 @@ typedef struct app_data_type  {
     task500ms_data_type task500ms_arg;
 } app_data_type;
 
-int main(int argcnt, char *args[]) {
+extern "C" int main(int argcnt, char *args[]) {
     app_data_type *appdata;
 
     fw_malloc_init();
+    fw_init();
 
     appdata = (app_data_type *)fw_get_ram_data(APP_TASK_NAME);
     if (appdata == 0) {

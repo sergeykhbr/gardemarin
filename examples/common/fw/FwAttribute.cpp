@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include <FwAttribute.h>
+#include <fwattribute.h>
 #include <fwobject.h>
 
 FwAttribute::FwAttribute(const char *name, const char *descr) :

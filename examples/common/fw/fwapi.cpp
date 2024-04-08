@@ -29,6 +29,27 @@
  */
 extern "C" KernelInterface *GetKernelInterface();
 
+extern "C" void fw_init() {
+    KernelInterface *kernel = GetKernelInterface();
+    FwList *p = kernel->GetObjectList();
+    FwObject *obj;
+
+    // Init stage:
+    while (p) {
+        obj = static_cast<FwObject *>(fwlist_payload(p));
+        obj->Init();
+        p = p->next;
+    }
+
+    // PostInit stage:
+    p = kernel->GetObjectList();
+    while (p) {
+        obj = static_cast<FwObject *>(fwlist_payload(p));
+        obj->PostInit();
+        p = p->next;
+    }
+}
+
 extern "C" FwList *fw_empty_list_item() {
     return GetKernelInterface()->GetEmptyListItem();
 }

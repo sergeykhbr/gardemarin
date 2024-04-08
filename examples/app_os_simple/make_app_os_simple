@@ -5,7 +5,7 @@ CC=arm-none-eabi-gcc
 OBJDUMP=arm-none-eabi-objdump
 OBJCOPY=arm-none-eabi-objcopy
 
-CFLAGS= -c -g -static -std=gnu99 -Os -mcpu=cortex-m4 -mfloat-abi=hard
+CFLAGS= -c -g -static -Os -mcpu=cortex-m4 -mfloat-abi=hard
 CFLAGS+=-fno-common
 
 LDFLAGS=-T ../common/system/stm32f4xx.ld -nostartfiles -mcpu=cortex-m4 -mfloat-abi=hard
@@ -16,6 +16,7 @@ INCL_PATH = \
 	$(TOP_DIR)/../common/include \
 	$(TOP_DIR)/../common/system \
 	$(TOP_DIR)/../common/drivers \
+	$(TOP_DIR)/../common/fw \
 	$(TOP_DIR)/../freertos \
 	$(TOP_DIR)/../freertos/ARM_CM4F \
 	$(TOP_DIR)/../freertos/include \
@@ -26,6 +27,7 @@ INCL_PATH = \
 SRC_PATH = \
 	$(TOP_DIR)/../common/system \
 	$(TOP_DIR)/../common/drivers \
+	$(TOP_DIR)/../common/fw \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/../freertos \
 	$(TOP_DIR)/../freertos/ARM_CM4F \
@@ -34,6 +36,7 @@ SRC_PATH = \
 
 LIB_NAMES = \
 	gcc \
+	stdc++ \
 	c \
 	m
 
@@ -65,6 +68,10 @@ SOURCES = isr_vector \
 	ledstrip \
 	motor \
 	can_drv \
+	fwapi \
+	fwattribute \
+	fwobject \
+	fwkernel \
 	task500ms \
 	main
 
@@ -97,8 +104,8 @@ $(ELFFILE): $(OBJ_FILES)
 	$(CPP) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
 
 %.o: %.c
-	$(ECHO) $(CC) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
-	$(CC) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(ECHO) $(CC) -std=gnu99 $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(CC) -std=gnu99 $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
 
 %.o: %.s
 	$(ECHO) $(CC) $(CFLAGS) -D__ASSEMBLY__=1 $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
