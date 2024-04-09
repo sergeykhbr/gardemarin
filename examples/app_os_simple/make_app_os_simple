@@ -48,7 +48,6 @@ SOURCES = isr_vector \
 	system_init \
 	gcc_startup \
 	gcc_newlib \
-	memanager \
 	vprintfmt \
 	uart \
 	app_handlers \
@@ -69,6 +68,7 @@ SOURCES = isr_vector \
 	ledstrip \
 	motor \
 	can_drv \
+	fwmem \
 	fwapi \
 	fwattribute \
 	fwobject \

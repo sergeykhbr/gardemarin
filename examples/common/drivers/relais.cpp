@@ -44,8 +44,6 @@ RelaisDriver::RelaisDriver(const char *name, int instidx) : FwObject(name),
 void RelaisDriver::Init() {
     RegisterInterface(static_cast<BinInterface *>(this));
     RegisterAttribute(&state_);
-
-    fw_register_object(static_cast<FwObject *>(this));
 }
 
 void RelaisDriver::setBinEnabled() {

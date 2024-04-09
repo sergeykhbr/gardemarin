@@ -17,41 +17,44 @@
 #include <prjtypes.h>
 #include <fwobject.h>
 #include <RawInterface.h>
-#include <KernelInterface.h>
 #include <fwapi.h>
+#include <fwkernel.h>
 #include <string.h>
 #include <stdio.h>
+#include <new>
+#include <uart.h>
 
-/**
- * @brief Get KernelInterface interface pointer that should return single
- *        kernel instance. In theory that should be the only single object
- *        in the firmware
- */
-extern "C" KernelInterface *GetKernelInterface();
+FwList *objlist_ = 0;
 
 extern "C" void fw_init() {
-    KernelInterface *kernel = GetKernelInterface();
-    FwList *p = kernel->GetObjectList();
+    FwList *p;
     FwObject *obj;
 
-    // Init stage:
+    fw_malloc_init();
+
+    new (fw_malloc(sizeof(KernelClass))) KernelClass("kernel");
+
+    // It is possible to create JSON-configration file and platoform loading here
+    p = fw_get_objects_list();
     while (p) {
-        obj = static_cast<FwObject *>(fwlist_payload(p));
+        obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         obj->Init();
         p = p->next;
     }
 
-    // PostInit stage:
-    p = kernel->GetObjectList();
+    p = fw_get_objects_list();
     while (p) {
-        obj = static_cast<FwObject *>(fwlist_payload(p));
+        obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         obj->PostInit();
         p = p->next;
     }
 }
 
 extern "C" FwList *fw_empty_list_item() {
-    return GetKernelInterface()->GetEmptyListItem();
+    FwList *ret = (FwList *)fw_malloc(sizeof(FwList));
+
+    fwlist_set_payload(ret, 0);
+    return ret;
 }
 
 /**
@@ -61,7 +64,10 @@ extern "C" FwList *fw_empty_list_item() {
  * @todo Implement alphabetically sorted list to improve list search
  */
 extern "C" void fw_register_object(void *obj) {
-    GetKernelInterface()->RegisterObject(static_cast<FwObject *>(obj));
+    FwList *p = fw_empty_list_item();
+    
+    fwlist_set_payload(p, obj);
+    fwlist_add(&objlist_, p);
 }
 
 /**
@@ -70,7 +76,7 @@ extern "C" void fw_register_object(void *obj) {
  *         presence as Kernel object.
  */
 extern "C" FwList *fw_get_objects_list() {
-    return GetKernelInterface()->GetObjectList();
+    return objlist_;
 }
 
 /**
@@ -79,11 +85,11 @@ extern "C" FwList *fw_get_objects_list() {
  * @return Pointer to FwObject in a case of success or zero value if the
  *         the object not found
  */
-extern "C" CommonInterface *fw_get_object(const char *name) {
+extern "C" void *fw_get_object(const char *name) {
     FwObject *obj;
-    FwList *p = GetKernelInterface()->GetObjectList();
+    FwList *p = fw_get_objects_list();
     while (p) {
-        obj = (FwObject *)fwlist_payload(p);
+        obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         p = p->next;
         if (strcmp(obj->ObjectName(), name) != 0) {
             obj = 0;
@@ -101,11 +107,11 @@ extern "C" CommonInterface *fw_get_object(const char *name) {
  * @return Pointer to CommonInterface if the specified interface was found
  *         or zero value otherwise
  */
-extern "C" CommonInterface *fw_get_object_interface(const char *objname,
+extern "C" void *fw_get_object_interface(const char *objname,
                                          const char *facename) {
     FwObject *obj;
     CommonInterface *ret = 0;
-    obj = static_cast<FwObject *>(fw_get_object(objname));
+    obj = reinterpret_cast<FwObject *>(fw_get_object(objname));
     if (obj) {
         ret = obj->GetInterface(facename);
     }
@@ -119,9 +125,9 @@ extern "C" CommonInterface *fw_get_object_interface(const char *objname,
  * @return Interface to FwObject in case if this index exists or zero
  *         if object not found.
  */
-extern "C" CommonInterface *fw_get_obj_by_index(int obj_idx) {
+extern "C" void *fw_get_obj_by_index(int obj_idx) {
     int tcnt = 0;
-    FwList *pitem = GetKernelInterface()->GetObjectList();
+    FwList *pitem = fw_get_objects_list();
     CommonInterface *ret = 0;
     // Find object with the specified index
     while (pitem != 0 && tcnt != obj_idx) {
@@ -130,7 +136,7 @@ extern "C" CommonInterface *fw_get_obj_by_index(int obj_idx) {
     }
 
     if (pitem != 0 && tcnt == obj_idx) {
-        ret = fwlist_payload(pitem);
+        ret = reinterpret_cast<CommonInterface *>(fwlist_get_payload(pitem));
     }
     return ret;
 }
@@ -143,11 +149,11 @@ extern "C" CommonInterface *fw_get_obj_by_index(int obj_idx) {
  * @return Interface to FwAttribute in case if this index exists or zero
  *         if attribute not found.
  */
-extern "C" CommonInterface *fw_get_attr_by_index(CommonInterface *obj,
-                                                 int atr_idx) {
+extern "C" void *fw_get_attr_by_index(void *obj,
+                                      int atr_idx) {
     int tcnt = 0;
-    FwList *pitem = static_cast<FwObject *>(obj)->GetAttributes();
-    CommonInterface *ret = 0;
+    FwList *pitem = reinterpret_cast<FwObject *>(obj)->GetAttributes();
+    void *ret = 0;
     // Find object with the specified index
     while (pitem != 0 && tcnt != atr_idx) {
         pitem = pitem->next;
@@ -155,7 +161,7 @@ extern "C" CommonInterface *fw_get_attr_by_index(CommonInterface *obj,
     }
 
     if (pitem != 0 && tcnt == atr_idx) {
-        ret = fwlist_payload(pitem);
+        ret = fwlist_get_payload(pitem);
     }
     return ret;
 }

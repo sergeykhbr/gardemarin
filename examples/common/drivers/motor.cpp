@@ -17,7 +17,7 @@
 #include <prjtypes.h>
 #include <stdio.h>
 #include <stm32f4xx_map.h>
-#include <memanager.h>
+#include <fwapi.h>
 #include <uart.h>
 #include "motor.h"
 
@@ -57,7 +57,7 @@ static void motor_configurate_gpio_bridge(h_bridge_gpio_config *brg) {
 
 }
 
-void motor_driver_init() {
+extern "C" void motor_driver_init() {
     motor_driver_type *p = (motor_driver_type *)fw_get_ram_data(MOTOR_DRV_NAME);
     if (p == 0) {
          return;
@@ -166,7 +166,7 @@ void motor_driver_init() {
 //     0       1         0     1    forward rotation
 //     1       0         1     0    backward rotation
 //     1       1         break break 
-void motor_dc_start(int idx) {
+extern "C" void motor_dc_start(int idx) {
     motor_driver_type *p = (motor_driver_type *)fw_get_ram_data(MOTOR_DRV_NAME);
     if (p == 0) {
          return;
@@ -179,7 +179,7 @@ void motor_dc_start(int idx) {
     gpio_pin_clear(&brg->out[2*chn + 1]);
 }
 
-void motor_dc_stop(int idx) {
+extern "C" void motor_dc_stop(int idx) {
     motor_driver_type *p = (motor_driver_type *)fw_get_ram_data(MOTOR_DRV_NAME);
     if (p == 0) {
          return;

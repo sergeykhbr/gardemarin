@@ -16,7 +16,7 @@
 
 #include <prjtypes.h>
 #include <stm32f4xx_map.h>
-#include <memanager.h>
+#include <fwapi.h>
 #include <uart.h>
 #include "can_drv.h"
 
@@ -28,7 +28,7 @@ uint32_t hwid2canid(uint32_t hwid) {
 
 /** Generic interrupt handler
  */
-void can_rx_generic_handler(int busid,
+extern "C" void can_rx_generic_handler(int busid,
                             int fifoidx,
                             int irqidx) {
     can_type *p = (can_type *)fw_get_ram_data(CAN_DRV_NAME);
@@ -61,19 +61,19 @@ void can_rx_generic_handler(int busid,
     nvic_irq_clear(irqidx);
 }
 
-void CAN1_FIFO0_irq_handler() {
+extern "C" void CAN1_FIFO0_irq_handler() {
     can_rx_generic_handler(0, 0, 20);
 }
 
-void CAN1_FIFO1_irq_handler() {
+extern "C" void CAN1_FIFO1_irq_handler() {
     can_rx_generic_handler(0, 1, 21);
 }
 
-void CAN2_FIFO0_irq_handler() {
+extern "C" void CAN2_FIFO0_irq_handler() {
     can_rx_generic_handler(1, 0, 64);
 }
 
-void CAN2_FIFO1_irq_handler() {
+extern "C" void CAN2_FIFO1_irq_handler() {
     can_rx_generic_handler(1, 1, 65);
 }
 
@@ -113,7 +113,7 @@ void can_set_baudrated(can_type *p, int busid, uint32_t baud) {
 }
 
 // Total 18 filters available
-void can_bus_listener_start(can_type *p, int busid) {
+extern "C" void can_bus_listener_start(can_type *p, int busid) {
     CAN_registers_type *dev = p->bus[busid].dev;
     CAN_IER_type ier;
     uint32_t t1;
@@ -141,12 +141,12 @@ void can_bus_listener_start(can_type *p, int busid) {
     write32(&dev->IER.val, ier.val);
 }
 
-void can_bus_listener_stop(can_type *p, int busid) {
+extern "C" void can_bus_listener_stop(can_type *p, int busid) {
     CAN_registers_type *dev = p->bus[busid].dev;
     write32(&dev->IER.val, 0);  // disable all interrupts
 }
 
-void can_init() {
+extern "C" void can_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     can_type *p = (can_type *)fw_get_ram_data(CAN_DRV_NAME);
     uint32_t t1;

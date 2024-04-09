@@ -17,11 +17,11 @@
 #include <prjtypes.h>
 #include <stdio.h>
 #include <stm32f4xx_map.h>
-#include <memanager.h>
+#include <fwapi.h>
 #include "user_led.h"
 
 //    PE2 - User LED. 0=LED is on (inversed)
-void user_led_init() {
+extern "C" void user_led_init() {
     user_led_type *p = (user_led_type *)fw_get_ram_data(USER_LED_DRV_NAME);
     if (p == 0) {
          return;
@@ -37,7 +37,7 @@ void user_led_init() {
     user_led_set_state(1);
 }
 
-void user_led_set_state(int on) {
+extern "C" void user_led_set_state(int on) {
     user_led_type *p = (user_led_type *)fw_get_ram_data(USER_LED_DRV_NAME);
     if (p == 0) {
          return;

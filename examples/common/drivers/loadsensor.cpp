@@ -66,7 +66,7 @@ int load_sensor_get_miso() {
 // PC[12] = SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
 // PC[11] = SPI3_MISO  AF6 -> AF0 input
 // PC[10] = SPI3_SCK   AF6 -> AF0 output
-void load_sensor_init(load_sensor_type *data) {
+extern "C" void load_sensor_init(load_sensor_type *data) {
     GPIO_registers_type *P = (GPIO_registers_type *)GPIOD_BASE;
     uint32_t t1;
     // CSn chip as output. HIGH is set MISO to Z state
@@ -163,7 +163,7 @@ void load_sensor_init(load_sensor_type *data) {
     }
 }
 
-void load_sensor_read(load_sensor_type *data) {
+extern "C" void load_sensor_read(load_sensor_type *data) {
     data->ready = 0;
     for (int i = 0; i < 4; i++) {
         load_sensor_select(i);
@@ -207,7 +207,7 @@ void load_sensor_read(load_sensor_type *data) {
     }
 }
 
-void load_sensor_sleep(load_sensor_type *sleep) {
+extern "C" void load_sensor_sleep(load_sensor_type *sleep) {
     load_sensor_set_sck(1);
     system_delay_ns(60000);
 }

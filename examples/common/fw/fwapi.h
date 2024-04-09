@@ -48,6 +48,14 @@ extern "C" {
  */
 void fw_init();
 
+void fw_malloc_init();
+
+void *fw_malloc(int size);
+
+void fw_register_ram_data(const char *name, void *data);
+
+void *fw_get_ram_data(const char *name);
+
 /**
  * @brief Get pointer to an empty FwList element. FW allocates items
  *        from the static array of the fixed size and check that number
@@ -75,7 +83,7 @@ FwList *fw_get_objects_list();
  * @return Pointer to FwObject in a case of success or zero value if the
  *         the object not found
  */
-CommonInterface *fw_get_object(const char *name);
+void *fw_get_object(const char *name);
 
 /**
  * @brief Get pointer to the specified interface of the specified FwObject.
@@ -84,8 +92,8 @@ CommonInterface *fw_get_object(const char *name);
  * @return Pointer to CommonInterface if the specified interface was found
  *         or zero value otherwise
  */
-CommonInterface *fw_get_object_interface(const char *objname,
-                                         const char *facename);
+void *fw_get_object_interface(const char *objname,
+                              const char *facename);
 
 /**
  * @brief Get FwObject interface using DBC index corresponding to
@@ -94,7 +102,7 @@ CommonInterface *fw_get_object_interface(const char *objname,
  * @return Interface to FwObject in case if this index exists or zero
  *         if object not found.
  */
-CommonInterface *fw_get_obj_by_index(int obj_idx);
+void *fw_get_obj_by_index(int obj_idx);
 
 /**
  * @brief Get FwAttribute interface using DBC index corresponding to
@@ -104,7 +112,7 @@ CommonInterface *fw_get_obj_by_index(int obj_idx);
  * @return Interface to FwAttribute in case if this index exists or zero
  *         if attribute not found.
  */
-CommonInterface *fw_get_attr_by_index(CommonInterface *obj, int atr_idx);
+void *fw_get_attr_by_index(void *obj, int atr_idx);
 
 
 #ifdef __cplusplus

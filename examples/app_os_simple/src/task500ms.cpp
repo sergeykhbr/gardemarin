@@ -113,7 +113,8 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state++;
         break;
     case SERVICE_STATE_RELAY0_ENA:
-        iface = fw_get_object_interface("relais0", "BinInterface");
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("relais0", "BinInterface"));
         if (iface) {
             static_cast<BinInterface *>(iface)->setBinEnabled();
             uart_printf("[%d] relais0 is on\r\n", xTaskGetTickCount());
@@ -124,7 +125,8 @@ void update_service_state(task500ms_data_type *data) {
         }
         break;
     case SERVICE_STATE_RELAY1_ENA:
-        iface = fw_get_object_interface("relais1", "BinInterface");
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("relais1", "BinInterface"));
         if (iface) {
             static_cast<BinInterface *>(iface)->setBinEnabled();
             uart_printf("[%d] relais1 is on\r\n", xTaskGetTickCount());
@@ -135,11 +137,13 @@ void update_service_state(task500ms_data_type *data) {
         }
         break;
     case SERVICE_STATE_RELAYS_DIS:
-        iface = fw_get_object_interface("relais0", "BinInterface");
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("relais0", "BinInterface"));
         if (iface) {
             static_cast<BinInterface *>(iface)->setBinDisabled();
         }
-        iface = fw_get_object_interface("relais1", "BinInterface");
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("relais1", "BinInterface"));
         if (iface) {
             static_cast<BinInterface *>(iface)->setBinDisabled();
         }

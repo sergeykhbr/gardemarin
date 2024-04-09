@@ -19,52 +19,19 @@
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
-#include <KernelInterface.h>
 #include "relais.h"
 
-class KernelClass : public FwObject,
-                    public KernelInterface {
+class KernelClass : public FwObject {
  public:
-    KernelClass();
+    explicit KernelClass(const char *name);
 
     // FwObject interface:
     virtual void Init() override;
     virtual void PostInit() override;
 
-    // KernelInterface interface:
-    virtual FwList *GetObjectList() override { return objlist_; }
-    virtual FwList *GetEmptyListItem() override ;
-    virtual void RegisterObject(FwObject *obj) override;
-
  private:
-    /**
-     * @brief Maximum number of FwObject instances in the whole FW
-     * @note It is better use heap (new/malloc) memory region but it is should
-     *       be checked with the MISRA rules.
-     */
-    static const int OBJECT_LIST_MAX = 32;
-
-    /**
-     * @brief Point to the first item of the single linked list of
-     * registered objects
-     */
-    FwList *objlist_;
-
-    /** 
-     * @brief Statically allocated list of items used to implement single linked
-     *        lists. Types of lists:
-     *          - list of FwObjects
-     *          - list of FwAttributes for each FwObject (if presence)
-     *          - list of additional Interfaces for each FwObject (if presence)
-     */
-    FwList list_array_[OBJECT_LIST_MAX];
-
     /** @brief Kernel Version attribute */
     FwAttribute version_;
-    /** @brief Counter and index of the last empty List Item */
-    FwAttribute listCnt_;
-    /** @brief Statically allocated maximum number of the List Items */
-    FwAttribute listMax_;
 
     RelaisDriver relais0_;
     RelaisDriver relais1_;

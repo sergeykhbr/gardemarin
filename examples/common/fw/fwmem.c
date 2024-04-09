@@ -59,10 +59,6 @@ char *_sbrk(int incr) {
     incr = (incr + 3) & (~3); // align value to 4
     pool->allocated_sz += incr;
     pool->end += incr;
-
-//    if (pool->end >= (uint32_t)__stack_limit) {
-//        uart_printf("heap limit reached %08x\n", pool->end);
-//    }
     return ret;
 }
 

@@ -16,14 +16,14 @@
 
 #include <prjtypes.h>
 #include <stm32f4xx_map.h>
-#include <memanager.h>
+#include <fwapi.h>
 #include "ledstrip.h"
 
 // LED[0] PB[10] TIM2_CH3
 // LED[1] PE[0]
 // LED[2] PE[1]
 // LED[3] PE[15]
-void led_strip_init() {
+extern "C" void led_strip_init() {
     led_strip_type *p = (led_strip_type *)fw_get_ram_data(LED_STRIP_DRV_NAME);
     if (p == 0) {
          return;
@@ -51,7 +51,7 @@ void led_strip_init() {
     }
 }
 
-void led_strip_on(int idx, int dimrate) {
+extern "C" void led_strip_on(int idx, int dimrate) {
     led_strip_type *p = (led_strip_type *)fw_get_ram_data(LED_STRIP_DRV_NAME);
     if (p == 0) {
          return;
@@ -65,7 +65,7 @@ void led_strip_on(int idx, int dimrate) {
     }
 }
 
-void led_strip_off(int idx) {
+extern "C" void led_strip_off(int idx) {
     led_strip_type *p = (led_strip_type *)fw_get_ram_data(LED_STRIP_DRV_NAME);
     if (p == 0) {
          return;

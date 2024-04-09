@@ -16,23 +16,19 @@
 
 #pragma once
 
-#include <CommonInterface.h>
-
 /**
  * @brief Singly linked list common structure
  */
 typedef struct FwList {
     FwList *next;
-    CommonInterface *payload;
+    void *payload;
 } FwList;
 
 /**
- * @brief Initialize common list structure
- * @param[in] p       Pointer to structure that should be initialized
+ * @brief Initialize payload field of the structure
  * @param[in] payload Pointer to the data payload
  */
-static inline void fwlist_init(FwList *p, CommonInterface *payload) {
-    p->next = 0;
+static inline void fwlist_set_payload(FwList *p, void *payload) {
     p->payload = payload;
 }
 
@@ -41,7 +37,7 @@ static inline void fwlist_init(FwList *p, CommonInterface *payload) {
  * @param[in] p Pointer to structure from which data should be read
  * @return      Pointer to the allocated CommonInterface stored as payload
  */
-static inline CommonInterface *fwlist_payload(FwList *p) {
+static inline void *fwlist_get_payload(FwList *p) {
     return p->payload;
 }
 
@@ -50,11 +46,15 @@ static inline CommonInterface *fwlist_payload(FwList *p) {
  * @param[in] pfirst Pointer to the first structure of the single linked list
  * @param[in] pnew   Pointer to the structure adding into list
  */
-static inline void fwlist_add(FwList *first, FwList *pnew) {
-    FwList *last = first;
-    while (last->next) {
-        last = last->next;
-    }
+static inline void fwlist_add(FwList **first, FwList *pnew) {
     pnew->next = 0;
-    last->next = pnew;
+    if (*first == 0) {
+        *first = pnew;
+    } else {
+        FwList *last = *first;
+        while (last->next) {
+            last = last->next;
+        }
+        last->next = pnew;
+    }
 }

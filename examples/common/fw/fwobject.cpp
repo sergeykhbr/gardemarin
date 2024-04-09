@@ -17,39 +17,33 @@
 #include <fwapi.h>
 #include <string.h>
 #include <fwobject.h>
+#include <uart.h>
 
 FwObject::FwObject(const char *name) : CommonInterface("FwObject"),
     objname_(name),
     attrlist_(0),
     ifacelist_(0)
 {
+    fw_register_object(static_cast<FwObject *>(this));
 }
 
 void FwObject::RegisterAttribute(CommonInterface *attr) {
     FwList *pnew = fw_empty_list_item();
-    fwlist_init(pnew, attr);
-    if (attrlist_ == 0) {
-        attrlist_ = pnew;
-    } else {
-        fwlist_add(attrlist_, pnew);
-    }
+    fwlist_set_payload(pnew, attr);
+    fwlist_add(&attrlist_, pnew);
 }
 
 void FwObject::RegisterInterface(CommonInterface *attr) {
     FwList *pnew = fw_empty_list_item();
-    fwlist_init(pnew, attr);
-    if (ifacelist_ == 0) {
-        ifacelist_ = pnew;
-    } else {
-        fwlist_add(ifacelist_, pnew);
-    }
+    fwlist_set_payload(pnew, attr);
+    fwlist_add(&ifacelist_, pnew);
 }
 
 CommonInterface *FwObject::GetInterface(const char *name) {
     CommonInterface *ret = 0;
     FwList *p = ifacelist_;
     while (p) {
-        ret = (CommonInterface *)fwlist_payload(p);
+        ret = reinterpret_cast<CommonInterface *>(fwlist_get_payload(p));
         if (strcmp(ret->GetFaceName(), name) != 0) {
             ret = 0;
             p = p->next;

@@ -17,12 +17,12 @@
 #include <prjtypes.h>
 #include <stdio.h>
 #include <stm32f4xx_map.h>
-#include <memanager.h>
+#include <fwapi.h>
 #include <uart.h>
 #include "user_btn.h"
 
 //    PC13 - User btn (internal pull-up). 0=btn is pressed
-void user_btn_init() {
+extern "C" void user_btn_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
     GPIO_registers_type *P = (GPIO_registers_type *)GPIOC_BASE;
@@ -79,7 +79,7 @@ void user_btn_init() {
 }
 
 // EXTI15_10
-void Btn_IRQHandler() {
+extern "C" void Btn_IRQHandler() {
     GPIO_registers_type *PC = (GPIO_registers_type *)GPIOC_BASE;
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     user_btn_type *p = (user_btn_type *)fw_get_ram_data(USER_BTN_DRV_NAME);

@@ -19,50 +19,22 @@
 #include "fwkernel.h"
 
 /**
- * @brief Single tone variable that creates all other modules and drivers
- */
-KernelClass kernel;
-
-/**
- * @brief Access method to KernelInterface from API file. This method allows
- *        to avoid including of the KernelClass.h file and as result interact
- *        only using virtual interface classes.
- */
-extern "C" KernelInterface *GetKernelInterface()
-{
-    return static_cast<KernelInterface *>(&kernel);
-}
-
-/**
  * @brief Kernel module constructor. Instance of this KernelClass registered
  *        as the first element in the single linked list of FwObjects.
  */
-KernelClass::KernelClass() : FwObject("kernel"),
+KernelClass::KernelClass(const char *name) : FwObject(name),
     version_("Version"),
-    listCnt_("ListCnt"),
-    listMax_("ListMax"),
     relais0_("relais0", 0),
     relais1_("relais1", 1)
 {
-    // Add First element of the linked list to kernel itself
-    objlist_ = &list_array_[0];
-    objlist_->next = 0;
-    objlist_->payload = static_cast<FwObject *>(this);
-
     version_.make_uint32(0x20240804);
-    listCnt_.make_int16(1);
-    listMax_.make_int16(OBJECT_LIST_MAX);
 }
 
 /**
  * @brief Overrided FwObject method to register attribtues and interface
  */
 void KernelClass::Init() {
-    RegisterInterface(static_cast<KernelInterface *>(this));
-
     RegisterAttribute(&version_);
-    RegisterAttribute(&listCnt_);
-    RegisterAttribute(&listMax_);
 }
 
 /**
@@ -71,7 +43,7 @@ void KernelClass::Init() {
 void KernelClass::PostInit() {
     FwObject *obj;
     FwAttribute *attr;
-    FwList *p = GetObjectList();
+    FwList *p = fw_get_objects_list();
     FwList *alist;
     int obj_idx;
     int atr_idx;
@@ -79,12 +51,12 @@ void KernelClass::PostInit() {
     uart_printf("Registered objects list:\r\n");
     obj_idx = 0;
     while (p) {
-        obj = static_cast<FwObject *>(fwlist_payload(p));
+        obj = static_cast<FwObject *>(fwlist_get_payload(p));
         uart_printf("  Attributes of class '%s':\r\n", obj->ObjectName());
         alist = obj->GetAttributes();
         atr_idx = 0;
         while (alist) {
-            attr = (FwAttribute *)fwlist_payload(alist);
+            attr = (FwAttribute *)fwlist_get_payload(alist);
             uart_printf("    ID[%d,%d] => %s", obj_idx, atr_idx, attr->name());
             switch (attr->kind()) {
             case Attr_String:
@@ -135,39 +107,3 @@ void KernelClass::PostInit() {
     uart_printf("\r\n");
 }
 
-/**
- * @brief Allocated new list item to add into one of linked lists
- * @return Pointer to an empty FwList structure. In a case if there's
- *         no empty item, infinite cycle with the continous debug output
- *         will be generated.
- */
-FwList *KernelClass::GetEmptyListItem() {
-    int cnt = listCnt_.to_int16();
-    FwList *ret = &list_array_[cnt];
-    if (cnt >= OBJECT_LIST_MAX) {
-        while (1) {
-            uart_printf("Increase FwList size OBJECT_LIST_MAX=%d\r\n",
-                        OBJECT_LIST_MAX);
-        }
-    }
-    listCnt_.make_int16(cnt + 1);
-    return ret;
-}
-
-/**
- * @brief Register new FwObject as the payload of the FwList structure
- * param[in] pnew Pointer to an object that should be added into object
- *                single linked linst stored in the kernel.
- * @note Nice optimization is to implement sorting algorithm to speed-up
- *       list search.
- */
-void KernelClass::RegisterObject(FwObject *obj) {
-    FwList *pnew = fw_empty_list_item();
-    fwlist_init(pnew, obj);
-
-    if (objlist_ == 0) {
-        objlist_ = pnew;
-    } else {
-        fwlist_add(objlist_, pnew);
-    }
-}
