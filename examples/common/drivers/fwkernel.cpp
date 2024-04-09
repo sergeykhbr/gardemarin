@@ -25,7 +25,8 @@
 KernelClass::KernelClass(const char *name) : FwObject(name),
     version_("Version"),
     relais0_("relais0", 0),
-    relais1_("relais1", 1)
+    relais1_("relais1", 1),
+    dbc_("dbc")
 {
     version_.make_uint32(0x20240804);
 }

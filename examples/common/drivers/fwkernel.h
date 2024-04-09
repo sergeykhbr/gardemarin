@@ -20,6 +20,7 @@
 #include <fwobject.h>
 #include <FwAttribute.h>
 #include "relais.h"
+#include "dbc.h"
 
 class KernelClass : public FwObject {
  public:
@@ -35,4 +36,5 @@ class KernelClass : public FwObject {
 
     RelaisDriver relais0_;
     RelaisDriver relais1_;
+    DbcConverter dbc_;        // CAN database converter
 };
