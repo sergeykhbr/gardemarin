@@ -21,7 +21,7 @@ Board is capable to control:
 Full setup includes the following items:
 
 1. Gardemarin (ARM M4F) board
-2. Vision Five 2 (RISC-V) board
+2. Vision Five 2 (RISC-V) Single Board Computer (SBC)
 3. Cyclone FX Debugger
 
 ![Top Side](docs/pics/dev_setup.png)
@@ -29,7 +29,7 @@ Full setup includes the following items:
 Vision Five 2 board provides touch screen controll functions and interacts with the
 Gardermarin board mainly through the CAN bus.
 
-Current repository contains the following examples:
+## Examples
 
 * Common code reusable by others applications.
 * Non-modified Free RTOS source code used by examples running this Operational System
@@ -44,3 +44,14 @@ Current repository contains the following examples:
   - CAN over Ethernet 
   - And some other useful examples
 
+## CAN database file (DBC)
+
+All examples in repository providing CAN access contains DBC converter and special SW layer
+that allows to interact (read/write) with the object's attributes. List of all registered 
+objects and its attributes is output during startup. DBC formatted information could be saved
+into the _*.dbc_ file and used by third-party CAN analyzers.
+
+Application startup output example:
+
+```
+```
