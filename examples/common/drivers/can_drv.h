@@ -14,52 +14,49 @@
  *  limitations under the License.
  */
 
-#include <gardemarin.h>
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <fwlist.h>
+#include <fwobject.h>
+#include <FwAttribute.h>
+#include <CanInterface.h>
 #include <gpio_drv.h>
 #include <can.h>
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class CanDriver : public FwObject,
+                  public CanInterface {
+ public:
+    CanDriver(const char *name, int busid);
 
-#define CAN_DRV_NAME "can"
+    // FwObject interface:
+    virtual void Init() override;
+    virtual void PostInit() override;
 
-#define CAN_RX_FRAMES_MAX 4
+    // CanInterface:
+    virtual void RxInterruptHandler(int fifoid) override;
+    virtual void SetBaudrated(uint32_t baud) override;
+    virtual void StartListenerMode() override;
+    virtual void Stop() override;
+    virtual void RegisterCanListener(CanListenerInterface *iface) override {}
+    virtual int ReadCanFrame(can_frame_type *frame) override;
 
-typedef union can_payload_type {
-    uint32_t u32[2];
-    uint8_t u8[8];
-} can_payload_type;
+ protected:
+    virtual uint32_t hwid2canid(uint32_t hwid);
 
-typedef struct can_frame_type {
-    uint32_t timestamp;
-    uint32_t id;
-    uint8_t dlc;
-    uint8_t busid;
-    can_payload_type data;
-} can_frame_type;
+ protected:
+    FwAttribute baudrate_;
+    FwAttribute mode_;
+    FwAttribute test1_;
 
-typedef struct can_bus_type {
-    gpio_pin_type gpio_cfg_rx;
-    gpio_pin_type gpio_cfg_tx;
-    CAN_registers_type *dev;
-} can_bus_type;
+    static const int CAN_RX_FRAMES_MAX = 4;
 
-typedef struct can_type {
-    can_bus_type bus[GARDEMARIN_CAN_BUS_TOTAL];
+    int busid_;
+    gpio_pin_type gpio_cfg_rx_;
+    gpio_pin_type gpio_cfg_tx_;
+    CAN_registers_type *dev_;
 
-    int rx_frame_cnt;
+    int rxframe_wcnt;
+    int rxframe_rcnt;
     can_frame_type rxframes[CAN_RX_FRAMES_MAX];
-} can_type;
-
-void can_init();
-void can_bus_listener_start(can_type *p, int busid);
-void can_bus_listener_stop(can_type *p, int busid);
-
-#ifdef __cplusplus
-}
-#endif
+};

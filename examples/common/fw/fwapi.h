@@ -20,26 +20,6 @@
 #include <fwlist.h>
 #include <stdarg.h>
 
-/*
- * @brief CAN ID used in FW to form DBC output and CAN filters
- * @{
- */
-/** @brief CAN ID for debug output */
-static const uint32_t CAN_MSG_ID_DBG_OUTPT = 0x776;
-/**
- * @brief Temporary CAN ID for the read messages. This value used to setup
- *        Rx CAN filter and properly handle Read/Write request
- */
-static const uint32_t CAN_MSG_ID_READ_DATA = 0x777;
-/**
- * @brief Temporary CAN ID for the write messages. This value used to setup
- *        Rx CAN filter and properly handle Read/Write request
- */
-static const uint32_t CAN_MSG_ID_WRITE_DATA = 0x778;
-/**
- * @}
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif

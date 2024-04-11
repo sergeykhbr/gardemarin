@@ -17,6 +17,7 @@
 #include <prjtypes.h>
 #include <fwapi.h>
 #include <uart.h>
+#include <canframe.h>
 #include "dbc.h"
 
 /**
@@ -78,56 +79,16 @@ void DbcConverter::PostInit() {
     // 2 defined Nodes:
     uart_printf("BU_: GARDEMARIN ANY\r\n\r\n\r\n");
 
-    // Debug message (always 64 bytes for now)
-    uart_printf("BO_ %d GARDEMARIN_DEBUG: 15 GARDEMARIN\r\n\r\n",
-                CAN_MSG_ID_DBG_OUTPT);
+    // Debug message (always 8 bytes for now)
+    uart_printf("BO_ %d GARDEMARIN_DEBUG: 8 GARDEMARIN\r\n\r\n",
+                0x10000000 | CAN_MSG_ID_DBG_OUTPT);  // extended format
 
-    // One message uses 16-bits multiplexer value to provide access
-    // to all objects and attribtues.
-    // Limitation (can be easly increased in a future):
-    //    Maximum number of object = 256
-    //    Maximum number of attributes per one object = 256
-    uart_printf("BO_ %d RD_DATA: %d GARDEMARIN\r\n",
-                CAN_MSG_ID_READ_DATA,
-                GetCanMessageDlc());
-
-    // Print signal DBC multiplexer 2 Bytes [obj_idx, atr_idx] using
-    // index of object and attributes in the lists. Only one multeplexer per
-    // message is possible
-    // @1+    = little-endian, unsigned. Don't change it
-    // (1,0)  = (scale,offset)
-    // [0,0]  = (min,max)
-    // \"\"   = units
-    uart_printf(" SG_ RD_DATA_mux M : %d|16@1+ (1,0) [0|0] \"\" ANY\r\n",
-                start_bit);
-    start_bit += 16;
 
     p = fw_get_objects_list();
     obj_idx = 0;
     while (p) {
         obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
-        printDbcObject("RD_DATA", start_bit, obj_idx, obj, "ANY");
-        p = p->next;
-        obj_idx++;
-    }
-    uart_printf("\r\n");
-
-    // Do the same message for write request.
-    // SENDER = ANY
-    start_bit = 0;
-    uart_printf("BO_ %d WR_DATA: %d ANY\r\n",
-        CAN_MSG_ID_WRITE_DATA,
-        GetCanMessageDlc());
-
-    uart_printf(" SG_ WR_DATA_mux M : %d|16@1+ (1,0) [0|0] \"\" GARDEMARIN\r\n",
-        start_bit);
-    start_bit += 16;
-
-    p = fw_get_objects_list();
-    obj_idx = 0;
-    while (p) {
-        obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
-        printDbcObject("WR_DATA", start_bit, obj_idx, obj, "GARDEMARIN");
+        printDbcObject(obj_idx, obj, "GARDEMARIN");
         p = p->next;
         obj_idx++;
     }
@@ -135,10 +96,10 @@ void DbcConverter::PostInit() {
 
     // Add Nodes description:
     uart_printf("CM_ BU_ GARDEMARIN \"Prototype of the aeroponic "
-                 "system base on S32F407* CPU\";\r\n");
+                 "system base on ST32F407* CPU\";\r\n");
     uart_printf("CM_ BU_ ANY \"Any target like host PC or Hardware\";\r\n");
     uart_printf("CM_ BO_ %d \"Debug output strings\";\r\n",
-                CAN_MSG_ID_DBG_OUTPT);
+                0x10000000 | CAN_MSG_ID_DBG_OUTPT);
     uart_printf("\r\n");
 
     // TODO: add enum format output
@@ -268,25 +229,30 @@ int DbcConverter::GetCanMessageDlc() {
 /**
  * @brief Print SG_ lines for a attribute of the object into DBG output
  */
-int DbcConverter::printDbcAttribute(const char *prefix,
-                                    int obj_idx,
-                                    int atr_idx,
+int DbcConverter::printDbcAttribute(int mux_idx,
                                     int start_bit,
                                     const char *objname,
                                     FwAttribute *atr,
                                     const char *dstname) {
-    // multiplexer value
-    int m = (obj_idx << 8) | atr_idx;
+
     int bit_sz = atr->BitSize();
-    uart_printf(" SG_ %s_%s_%s m%d : %d|%d@1+ (1,0) [0|0] \"\" %s\r\n",
-        prefix,
-        objname,
-        atr->name(),
-        m,
+    uart_printf(" SG_ %s_%s", objname, atr->name());
+
+    if (mux_idx != -1) {
+        uart_printf(" m%d", mux_idx);
+    }
+
+
+    // @1+    = little-endian, unsigned. Don't change it
+    // (1,0)  = (scale,offset)
+    // [0,0]  = (min,max)
+    // \"\"   = units
+    uart_printf(" : %d|%d@1+ (1,0) [0|0] \"\" %s\r\n",
         start_bit,
         bit_sz,
         dstname
         );
+
     start_bit += bit_sz;
     return start_bit;
 }
@@ -297,23 +263,60 @@ int DbcConverter::printDbcAttribute(const char *prefix,
  * @warning Do not increment start_bit for now, transmit attribtues in a
  *          separate messages without packing (maybe changed in future)
  */
-void DbcConverter::printDbcObject(const char *prefix,
-                                 int start_bit,
-                                 int obj_idx,
+void DbcConverter::printDbcObject(int obj_idx,
                                  FwObject *obj,
                                  const char *dstname) {
     int atr_idx = 0;
+    int start_bit = 0;
+    int mux_idx = -1;
+    int bits_total = 0;
     FwList *atrlist = obj->GetAttributes();
     FwAttribute *atr;
+
     while (atrlist) {
-        atr = reinterpret_cast<FwAttribute *>(fwlist_get_payload(atrlist));
-        printDbcAttribute(prefix,
-                          obj_idx,
-                          atr_idx,
-                          start_bit,
-                          obj->ObjectName(),
-                          atr, dstname);
         atrlist = atrlist->next;
+        if (bits_total < atr->BitSize()) {
+             bits_total = atr->BitSize();
+        }
         atr_idx++;
     }
+    if (atr_idx > 1) {
+        bits_total += 8;
+        start_bit = 8;
+        mux_idx = 0;
+    }
+
+    uart_printf("BO_ %d %s: %d GARDEMARIN\r\n",
+                0x10000000 | (OBJ_MSG_ID(obj_idx)),
+                obj->ObjectName(),
+                (bits_total + 7) / 8);
+
+
+    // Use multiplexer [7:0] to access attributes:
+    if (atr_idx > 1) {
+        uart_printf(" SG_ %s_mux M", obj->ObjectName());
+
+        // @1+    = little-endian, unsigned. Don't change it
+        // (1,0)  = (scale,offset)
+        // [0,0]  = (min,max)
+        // \"\"   = units
+        uart_printf(" : 0|8d@1+ (1,0) [0|0] \"\" %s\r\n", dstname);
+    }
+
+    atrlist = obj->GetAttributes();
+    while (atrlist) {
+        atr = reinterpret_cast<FwAttribute *>(fwlist_get_payload(atrlist));
+
+        start_bit = printDbcAttribute(mux_idx,
+                                      start_bit,
+                                      obj->ObjectName(),
+                                      atr,
+                                      dstname);
+        atrlist = atrlist->next;
+        if (mux_idx != -1) {
+            start_bit = 8;
+            mux_idx++;
+        }
+    }
+    uart_printf("\r\n");
 }

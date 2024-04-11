@@ -55,4 +55,89 @@ CAN software.
 Example of application startup output:
 
 ```
+Registered objects list:
+  Attributes of class 'kernel':
+    ID[0,0] => Version, uint32, 0x20240804
+  Attributes of class 'relais0':
+    ID[1,0] => State, int16, 0
+  Attributes of class 'relais1':
+    ID[2,0] => State, int16, 0
+  Attributes of class 'can1':
+    ID[3,0] => baudrate, uint32, 0x0007a120
+    ID[3,1] => mode, int8, 2
+    ID[3,2] => test1, uint32, 0xcafef00d
+  Attributes of class 'can2':
+    ID[4,0] => baudrate, uint32, 0x0007a120
+    ID[4,1] => mode, int8, 2
+    ID[4,2] => test1, uint32, 0xcafef00d
+  Attributes of class 'dbc':
+
+VERSION ""
+
+NS_ :
+        BA_
+        BA_DEF
+        BA_DEF_DEF_
+        BA_DEF_DEF_REL_
+        BA_DEF_REL_
+        BA_DEF_SGTYPE_
+        BA_REL_
+        BA_SGTYPE_
+        BO_TX_BU_
+        BU_BO_REL_
+        BU_EV_REL_
+        BU_SG_REL_
+        CAT_
+        CAT_DEF_
+        CM_
+        ENVVAR_DATA_
+        EV_DATA_
+        FILTER
+        NS_DESC_
+        SGTYPE_
+        SGTYPE_VAL_
+        SG_MUL_VAL_
+        SIGTYPE_VALTYPE_
+        SIG_GROUP_
+        SIG_TYPE_REF_
+        SIG_VALTYPE_
+        VAL_
+        VAL_TABLE_
+BS_:
+
+BU_: GARDEMARIN ANY
+
+
+BO_ 268437366 GARDEMARIN_DEBUG: 8 GARDEMARIN
+
+BO_ 268435712 kernel: 1 GARDEMARIN
+ SG_ kernel_Version : 0|32@1+ (1,0) [0|0] "" GARDEMARIN
+
+BO_ 268435712 relais0: 1 GARDEMARIN
+ SG_ relais0_State : 0|16@1+ (1,0) [0|0] "" GARDEMARIN
+
+BO_ 268436224 relais1: 1 GARDEMARIN
+ SG_ relais1_State : 0|16@1+ (1,0) [0|0] "" GARDEMARIN
+
+BO_ 268436224 can1: 2 GARDEMARIN
+ SG_ can1_mux M : 0|8d@1+ (1,0) [0|0] "" GARDEMARIN
+ SG_ can1_baudrate m0 : 8|32@1+ (1,0) [0|0] "" GARDEMARIN
+ SG_ can1_mode m1 : 8|8@1+ (1,0) [0|0] "" GARDEMARIN
+ SG_ can1_test1 m2 : 8|32@1+ (1,0) [0|0] "" GARDEMARIN
+
+BO_ 268436736 can2: 2 GARDEMARIN
+ SG_ can2_mux M : 0|8d@1+ (1,0) [0|0] "" GARDEMARIN
+ SG_ can2_baudrate m0 : 8|32@1+ (1,0) [0|0] "" GARDEMARIN
+ SG_ can2_mode m1 : 8|8@1+ (1,0) [0|0] "" GARDEMARIN
+ SG_ can2_test1 m2 : 8|32@1+ (1,0) [0|0] "" GARDEMARIN
+
+BO_ 268436736 dbc: 0 GARDEMARIN
+
+
+CM_ BU_ GARDEMARIN "Prototype of the aeroponic system base on ST32F407* CPU";
+CM_ BU_ ANY "Any target like host PC or Hardware";
+CM_ BO_ 268437366 "Debug output strings";
+
+
+Starting FreeRTOS scheduler!
 ```

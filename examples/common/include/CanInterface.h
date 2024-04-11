@@ -16,28 +16,25 @@
 
 #pragma once
 
-#include <fwlist.h>
-#include <fwobject.h>
-#include <FwAttribute.h>
-#include "relais.h"
-#include "can_drv.h"
-#include "dbc.h"
+#include "CommonInterface.h"
+#include <canframe.h>
 
-class KernelClass : public FwObject {
+class CanListenerInterface : public CommonInterface {
  public:
-    explicit KernelClass(const char *name);
+    CanListenerInterface() : CommonInterface("CanListenerInterface") {}
 
-    // FwObject interface:
-    virtual void Init() override;
-    virtual void PostInit() override;
+    virtual void CanCallback(can_frame_type *frame) = 0;
+};
 
- private:
-    /** @brief Kernel Version attribute */
-    FwAttribute version_;
 
-    RelaisDriver relais0_;
-    RelaisDriver relais1_;
-    CanDriver can1_;
-    CanDriver can2_;
-    DbcConverter dbc_;        // CAN database converter
+class CanInterface : public CommonInterface {
+ public:
+    CanInterface() : CommonInterface("CanInterface") {}
+
+    virtual void RxInterruptHandler(int fifoid) = 0;
+    virtual void SetBaudrated(uint32_t baud) = 0;
+    virtual void StartListenerMode() = 0;
+    virtual void Stop() = 0;
+    virtual void RegisterCanListener(CanListenerInterface *iface) = 0;
+    virtual int ReadCanFrame(can_frame_type *frame) = 0;
 };

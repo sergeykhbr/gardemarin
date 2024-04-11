@@ -41,9 +41,7 @@ class DbcConverter : public FwObject,
     /**
      * @brief Print SG_ lines for a attribute of the object into DBG output
      */
-    int printDbcAttribute(const char *prefix,
-                         int obj_idx,
-                         int atr_idx,
+    int printDbcAttribute(int mux_idx,
                          int start_bit,
                          const char *objname,
                          FwAttribute *atr,
@@ -55,9 +53,7 @@ class DbcConverter : public FwObject,
      * @warning Do not increment start_bit for now, transmit attribtues in a
      *          separate messages without packing (maybe changed in future)
      */
-    void printDbcObject(const char *prefix,
-                        int start_bit,
-                        int obj_idx,
+    void printDbcObject(int obj_idx,
                         FwObject *obj,
                         const char *dstname);
 

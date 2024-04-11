@@ -20,6 +20,7 @@
 #include <uart.h>
 #include <fwapi.h>
 #include <BinInterface.h>
+#include <CanInterface.h>
 #include "task500ms.h"
 
 // current task is 0.5 sec
@@ -27,20 +28,15 @@
 
 /** Print CAN frames
 */
-void output_can_messages(can_type *data) {
-    can_frame_type *f;
-    for (int i = 0; i < data->rx_frame_cnt; i++) {
-        f = &data->rxframes[i];
-        uart_printf("%d=>%08x %d",
-                    f->busid,
-                    f->id,
-                    f->dlc);
-        for (uint8_t n = 0; n < f->dlc; n++) {
-            uart_printf(" %02x", f->data.u8[n]);
-        }
-        uart_printf("%s", "\r\n");
+void output_can_messages(can_frame_type *frame) {
+    uart_printf("%d=>%08x %d",
+                frame->busid,
+                frame->id,
+                frame->dlc);
+    for (uint8_t n = 0; n < frame->dlc; n++) {
+        uart_printf(" %02x", frame->data.u8[n]);
     }
-    data->rx_frame_cnt = 0;
+     uart_printf("%s", "\r\n");
 }
 
 
@@ -85,31 +81,24 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state++;
         break;
     case SERVICE_STATE_CAN1_START:
-        can_bus_listener_start(&data->can_data, 0);
         uart_printf("[%d] CAN1 sniffer started\r\n", xTaskGetTickCount());
         data->service_state++;
         break;
     case SERVICE_STATE_CAN1_SNIFFER:
-        output_can_messages(&data->can_data);
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("can1", "CanInterface"));
+        if (iface) {
+            can_frame_type can_data;
+            while (static_cast<CanInterface *>(iface)->ReadCanFrame(&can_data)) {
+                output_can_messages(&can_data);
+            }
+        }
         if (btnClick) {
             data->service_state++;
         }
         break;
-    case SERVICE_STATE_CAN2_SWITCH:
-        can_bus_listener_stop(&data->can_data, 0);
-        can_bus_listener_start(&data->can_data, 1);
-        uart_printf("[%d] CAN1 stopped, CAN2 sniffer started\r\n", xTaskGetTickCount());
-        data->service_state++;
-        break;
-    case SERVICE_STATE_CAN2_SNIFFER:
-        output_can_messages(&data->can_data);
-        if (btnClick) {
-            data->service_state++;
-        }
-        break;
-    case SERVICE_STATE_CAN2_STOP:
-        can_bus_listener_stop(&data->can_data, 1);
-        uart_printf("[%d] CAN2 stopped\r\n", xTaskGetTickCount());
+    case SERVICE_STATE_CAN1_STOP:
+        uart_printf("[%d] CAN1 stopped\r\n", xTaskGetTickCount());
         data->service_state++;
         break;
     case SERVICE_STATE_RELAY0_ENA:

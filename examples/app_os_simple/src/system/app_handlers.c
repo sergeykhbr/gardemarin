@@ -15,5 +15,4 @@
  */
 
 #include <prjtypes.h>
-#include <can_drv.h>
 #include "system_handlers.h"
