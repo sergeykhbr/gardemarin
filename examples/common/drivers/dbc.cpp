@@ -81,7 +81,7 @@ void DbcConverter::PostInit() {
 
     // Debug message (always 8 bytes for now)
     uart_printf("BO_ %d GARDEMARIN_DEBUG: 8 GARDEMARIN\r\n\r\n",
-                0x10000000 | CAN_MSG_ID_DBG_OUTPT);  // extended format
+                0x80000000 | CAN_MSG_ID_DBG_OUTPT);  // extended format
 
 
     p = fw_get_objects_list();
@@ -99,7 +99,7 @@ void DbcConverter::PostInit() {
                  "system base on ST32F407* CPU\";\r\n");
     uart_printf("CM_ BU_ ANY \"Any target like host PC or Hardware\";\r\n");
     uart_printf("CM_ BO_ %d \"Debug output strings\";\r\n",
-                0x10000000 | CAN_MSG_ID_DBG_OUTPT);
+                0x80000000 | CAN_MSG_ID_DBG_OUTPT);
     uart_printf("\r\n");
 
     // TODO: add enum format output
@@ -287,7 +287,7 @@ void DbcConverter::printDbcObject(int obj_idx,
     }
 
     uart_printf("BO_ %d %s: %d GARDEMARIN\r\n",
-                0x10000000 | (OBJ_MSG_ID(obj_idx)),
+                0x80000000 | (OBJ_MSG_ID(obj_idx)),
                 obj->ObjectName(),
                 (bits_total + 7) / 8);
 

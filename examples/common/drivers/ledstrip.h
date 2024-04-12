@@ -16,26 +16,78 @@
 
 #include <gardemarin.h>
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <fwlist.h>
+#include <fwobject.h>
+#include <FwAttribute.h>
+#include <PwmInterface.h>
+#include <IrqInterface.h>
 #include <gpio_drv.h>
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class LedColorPort : public PwmInterface {
+ public:
+    LedColorPort(FwObject *parent,
+                 const gpio_pin_type *pin,
+                 const char *portname,
+                 int idx);
 
-#define LED_STRIP_DRV_NAME "ledstr"
+    // PwmInterface:
+    virtual void setPwmHz(int hz) override;
+    virtual void setPwmDutyCycle(int duty) override;
+    virtual void enablePwm() override;
+    virtual void disablePwm() override;
 
-typedef struct led_strip_type {
-    gpio_pin_type gpio_cfg[GARDEMARIN_LED_STRIP_TOTAL];
-    uint32_t enable;
-} led_strip_type;
+ protected:
+    FwObject *parent_;
+    const gpio_pin_type *pin_;
+    int idx_;
+};
 
-void led_strip_init();
-void led_strip_on(int idx, int dimrate);
-void led_strip_off(int idx);
+// Use one PWM generator TIM2_CH3 at high frequency (2..100 kHz) to form
+// LED channel PWM with the frequency 200 Hz (default)
+class LedStripDriver : public FwObject,
+                       public IrqHandlerInterface {
+ public:
+    LedStripDriver(const char *name);
 
-#ifdef __cplusplus
-}
-#endif
+    // FwObject interface:
+    virtual void Init() override;
+
+    // IrqHandler interface:
+    virtual void handleInterrupt(int *argv) override;
+
+ public:
+    // Accessed from channels:
+    void setChannelPwmHz(int chidx, int hz) {}
+    void setChannelPwmDutyCycle(int chidx, int duty) {}
+
+
+ protected:
+    FwAttribute tim_hz_;
+    FwAttribute red_hz_;
+    FwAttribute red_duty_;
+    FwAttribute blue_hz_;
+    FwAttribute blue_duty_;
+    FwAttribute white_hz_;
+    FwAttribute white_duty_;
+    FwAttribute mixed_hz_;
+    FwAttribute mixed_duty_;
+
+    LedColorPort red_;
+    LedColorPort blue_;
+    LedColorPort white_;
+    LedColorPort mixed_;
+
+    uint32_t tim_cnt_;
+
+    // for the fast access initialize in constructor the following pointers
+    // instead of using new() operator
+    struct ColorChannelType {
+        FwAttribute *hz;
+        FwAttribute *duty;
+        LedColorPort *port;
+        uint32_t cnt_modulo;      // tim_cnt % cnt_module
+        uint32_t cnt_switch;      // cnt_switch < (tim_cnt % cnt_module) is "ON, otherwise "OFF"
+    } chn_[GARDEMARIN_LED_STRIP_TOTAL];
+};

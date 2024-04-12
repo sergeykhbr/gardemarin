@@ -18,7 +18,7 @@
 #include <stm32f4xx_map.h>
 #include "gpio_drv.h"
 
-void gpio_pin_as_output(gpio_pin_type *p,
+void gpio_pin_as_output(const gpio_pin_type *p,
                         uint32_t odrain,
                         uint32_t speed,
                         uint32_t pushpull) {
@@ -49,7 +49,7 @@ void gpio_pin_as_output(gpio_pin_type *p,
     write32(&p->port->PUPDR, t1);
 }
 
-void gpio_pin_as_alternate(gpio_pin_type *p,
+void gpio_pin_as_alternate(const gpio_pin_type *p,
                            uint32_t ADx) {
 
     uint32_t t1;
@@ -66,10 +66,10 @@ void gpio_pin_as_alternate(gpio_pin_type *p,
     write32(&p->port->AFR[p->pinidx >> 3], t1);
 }
 
-void gpio_pin_set(gpio_pin_type *p) {
+void gpio_pin_set(const gpio_pin_type *p) {
     write16(&p->port->BSRRL, (1 << p->pinidx));
 }
 
-void gpio_pin_clear(gpio_pin_type *p) {
+void gpio_pin_clear(const gpio_pin_type *p) {
     write16(&p->port->BSRRH, (1 << p->pinidx));
 }

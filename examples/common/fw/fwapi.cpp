@@ -119,6 +119,27 @@ extern "C" void *fw_get_object_interface(const char *objname,
 }
 
 /**
+ * @brief Get pointer to the specified interface of the specified FwObject.
+ *        when the object implements several interfaces of the same type
+ * @param[i] objname Object name string used as the FwObject identificator.
+ * @param[i] portname Port name to witch the interface is bound.
+ * @param[i] facename Interface name.
+ * @return Pointer to CommonInterface if the specified interface was found
+ *         or zero value otherwise
+ */
+void *fw_get_object_port_interface(const char *objname,
+                                   const char *portname,
+                                   const char *facename) {
+    FwObject *obj;
+    CommonInterface *ret = 0;
+    obj = reinterpret_cast<FwObject *>(fw_get_object(objname));
+    if (obj) {
+        ret = obj->GetPortInterface(portname, facename);
+    }
+    return ret;
+}
+
+/**
  * @brief Get FwObject interface using DBC index corresponding to
  *        index in object list
  * @param[in] obj_idx Index of FwObject in the object list

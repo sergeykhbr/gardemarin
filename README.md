@@ -1,7 +1,5 @@
 # STM32 Gardemarin
 
-# STM32 Gardemarin
-
 The STM32 Gardemarin kit empowers users to craft their own systems with multiple motors and sensors,
 all controlled by a single board featuring the ARM Cortex M4F processor.
 

@@ -23,58 +23,108 @@
 // LED[1] PE[0]
 // LED[2] PE[1]
 // LED[3] PE[15]
-extern "C" void led_strip_init() {
-    led_strip_type *p = (led_strip_type *)fw_get_ram_data(LED_STRIP_DRV_NAME);
-    if (p == 0) {
-         return;
-    }
+static const gpio_pin_type gpio_cfg[GARDEMARIN_LED_STRIP_TOTAL] = {
+    {(GPIO_registers_type *)GPIOB_BASE, 10},
+    {(GPIO_registers_type *)GPIOE_BASE, 0},
+    {(GPIO_registers_type *)GPIOE_BASE, 1},
+    {(GPIO_registers_type *)GPIOE_BASE, 15}
+};
 
-    p->gpio_cfg[0].port = (GPIO_registers_type *)GPIOB_BASE;
-    p->gpio_cfg[0].pinidx = 10;
+LedStripDriver::LedStripDriver(const char *name) : FwObject(name),
+    tim_hz_("tim_hz"),
+    red_hz_("red_hz"),
+    red_duty_("red_duty"),
+    blue_hz_("blue_hz"),
+    blue_duty_("blue_duty"),
+    white_hz_("white_hz"),
+    white_duty_("white_duty"),
+    mixed_hz_("mixed_hz"),
+    mixed_duty_("mixed_duty"),
+    red_(static_cast<FwObject *>(this), &gpio_cfg[0], "red", 0),
+    blue_(static_cast<FwObject *>(this), &gpio_cfg[1], "blue", 1),
+    white_(static_cast<FwObject *>(this), &gpio_cfg[2], "white", 2),
+    mixed_(static_cast<FwObject *>(this), &gpio_cfg[3], "mixed", 3) {
 
-    p->gpio_cfg[1].port = (GPIO_registers_type *)GPIOE_BASE;
-    p->gpio_cfg[1].pinidx = 0;
+    tim_cnt_ = 0;
 
-    p->gpio_cfg[2].port = (GPIO_registers_type *)GPIOE_BASE;
-    p->gpio_cfg[2].pinidx = 1;
+    // access by index:
+    chn_[0].hz = &red_hz_;
+    chn_[0].duty = &red_duty_;
+    chn_[0].port = &red_;
+    chn_[1].hz = &blue_hz_;
+    chn_[1].duty = &blue_duty_;
+    chn_[1].port = &blue_;
+    chn_[2].hz = &white_hz_;
+    chn_[2].duty = &white_duty_;
+    chn_[2].port = &white_;
+    chn_[3].hz = &mixed_hz_;
+    chn_[3].duty = &mixed_duty_;
+    chn_[3].port = &mixed_;
+}
 
-    p->gpio_cfg[3].port = (GPIO_registers_type *)GPIOE_BASE;
-    p->gpio_cfg[3].pinidx = 15;
+void LedStripDriver::Init() {
+    RegisterAttribute(&tim_hz_);
+    RegisterAttribute(&red_hz_);
+    RegisterAttribute(&red_duty_);
+    RegisterAttribute(&blue_hz_);
+    RegisterAttribute(&blue_duty_);
+    RegisterAttribute(&white_hz_);
+    RegisterAttribute(&white_duty_);
+    RegisterAttribute(&mixed_hz_);
+    RegisterAttribute(&mixed_duty_);
+
+    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
+    RegisterPortInterface("red", static_cast<PwmInterface *>(&red_));
+    RegisterPortInterface("blue", static_cast<PwmInterface *>(&blue_));
+    RegisterPortInterface("white", static_cast<PwmInterface *>(&white_));
+    RegisterPortInterface("mixed", static_cast<PwmInterface *>(&mixed_));
+}
+
+void LedStripDriver::handleInterrupt(int *argv) {
+    int cnt;
+    ColorChannelType *pch;
+    ++tim_cnt_;
 
     for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
-        gpio_pin_as_output(&p->gpio_cfg[i],
-                           GPIO_NO_OPEN_DRAIN,
-                           GPIO_SLOW,
-                           GPIO_NO_PUSH_PULL);
-
-        led_strip_off(i);
+        pch = &chn_[i];
+        cnt = tim_cnt_ % pch->cnt_modulo;
+        if (cnt < pch->cnt_switch) {
+            pch->port->disablePwm();
+        } else {
+            pch->port->enablePwm();
+        }
     }
 }
 
-extern "C" void led_strip_on(int idx, int dimrate) {
-    led_strip_type *p = (led_strip_type *)fw_get_ram_data(LED_STRIP_DRV_NAME);
-    if (p == 0) {
-         return;
-    }
-    if (idx < 0 || idx >= GARDEMARIN_LED_STRIP_TOTAL) {
-        for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
-            gpio_pin_set(&p->gpio_cfg[i]);
-        }
-    } else {
-        gpio_pin_set(&p->gpio_cfg[idx]);
-    }
+LedColorPort::LedColorPort(FwObject *parent,
+                           const gpio_pin_type *pin,
+                           const char *portname,
+                           int idx) :
+    parent_(parent),
+    pin_(pin),
+    idx_(idx) {
+
+    gpio_pin_as_output(pin,
+                       GPIO_NO_OPEN_DRAIN,
+                       GPIO_SLOW,
+                       GPIO_NO_PUSH_PULL);
+    disablePwm();
 }
 
-extern "C" void led_strip_off(int idx) {
-    led_strip_type *p = (led_strip_type *)fw_get_ram_data(LED_STRIP_DRV_NAME);
-    if (p == 0) {
-         return;
-    }
-    if (idx < 0 || idx >= GARDEMARIN_LED_STRIP_TOTAL) {
-        for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
-            gpio_pin_clear(&p->gpio_cfg[i]);
-        }
-    } else {
-        gpio_pin_clear(&p->gpio_cfg[idx]);
-    }
+void LedColorPort::setPwmHz(int hz) {
+    LedStripDriver *p = static_cast<LedStripDriver *>(parent_);
+    p->setChannelPwmHz(idx_, hz);
+}
+
+void LedColorPort::setPwmDutyCycle(int duty) {
+    LedStripDriver *p = static_cast<LedStripDriver *>(parent_);
+    p->setChannelPwmDutyCycle(idx_, duty);
+}
+
+void LedColorPort::enablePwm() {
+    gpio_pin_set(pin_);
+}
+
+void LedColorPort::disablePwm() {
+    gpio_pin_clear(pin_);
 }

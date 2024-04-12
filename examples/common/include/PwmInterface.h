@@ -29,6 +29,9 @@ class PwmInterface : public CommonInterface {
     // Percentage 1..100 duty cycle
     //   100 = No PWM fully enabled
     //   0 = disabled
-    virtual void setPwmRate(int rate) = 0;
+    virtual void setPwmDutyCycle(int duty) = 0;
+
+    virtual void enablePwm() = 0;
+    virtual void disablePwm() = 0;
 };
 

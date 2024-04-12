@@ -19,10 +19,15 @@
 #include <fwobject.h>
 #include <uart.h>
 
+struct FwPortType : public FwList {
+    const char *portname;
+};
+
 FwObject::FwObject(const char *name) : CommonInterface("FwObject"),
     objname_(name),
     attrlist_(0),
-    ifacelist_(0)
+    ifacelist_(0),
+    portlist_(0)
 {
     fw_register_object(static_cast<FwObject *>(this));
 }
@@ -39,12 +44,35 @@ void FwObject::RegisterInterface(CommonInterface *attr) {
     fwlist_add(&ifacelist_, pnew);
 }
 
+void FwObject::RegisterPortInterface(const char *portname, CommonInterface *attr) {
+    FwPortType *pnew = reinterpret_cast<FwPortType *>(fw_malloc(sizeof(FwPortType)));
+    pnew->portname = portname;
+    fwlist_set_payload(pnew, attr);
+    fwlist_add(&portlist_, pnew);
+}
+
 CommonInterface *FwObject::GetInterface(const char *name) {
     CommonInterface *ret = 0;
     FwList *p = ifacelist_;
     while (p) {
         ret = reinterpret_cast<CommonInterface *>(fwlist_get_payload(p));
         if (strcmp(ret->GetFaceName(), name) != 0) {
+            ret = 0;
+            p = p->next;
+            continue;
+        }
+        break;
+    }
+    return ret;
+}
+
+CommonInterface *FwObject::GetPortInterface(const char *portname, const char *name) {
+    CommonInterface *ret = 0;
+    FwList *p = portlist_;
+    while (p) {
+        ret = reinterpret_cast<CommonInterface *>(fwlist_get_payload(p));
+        if (strcmp(ret->GetFaceName(), name) != 0
+           || strcmp(static_cast<FwPortType *>(p)->portname, portname) != 0) {
             ret = 0;
             p = p->next;
             continue;

@@ -13,33 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 #pragma once
 
-#include <fwlist.h>
-#include <fwobject.h>
-#include <FwAttribute.h>
-#include "relais.h"
-#include "ledstrip.h"
-#include "can_drv.h"
-#include "dbc.h"
+#include "CommonInterface.h"
 
-class KernelClass : public FwObject {
+class IrqHandlerInterface : public CommonInterface {
  public:
-    explicit KernelClass(const char *name);
+    IrqHandlerInterface() : CommonInterface("IrqHandlerInterface") {}
 
-    // FwObject interface:
-    virtual void Init() override;
-    virtual void PostInit() override;
-
- private:
-    /** @brief Kernel Version attribute */
-    FwAttribute version_;
-
-    RelaisDriver relais0_;
-    RelaisDriver relais1_;
-    LedStripDriver ledrbw_;
-    CanDriver can1_;
-    CanDriver can2_;
-    DbcConverter dbc_;        // CAN database converter
+    virtual void handleInterrupt(int *argv) = 0;
 };
+

@@ -40,13 +40,11 @@ extern "C" int main(int argcnt, char *args[]) {
         fw_register_ram_data(APP_TASK_NAME, appdata);
         fw_register_ram_data(USER_BTN_DRV_NAME, &appdata->task500ms_arg.user_btn);
         fw_register_ram_data(USER_LED_DRV_NAME, &appdata->task500ms_arg.user_led);
-        fw_register_ram_data(LED_STRIP_DRV_NAME, &appdata->task500ms_arg.led_data);
         fw_register_ram_data(MOTOR_DRV_NAME, &appdata->task500ms_arg.motor_data);
     }
 
     user_btn_init();
     user_led_init();
-    led_strip_init();
     motor_driver_init();
     EnableIrqGlobal();
 

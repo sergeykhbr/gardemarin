@@ -39,6 +39,27 @@ void output_can_messages(can_frame_type *frame) {
      uart_printf("%s", "\r\n");
 }
 
+void led_strip_on(const char *name) {
+    CommonInterface *iface = reinterpret_cast<CommonInterface *>(
+          fw_get_object_port_interface("ledrbw", name, "PwmInterface"));
+    if (iface) {
+        static_cast<PwmInterface *>(iface)->enablePwm();
+        uart_printf("[%d] LED %s turn on, dim=100\r\n", xTaskGetTickCount(), name);
+    } else {
+        uart_printf("[%d] LED PWM %s not found\r\n", xTaskGetTickCount(), name);
+    }
+}
+
+void led_strip_off(const char *name) {
+    CommonInterface *iface = reinterpret_cast<CommonInterface *>(
+          fw_get_object_port_interface("ledrbw", name, "PwmInterface"));
+    if (iface) {
+        static_cast<PwmInterface *>(iface)->disablePwm();
+        uart_printf("[%d] LED %s turn off\r\n", xTaskGetTickCount(), name);
+    } else {
+        uart_printf("[%d] LED PWM %s not found\r\n", xTaskGetTickCount(), name);
+    }
+}
 
 void update_service_state(task500ms_data_type *data) {
     // LED blinking in service mode:
@@ -140,36 +161,36 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state++;
         break;
     case SERVICE_STATE_LED0_ON:
-        led_strip_on(0, 100);
-        uart_printf("[%d] LED Strip[0] turn on, dim=100\r\n", xTaskGetTickCount());
+        led_strip_on("red");
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_LED1_ON:
-        led_strip_off(0);
-        led_strip_on(1, 100);
-        uart_printf("[%d] LED Strip[1] turn on, dim=100\r\n", xTaskGetTickCount());
+        led_strip_off("red");
+        led_strip_on("blue");
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_LED2_ON:
-        led_strip_off(1);
-        led_strip_on(2, 100);
-        uart_printf("[%d] LED Strip[2] turn on, dim=100\r\n", xTaskGetTickCount());
+        led_strip_off("blue");
+        led_strip_on("white");
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_LED3_ON:
-        led_strip_off(2);
-        led_strip_on(3, 100);
-        uart_printf("[%d] LED Strip[3] turn on, dim=100\r\n", xTaskGetTickCount());
+        led_strip_off("white");
+        led_strip_on("mixed");
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_LEDALL_ON:
-        led_strip_on(-1, 100);
-        uart_printf("[%d] LED strips all on, dim=100\r\n", xTaskGetTickCount());
+        led_strip_on("red");
+        led_strip_on("blue");
+        led_strip_on("white");
+        led_strip_on("mixed");
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_LEDALL_OFF:
-        led_strip_off(-1);
-        uart_printf("[%d] LED Strips off\r\n", xTaskGetTickCount());
+        led_strip_off("red");
+        led_strip_off("blue");
+        led_strip_off("white");
+        led_strip_off("mixed");
         data->service_state++;
         break;
     case SERVICE_STATE_SCALES_INIT:

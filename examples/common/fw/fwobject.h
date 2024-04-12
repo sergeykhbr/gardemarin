@@ -60,6 +60,8 @@ class FwObject : public CommonInterface {
      */
     CommonInterface *GetInterface(const char *name);
 
+    CommonInterface *GetPortInterface(const char *portname, const char *name);
+
     /*
      * @brief Get object name
      * @return Pointer to an object name string
@@ -81,6 +83,8 @@ class FwObject : public CommonInterface {
      */
     void RegisterInterface(CommonInterface *iface);
 
+    void RegisterPortInterface(const char *portname, CommonInterface *iface);
+
  protected:
     /**
      * @brief Object name in human readable format. Any module can request
@@ -99,4 +103,9 @@ class FwObject : public CommonInterface {
               inteface of this class
      */
     FwList *ifacelist_;
+
+    /**
+     * @brief Entry element point of registered port intefaces
+     */
+    FwList *portlist_;
 };
