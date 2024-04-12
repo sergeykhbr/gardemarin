@@ -19,13 +19,15 @@
 #include <fwobject.h>
 #include <FwAttribute.h>
 #include <CanInterface.h>
+#include <IrqInterface.h>
 #include <gpio_drv.h>
 #include <can.h>
 
 #pragma once
 
 class CanDriver : public FwObject,
-                  public CanInterface {
+                  public CanInterface,
+                  public IrqHandlerInterface {
  public:
     CanDriver(const char *name, int busid);
 
@@ -34,12 +36,14 @@ class CanDriver : public FwObject,
     virtual void PostInit() override;
 
     // CanInterface:
-    virtual void RxInterruptHandler(int fifoid) override;
     virtual void SetBaudrated(uint32_t baud) override;
     virtual void StartListenerMode() override;
     virtual void Stop() override;
     virtual void RegisterCanListener(CanListenerInterface *iface) override {}
     virtual int ReadCanFrame(can_frame_type *frame) override;
+
+    // IrqHandlerInterface
+    virtual void handleInterrupt(int *argv) override;
 
  protected:
     virtual uint32_t hwid2canid(uint32_t hwid);

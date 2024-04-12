@@ -31,7 +31,6 @@ class CanInterface : public CommonInterface {
  public:
     CanInterface() : CommonInterface("CanInterface") {}
 
-    virtual void RxInterruptHandler(int fifoid) = 0;
     virtual void SetBaudrated(uint32_t baud) = 0;
     virtual void StartListenerMode() = 0;
     virtual void Stop() = 0;

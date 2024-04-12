@@ -21,37 +21,41 @@
 #include "can_drv.h"
 
 extern "C" void CAN1_FIFO0_irq_handler() {
-    CanInterface *iface = reinterpret_cast<CanInterface *>(
-            fw_get_object_interface("can1", "CanInterface"));
+    IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("can1", "IrqHandlerInterface"));
     if (iface) {
-        iface->RxInterruptHandler(0);
+        int fifoid = 0;
+        iface->handleInterrupt(&fifoid);
     }
     nvic_irq_clear(20);
 }
 
 extern "C" void CAN1_FIFO1_irq_handler() {
-    CanInterface *iface = reinterpret_cast<CanInterface *>(
-            fw_get_object_interface("can1", "CanInterface"));
+    IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("can1", "IrqHandlerInterface"));
     if (iface) {
-        iface->RxInterruptHandler(1);
+        int fifoid = 1;
+        iface->handleInterrupt(&fifoid);
     }
     nvic_irq_clear(21);
 }
 
 extern "C" void CAN2_FIFO0_irq_handler() {
-    CanInterface *iface = reinterpret_cast<CanInterface *>(
-            fw_get_object_interface("can2", "CanInterface"));
+    IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("can2", "IrqHandlerInterface"));
     if (iface) {
-        iface->RxInterruptHandler(0);
+        int fifoid = 0;
+        iface->handleInterrupt(&fifoid);
     }
     nvic_irq_clear(64);
 }
 
 extern "C" void CAN2_FIFO1_irq_handler() {
-    CanInterface *iface = reinterpret_cast<CanInterface *>(
-            fw_get_object_interface("can2", "CanInterface"));
+    IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("can2", "IrqHandlerInterface"));
     if (iface) {
-        iface->RxInterruptHandler(1);
+        int fifoid = 1;
+        iface->handleInterrupt(&fifoid);
     }
     nvic_irq_clear(65);
 }
@@ -118,6 +122,7 @@ CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
 
 void CanDriver::Init() {
     RegisterInterface(static_cast<CanInterface *>(this));
+    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
     RegisterAttribute(&baudrate_);
     RegisterAttribute(&mode_);
     RegisterAttribute(&test1_);
@@ -167,9 +172,10 @@ uint32_t CanDriver::hwid2canid(uint32_t hwid) {
     return ret;
 }
 
-void CanDriver::RxInterruptHandler(int fifoidx) {
+void CanDriver::handleInterrupt(int *argv) {
     CAN_RF_type rf;
     can_frame_type *f;
+    int fifoidx = argv[0];
 
     do {
         f = &rxframes[rxframe_wcnt];
