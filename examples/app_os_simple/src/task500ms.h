@@ -62,7 +62,6 @@ typedef struct task500ms_data_type {
     int wait_btn;
 
     user_btn_type user_btn;
-    user_led_type user_led;
     motor_driver_type motor_data;
 } task500ms_data_type;
 

@@ -80,7 +80,7 @@ void DbcConverter::PostInit() {
     uart_printf("BU_: GARDEMARIN ANY\r\n\r\n\r\n");
 
     // Debug message (always 8 bytes for now)
-    uart_printf("BO_ %d GARDEMARIN_DEBUG: 8 GARDEMARIN\r\n\r\n",
+    uart_printf("BO_ %u GARDEMARIN_DEBUG: 8 GARDEMARIN\r\n\r\n",
                 0x80000000 | CAN_MSG_ID_DBG_OUTPT);  // extended format
 
 
@@ -98,7 +98,7 @@ void DbcConverter::PostInit() {
     uart_printf("CM_ BU_ GARDEMARIN \"Prototype of the aeroponic "
                  "system base on ST32F407* CPU\";\r\n");
     uart_printf("CM_ BU_ ANY \"Any target like host PC or Hardware\";\r\n");
-    uart_printf("CM_ BO_ %d \"Debug output strings\";\r\n",
+    uart_printf("CM_ BO_ %u \"Debug output strings\";\r\n",
                 0x80000000 | CAN_MSG_ID_DBG_OUTPT);
     uart_printf("\r\n");
 
@@ -286,7 +286,7 @@ void DbcConverter::printDbcObject(int obj_idx,
         mux_idx = 0;
     }
 
-    uart_printf("BO_ %d %s: %d GARDEMARIN\r\n",
+    uart_printf("BO_ %u %s: %d GARDEMARIN\r\n",
                 0x80000000 | (OBJ_MSG_ID(obj_idx)),
                 obj->ObjectName(),
                 (bits_total + 7) / 8);

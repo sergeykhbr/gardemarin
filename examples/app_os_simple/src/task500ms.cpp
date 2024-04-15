@@ -72,10 +72,15 @@ void update_service_state(task500ms_data_type *data) {
         btnClick = 1;
     }
 
-    if (data->service_state == SERVICE_STATE_IDLE) {
-        user_led_set_state(1);
+    iface = reinterpret_cast<CommonInterface *>(
+              fw_get_object_interface("uled0", "BinInterface"));
+    if (iface == 0) {
+        uart_printf("[%d] uled BinInterface not available\r\n", xTaskGetTickCount());
+    } else if (data->service_state == SERVICE_STATE_IDLE
+             || (data->cnt & 1) != 0) {
+        static_cast<BinInterface *>(iface)->setBinEnabled();
     } else {
-        user_led_set_state((int)(data->cnt & 1));
+        static_cast<BinInterface *>(iface)->setBinDisabled();
     }
 
     if (data->wait_btn) {

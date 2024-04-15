@@ -21,31 +21,33 @@
 #include "user_led.h"
 
 //    PE2 - User LED. 0=LED is on (inversed)
-extern "C" void user_led_init() {
-    user_led_type *p = (user_led_type *)fw_get_ram_data(USER_LED_DRV_NAME);
-    if (p == 0) {
-         return;
-    }
-    p->gpio_cfg.port = (GPIO_registers_type *)GPIOE_BASE;
-    p->gpio_cfg.pinidx = 2;
+static const gpio_pin_type USER_LED0 = {(GPIO_registers_type *)GPIOE_BASE, 2};
 
-    gpio_pin_as_output(&p->gpio_cfg,
+UserLedDriver::UserLedDriver(const char *name) : FwObject(name),
+    state_("state") {
+
+    gpio_pin_as_output(&USER_LED0,
                        GPIO_NO_OPEN_DRAIN,
                        GPIO_SLOW,
                        GPIO_NO_PUSH_PULL);
 
-    user_led_set_state(1);
+    setBinEnabled();
 }
 
-extern "C" void user_led_set_state(int on) {
-    user_led_type *p = (user_led_type *)fw_get_ram_data(USER_LED_DRV_NAME);
-    if (p == 0) {
-         return;
-    }
+void UserLedDriver::Init() {
+    RegisterInterface(static_cast<BinInterface *>(this));
+
+    RegisterAttribute(&state_);
+}
+
+void UserLedDriver::setBinEnabled() {
     // inversed
-    if (on) {
-        gpio_pin_clear(&p->gpio_cfg);
-    } else {
-        gpio_pin_set(&p->gpio_cfg);
-    }
+    gpio_pin_clear(&USER_LED0);
+    state_.make_uint32(1);
+}
+
+void UserLedDriver::setBinDisabled() {
+    // inversed
+    gpio_pin_set(&USER_LED0);
+    state_.make_uint32(0);
 }

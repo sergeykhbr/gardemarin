@@ -23,6 +23,7 @@
 #include "ledstrip.h"
 #include "can_drv.h"
 #include "loadsensor.h"
+#include "user_led.h"
 #include "dbc.h"
 
 class KernelClass : public FwObject {
@@ -43,5 +44,6 @@ class KernelClass : public FwObject {
     CanDriver can1_;
     CanDriver can2_;
     LoadSensorDriver scales_;
+    UserLedDriver uled0_;
     DbcConverter dbc_;        // CAN database converter
 };

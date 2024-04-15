@@ -14,26 +14,29 @@
  *  limitations under the License.
  */
 
+#include <gardemarin.h>
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <fwlist.h>
+#include <fwobject.h>
+#include <FwAttribute.h>
+#include <BinInterface.h>
 #include <gpio_drv.h>
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class UserLedDriver : public FwObject,
+                      public BinInterface {
+ public:
+    UserLedDriver(const char *name);
 
-#define USER_LED_DRV_NAME "uled"
+    // FwObject interface:
+    virtual void Init() override;
 
-typedef struct user_led_type {
-    gpio_pin_type gpio_cfg;
-    uint32_t state;
-} user_led_type;
+    // BinInterface
+    virtual void setBinEnabled() override;
+    virtual void setBinDisabled() override;
 
-void user_led_init();
-void user_led_set_state(int on);
+ protected:
+    FwAttribute state_;
+};
 
-#ifdef __cplusplus
-}
-#endif
