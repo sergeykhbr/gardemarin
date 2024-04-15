@@ -13,26 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 #pragma once
 
 #include "CommonInterface.h"
-#include <canframe.h>
 
-class CanListenerInterface : public CommonInterface {
+class SensorInterface : public CommonInterface {
  public:
-    CanListenerInterface() : CommonInterface("CanListenerInterface") {}
+    SensorInterface() : CommonInterface("SensorInterface") {}
 
-    virtual void CanCallback(can_frame_type *frame) = 0;
+    // set value from external interface
+    virtual void setSensorValue(uint32_t val) = 0;
+    // linear polynom of 1-st order: physical = a0 + a1 * adc
+    virtual void setSensorOffset(uint32_t offset) = 0;
+    virtual void setSensorAlpha(double alpha) = 0;
+    // get ADC and convertd values
+    virtual uint32_t getSensorValue() = 0;
+    virtual double getSensorPhysical() = 0;
 };
 
-
-class CanInterface : public CommonInterface {
- public:
-    CanInterface() : CommonInterface("CanInterface") {}
-
-    virtual void SetBaudrated(uint32_t baud) = 0;
-    virtual void StartListenerMode() = 0;
-    virtual void RegisterCanListener(CanListenerInterface *iface) = 0;
-    virtual int ReadCanFrame(can_frame_type *frame) = 0;
-};

@@ -29,6 +29,7 @@ KernelClass::KernelClass(const char *name) : FwObject(name),
     ledrbw_("ledrbw"),
     can1_("can1", 0),
     can2_("can2", 1),
+    scales_("scales"),
     dbc_("dbc")
 {
     version_.make_uint32(0x20240804);

@@ -13,26 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 #pragma once
 
 #include "CommonInterface.h"
-#include <canframe.h>
 
-class CanListenerInterface : public CommonInterface {
+class TimerListenerInterface : public CommonInterface {
  public:
-    CanListenerInterface() : CommonInterface("CanListenerInterface") {}
+    TimerListenerInterface() : CommonInterface("TimerListenerInterface") {}
 
-    virtual void CanCallback(can_frame_type *frame) = 0;
+    virtual void callbackTimer(uint64_t tickcnt) = 0;
 };
 
 
-class CanInterface : public CommonInterface {
+class TimerInterface : public CommonInterface {
  public:
-    CanInterface() : CommonInterface("CanInterface") {}
+    TimerInterface() : CommonInterface("TimerInterface") {}
 
-    virtual void SetBaudrated(uint32_t baud) = 0;
-    virtual void StartListenerMode() = 0;
-    virtual void RegisterCanListener(CanListenerInterface *iface) = 0;
-    virtual int ReadCanFrame(can_frame_type *frame) = 0;
+    virtual void registerCallbackListener(TimerListenerInterface *iface) = 0;
 };

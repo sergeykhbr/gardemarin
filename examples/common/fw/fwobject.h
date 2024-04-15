@@ -68,7 +68,7 @@ class FwObject : public CommonInterface {
      */
     const char *ObjectName() { return objname_; }
 
- protected:
+ public:
     /**
      * @brief Write attribtue into attribute list of the current object
      * @param[in] attr Pointer to CommonInterface tha can be statically case

@@ -121,6 +121,7 @@ CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
 }
 
 void CanDriver::Init() {
+    RegisterInterface(static_cast<RunInterface *>(this));
     RegisterInterface(static_cast<CanInterface *>(this));
     RegisterInterface(static_cast<IrqHandlerInterface *>(this));
     RegisterAttribute(&baudrate_);
@@ -207,7 +208,6 @@ void CanDriver::handleInterrupt(int *argv) {
 
 // Total 18 filters available
 void CanDriver::StartListenerMode() {
-    CAN_IER_type ier;
     uint32_t t1;
 
     // [13:8] CAN2FSB: 0=no assigned filters to CAN1, 28=all filters assigned to CAN1
@@ -227,15 +227,21 @@ void CanDriver::StartListenerMode() {
 
 
     // Enable Rx interrupts in FIFO0 and FIFO1
+    setRun();
+    mode_.make_int8(2);
+}
+
+    // Enable Rx interrupts in FIFO0 and FIFO1
+void CanDriver::setRun() {
+    CAN_IER_type ier;
+
     ier.val = 0;
     ier.b.FMPIE0 = 1;
     ier.b.FMPIE1 = 1;
     write32(&dev_->IER.val, ier.val);
-
-    mode_.make_int8(2);
 }
 
-void CanDriver::Stop() {
+void CanDriver::setStop() {
     write32(&dev_->IER.val, 0);  // disable all interrupts
 }
 

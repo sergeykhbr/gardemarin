@@ -21,6 +21,8 @@
 #include <fwapi.h>
 #include <BinInterface.h>
 #include <CanInterface.h>
+#include <TimerInterface.h>
+#include <RunInterface.h>
 #include "task500ms.h"
 
 // current task is 0.5 sec
@@ -195,18 +197,27 @@ void update_service_state(task500ms_data_type *data) {
         break;
     case SERVICE_STATE_SCALES_INIT:
         uart_printf("[%d] Init scales\r\n", xTaskGetTickCount());
-        load_sensor_init(&data->load_sensor_data);
         data->service_state = SERVICE_STATE_SCALES_READ;
         break;
     case SERVICE_STATE_SCALES_READ:
-        load_sensor_read(&data->load_sensor_data);
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("scales", "TimerListenerInterface"));
+        if (iface) {
+            static_cast<TimerListenerInterface *>(iface)->callbackTimer(data->cnt);
+        }
         if (btnClick) {
             data->service_state++;
         }
         break;
     case SERVICE_STATE_SCALES_SLEEP:
-        load_sensor_sleep(&data->load_sensor_data);
-        uart_printf("[%d] Scales turned off\r\n", xTaskGetTickCount());
+        iface = reinterpret_cast<CommonInterface *>(
+                  fw_get_object_interface("scales", "RunInterface"));
+        if (iface) {
+            static_cast<RunInterface *>(iface)->setSleep();
+            uart_printf("[%d] Scales turned off\r\n", xTaskGetTickCount());
+        } else {
+            uart_printf("[%d] Scales RunInterface not found\r\n", xTaskGetTickCount());
+        }
         data->service_state++;
         break;
     case SERVICE_STATE_MOTOR0_ENA:

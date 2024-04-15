@@ -17,18 +17,12 @@
 
 #include "CommonInterface.h"
 
-class AdcInterface : public CommonInterface {
+class RunInterface : public CommonInterface {
  public:
-    AdcInterface() : CommonInterface("AdcInterface") {}
+    RunInterface() : CommonInterface("RunInterface") {}
 
-    // Non-modified  ADC value
-    virtual uint32_t getAdcValue() = 0;
-
-    // Normalized to transformed value representing physical process (A, mg or other)
-    virtual double getAdcNormalized() = 0;
-
-    // linear polynom of 1-st order: physical = a0 + a1 * adc
-    virtual void setAdcLinearRate0(double a0) = 0;
-    virtual void setAdcLinearRate1(double a1) = 0;
+    virtual void setRun() = 0;
+    virtual void setStop() = 0;
+    virtual void setSleep() = 0;
 };
 

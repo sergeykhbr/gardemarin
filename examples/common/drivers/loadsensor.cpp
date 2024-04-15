@@ -15,199 +15,167 @@
  */
 
 #include <prjtypes.h>
-#include <stdio.h>
 #include <stm32f4xx_map.h>
+#include <fwapi.h>
+#include <new>
 #include <uart.h>
 #include "loadsensor.h"
 
-void load_sensor_select(int idx) {
-    GPIO_registers_type *P = (GPIO_registers_type *)GPIOD_BASE;
-    uint32_t t1 = read32(&P->ODR);
-    switch (idx) {
-    case 0:
-        t1 &= ~(1 << 2);
-        break;
-    case 1:
-        t1 &= ~(1 << 3);
-        break;
-    case 2:
-        t1 &= ~(1 << 4);
-        break;
-    case 3:
-        t1 &= ~(1 << 7);
-        break;
-    default:;
-    }
-    write32(&P->ODR, t1);
-}
+// Chip select pins per channel
+struct LoadCellCfgType {
+    const char *portname;        // all names should be placed into flash, do not use SRAM for that
+    gpio_pin_type cs_gpio_cfg;
+    const char *attr_value_name;    
+    const char *attr_gram_name;    
+    const char *attr_offset_name;    
+    const char *attr_alpha_name;
+};
 
-void load_sensor_deselect_all() {
-    GPIO_registers_type *P = (GPIO_registers_type *)GPIOD_BASE;
-    // [15:0] ODRy: port output data
-    uint32_t t1 = read32(&P->ODR);
-    t1 |= 0x9C;  // MISO to z-state
-    write32(&P->ODR, t1);
-}
+static const LoadCellCfgType CELL_CONFIG[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
+    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "gram0", "offset0", "alpha0"},
+    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "gram1", "offset1", "alpha1"},
+    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "gram2", "offset2", "alpha2"},
+    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "gram3", "offset3", "alpha3"}
+};
 
-void load_sensor_set_sck(int val) {
-    GPIO_registers_type *P = (GPIO_registers_type *)GPIOC_BASE;
-    uint32_t t1 = read32(&P->ODR);
-    t1 &= ~(0x1 << 10); 
-    t1 |= (val << 10);
-    write32(&P->ODR, t1);
-}
-
-int load_sensor_get_miso() {
-    GPIO_registers_type *P = (GPIO_registers_type *)GPIOC_BASE;
-    return (read32(&P->IDR) >> 11) & 0x1;
-}
-
-// {PD[7], PD[4:2]} = CSn[3:0]. Mask 1 bit: 0x9C; Mask 2 bits: 0xC3F0
 // PC[12] = SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
 // PC[11] = SPI3_MISO  AF6 -> AF0 input
 // PC[10] = SPI3_SCK   AF6 -> AF0 output
-extern "C" void load_sensor_init(load_sensor_type *data) {
-    GPIO_registers_type *P = (GPIO_registers_type *)GPIOD_BASE;
-    uint32_t t1;
-    // CSn chip as output. HIGH is set MISO to Z state
+static const gpio_pin_type SPI3_MOSI = {(GPIO_registers_type *)GPIOC_BASE, 12};
+static const gpio_pin_type SPI3_MISO = {(GPIO_registers_type *)GPIOC_BASE, 11};
+static const gpio_pin_type SPI3_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10};
 
-    // 00 input; 01 output; 10 alternate; 11 analog
-    t1 = read32(&P->MODER);
-    t1 &= ~(0xC3F0);
-    t1 |= 0x4150;           // {7,4,3,2} as output
-    write32(&P->MODER, t1);
+LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
+    gpio_pin_type pin_cfg;
+    for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+        chn_[i].port = new(fw_malloc(sizeof(LoadSensorPort)))
+               LoadSensorPort(static_cast<FwObject *>(this), i);
+    }
+    selectChannel(-1);
 
-    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
-    t1 = read32(&P->OTYPER);
-    t1 &= ~0x9C;
-    write32(&P->OTYPER, t1);
+    // Setup SPI interface. Use bitband instead of SPI3 controller because 
+    // non-standard 25-bits transactions:
+    //     PC[12] = SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
+    //     PC[11] = SPI3_MISO  AF6 -> AF0 input
+    //     PC[10] = SPI3_SCK   AF6 -> AF0 output
+    gpio_pin_as_output(&SPI3_SCK,
+                       GPIO_NO_OPEN_DRAIN,
+                       GPIO_MEDIUM,
+                       GPIO_NO_PUSH_PULL);
+    gpio_pin_clear(&SPI3_SCK);
 
-    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
-    t1 = read32(&P->OSPEEDR);
-    t1 &= ~0xC3F0;
-    write32(&P->OSPEEDR, t1);
+    // MISO:
+    gpio_pin_as_input(&SPI3_MISO,
+                      GPIO_MEDIUM,
+                      GPIO_NO_PUSH_PULL);
 
-    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down; 11=reserved
-    t1 = read32(&P->PUPDR);
-    t1 &= ~0xC3F0;
-    write32(&P->PUPDR, t1);
+    // MOSI (unused by HX711)
+    gpio_pin_as_output(&SPI3_MOSI,
+                       GPIO_NO_OPEN_DRAIN,
+                       GPIO_MEDIUM,
+                       GPIO_NO_PUSH_PULL);
+    gpio_pin_clear(&SPI3_MOSI);
+}
 
-    load_sensor_deselect_all();
+void LoadSensorDriver::Init() {
+    RegisterInterface(static_cast<RunInterface *>(this));
+    RegisterInterface(static_cast<TimerListenerInterface *>(this));
 
-
-    // SPI3 controller is not used because of 25-bits transition CH.A, Gain 128
-    // PORTC:
-    //    PC12 SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
-    //    PC11 SPI3_MISO  AF6 -> AF0 input
-    //    PC10 SPI3_SCK   AF6 -> AF0 output
-    P = (GPIO_registers_type *)GPIOC_BASE;
-
-    // 00 input; 01 output; 10 alternate; 11 analog
-    t1 = read32(&P->MODER);
-    t1 &= ~(0x3F << (2*10));
-    t1 |= (0x11 << (2*10));
-    write32(&P->MODER, t1);
-
-    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
-    t1 = read32(&P->OTYPER);
-    t1 &= ~(0x7 << 10);
-    write32(&P->OTYPER, t1);
-
-    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
-    t1 = read32(&P->OSPEEDR);
-    t1 &= ~(0x3F << 2*10);
-    t1 |= (0x15 << 2*10);
-    write32(&P->OSPEEDR, t1);
-
-    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down; 11=reserved
-    t1 = read32(&P->PUPDR);
-    t1 &= ~(0x3F << (2*10));
-    write32(&P->PUPDR, t1);
-
-    // [15:0] ODRy: port output data
-    t1 = read32(&P->ODR);
-    t1 &= ~(0x7 << 10); 
-    write32(&P->ODR, t1);
-
-    // Let's check what HX711 are connected to PC[11] MISO:
-    data->hx711_not_found = 0;
-    for (int i = 0; i < 4; i++) {
-        load_sensor_select(i);
-
-        // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down; 11=reserved
-        t1 = read32(&P->PUPDR);
-        t1 &= ~(0x3 << (2*11));
-        t1 |= (0x1 << (2*11));   // pull-up
-        write32(&P->PUPDR, t1);
-        if (load_sensor_get_miso() == 1) {
-            // pull-down
-            t1 &= ~(0x3 << (2*11));
-            t1 |= (0x2 << (2*11));   // pull-down
-            write32(&P->PUPDR, t1);
-            if (load_sensor_get_miso() == 0) {
-                data->hx711_not_found |= 1 << i;
-            }
-        }
-        // restore no pull/push-ups:
-        t1 &= ~(0x3 << (2*11));
-        write32(&P->PUPDR, t1);
-        
-        if (data->hx711_not_found & (1 << i)) {
-            uart_printf("HX711[%d] not found\r\n", i);
-        } else {
-            uart_printf("HX711[%d] detected. MISO=%d\r\n",
-                       i, load_sensor_get_miso());
-        }
-
-        load_sensor_deselect_all();
+    for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+        chn_[i].port->Init();
     }
 }
 
-extern "C" void load_sensor_read(load_sensor_type *data) {
-    data->ready = 0;
-    for (int i = 0; i < 4; i++) {
-        load_sensor_select(i);
+void LoadSensorDriver::selectChannel(int chidx) {
+    GPIO_registers_type *P = (GPIO_registers_type *)GPIOD_BASE;
+    uint32_t t1 = read32(&P->ODR);
+    t1 |= 0x9C;  // all MISO to z-state
+    if (chidx >= 0 && chidx < GARDEMARIN_LOAD_SENSORS_TOTAL) {
+        t1 &= ~(1 << CELL_CONFIG[chidx].cs_gpio_cfg.pinidx);
+    }
+    write32(&P->ODR, t1);
+}
 
-        data->value[i] = 0;
-        if (load_sensor_get_miso() == 0) {
-            data->ready |= 1 << i;
+void LoadSensorDriver::setSleep() {
+    gpio_pin_set(&SPI3_SCK);
+    system_delay_ns(60000);
+}
+
+void LoadSensorDriver::callbackTimer(uint64_t tickcnt) {
+    uint32_t ready = 0;
+    uint32_t value[GARDEMARIN_LOAD_SENSORS_TOTAL];
+    for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+        selectChannel(i);
+
+        value[i] = 0;
+        if (gpio_pin_get(&SPI3_MISO) == 0) {
+            ready |= 1 << i;
         }
-        load_sensor_deselect_all();
     }
 
     // 27 clocks to read DOUT with gain 64
-    for (int i = 0; i < 4; i++) {
-        data->value[i] = 0;
-    }
-
     for (int i = 0; i < 27; i++) {
-        load_sensor_set_sck(1);
+        gpio_pin_set(&SPI3_SCK);
         system_delay_ns(1000);   // 0.2 us; typical 1 us; max 50 us
 
-        load_sensor_set_sck(0);
+        gpio_pin_clear(&SPI3_SCK);
         system_delay_ns(1000);   // 0.2 us; typical 1 us
 
-        for (int i = 0; i < 4; i++) {
-            load_sensor_select(i);
-            data->value[i] <<= 1;
-            data->value[i] |= load_sensor_get_miso();
-            load_sensor_deselect_all();
+        for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+            selectChannel(i);
+            value[i] <<= 1;
+            value[i] |= gpio_pin_get(&SPI3_MISO);
+            chn_[i].port->setSensorValue(value[i]);
         }
     }
 
+    selectChannel(-1);    // deselect all
 
-    for (int i = 0; i < 4; i++) {
-        if (((data->ready >> i) & 1) == 0) {
+    for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+        if (((ready >> i) & 1) == 0) {
             continue;
         }
         uart_printf("%d %08x %d\r\n", 
                     i,
-                    data->value[i],
-                    data->value[i]);
+                    chn_[i].port->getSensorValue(),
+                    static_cast<int>(chn_[i].port->getSensorPhysical()));
     }
 }
 
-extern "C" void load_sensor_sleep(load_sensor_type *sleep) {
-    load_sensor_set_sck(1);
-    system_delay_ns(60000);
+
+LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) : 
+    parent_(parent),
+    portname_(CELL_CONFIG[idx].portname),
+    value_(CELL_CONFIG[idx].attr_value_name),
+    gram_(CELL_CONFIG[idx].attr_gram_name),
+    offset_(CELL_CONFIG[idx].attr_offset_name),
+    alpha_(CELL_CONFIG[idx].attr_alpha_name),
+    idx_(idx) {
+
+    gpio_pin_as_output(&CELL_CONFIG[idx].cs_gpio_cfg,
+                       GPIO_NO_OPEN_DRAIN,
+                       GPIO_SLOW,
+                       GPIO_NO_PUSH_PULL);
+    gpio_pin_set(&CELL_CONFIG[idx].cs_gpio_cfg);
+
+    value_.make_uint32(0);
+    gram_.make_float(0);
+    offset_.make_uint32(0);
+    alpha_.make_float(1.0);
+}
+
+void LoadSensorPort::Init() {
+    parent_->RegisterPortInterface(portname_, static_cast<SensorInterface *>(this));
+
+    parent_->RegisterAttribute(&value_);
+    parent_->RegisterAttribute(&gram_);
+    parent_->RegisterAttribute(&offset_);
+    parent_->RegisterAttribute(&alpha_);
+}
+
+void LoadSensorPort::setSensorValue(uint32_t val) {
+    value_.make_uint32(val);
+    double phys = static_cast<double>(
+        val - offset_.to_uint32()) * alpha_.to_float();
+    gram_.make_float(phys);
 }

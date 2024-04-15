@@ -18,6 +18,7 @@
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
+#include <RunInterface.h>
 #include <CanInterface.h>
 #include <IrqInterface.h>
 #include <gpio_drv.h>
@@ -26,6 +27,7 @@
 #pragma once
 
 class CanDriver : public FwObject,
+                  public RunInterface,
                   public CanInterface,
                   public IrqHandlerInterface {
  public:
@@ -35,10 +37,14 @@ class CanDriver : public FwObject,
     virtual void Init() override;
     virtual void PostInit() override;
 
+    // RunInterface
+    virtual void setRun() override;
+    virtual void setStop() override;
+    virtual void setSleep() override {}
+
     // CanInterface:
     virtual void SetBaudrated(uint32_t baud) override;
     virtual void StartListenerMode() override;
-    virtual void Stop() override;
     virtual void RegisterCanListener(CanListenerInterface *iface) override {}
     virtual int ReadCanFrame(can_frame_type *frame) override;
 

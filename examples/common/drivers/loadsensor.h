@@ -14,25 +14,70 @@
  *  limitations under the License.
  */
 
+#include <gardemarin.h>
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <fwlist.h>
+#include <fwobject.h>
+#include <FwAttribute.h>
+#include <RunInterface.h>
+#include <TimerInterface.h>
+#include <SensorInterface.h>
+#include <gpio_drv.h>
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class LoadSensorPort : public SensorInterface {
+ public:
+    LoadSensorPort(FwObject *parent,
+                   int idx);
 
-typedef struct load_sensor_type {
-    char hx711_not_found;  // [3:0] mask
-    char ready;            // [3:0] mask
-    uint32_t value[4];
-} load_sensor_type;
+    // SensorInterface:
+    virtual void setSensorValue(uint32_t val) override;
+    virtual void setSensorOffset(uint32_t offset) override { offset_.make_uint32(offset); }
+    virtual void setSensorAlpha(double alpha) override { alpha_.make_float(alpha); }
+    virtual uint32_t getSensorValue() override { return value_.to_uint32(); }
+    virtual double getSensorPhysical() override { return gram_.to_float(); }
 
-void load_sensor_init(load_sensor_type *data);
-void load_sensor_read(load_sensor_type *data);
-void load_sensor_sleep(load_sensor_type *data);
+    // Common interface
+    virtual void Init();     // register attribute in parent class
 
-#ifdef __cplusplus
-}
-#endif
+ protected:
+    FwObject *parent_;
+    const char *portname_;
+    FwAttribute value_;
+    FwAttribute gram_;
+    FwAttribute offset_;
+    FwAttribute alpha_;
+    int idx_;
+};
+
+class LoadSensorDriver : public FwObject,
+                         public RunInterface,
+                         public TimerListenerInterface {
+ public:
+    LoadSensorDriver(const char *name);
+
+    // FwObject interface:
+    virtual void Init() override;
+
+    // RunInterface
+    virtual void setRun() override {}
+    virtual void setStop() override {}
+    virtual void setSleep() override;
+
+    // TimerListenerInterface
+    virtual void callbackTimer(uint64_t tickcnt) override;
+
+ protected:
+    // Accessed from channels:
+    void selectChannel(int chidx);
+
+ protected:
+
+    // for the fast access initialize in constructor the following pointers
+    // instead of using new() operator
+    struct SensorType {
+        LoadSensorPort *port;
+    } chn_[GARDEMARIN_LOAD_SENSORS_TOTAL];
+};
+
