@@ -23,6 +23,7 @@
 #include <CanInterface.h>
 #include <TimerInterface.h>
 #include <RunInterface.h>
+#include <PwmInterface.h>
 #include "task500ms.h"
 
 // current task is 0.5 sec
@@ -63,7 +64,42 @@ void led_strip_off(const char *name) {
     }
 }
 
+void dc_motor_on(int idx) {
+    CommonInterface *iface;
+    char hbrg[8] = "hbrg0";
+    char dc[4] = "dc0";
+    hbrg[4] += (idx >> 1);
+    dc[3] += (idx & 1);
+
+    iface = reinterpret_cast<CommonInterface *>(
+           fw_get_object_port_interface(hbrg, dc, "PwmInterface"));
+    if (iface) {
+        static_cast<PwmInterface *>(iface)->enablePwm();
+        uart_printf("[%d] dc[%d] started\r\n", xTaskGetTickCount(), idx);
+    } else {
+        uart_printf("[%d] dc[%d] PwmInterface not found\r\n", xTaskGetTickCount(), idx);
+    }
+}
+
+void dc_motor_off(int idx) {
+    CommonInterface *iface;
+    char hbrg[8] = "hbrg0";
+    char dc[4] = "dc0";
+    hbrg[4] += (idx >> 1);
+    dc[3] += (idx & 1);
+
+    iface = reinterpret_cast<CommonInterface *>(
+           fw_get_object_port_interface(hbrg, dc, "PwmInterface"));
+    if (iface) {
+        static_cast<PwmInterface *>(iface)->disablePwm();
+        uart_printf("[%d] dc[%d] stopped\r\n", xTaskGetTickCount(), idx);
+    } else {
+        uart_printf("[%d] dc[%d] PwmInterface not found\r\n", xTaskGetTickCount(), idx);
+    }
+}
+
 void update_service_state(task500ms_data_type *data) {
+    int t1;
     // LED blinking in service mode:
     CommonInterface *iface;
     int btnClick = 0;
@@ -226,19 +262,23 @@ void update_service_state(task500ms_data_type *data) {
         data->service_state++;
         break;
     case SERVICE_STATE_MOTOR0_ENA:
-        motor_dc_start(0);
-        uart_printf("[%d] Pump[0] started\r\n", xTaskGetTickCount());
-        data->wait_btn = 1;
-        break;
     case SERVICE_STATE_MOTOR1_ENA:
-        motor_dc_stop(0);
-        motor_dc_start(1);
-        uart_printf("[%d] Pump[0] stopped; Pump[1] started\r\n", xTaskGetTickCount());
+    case SERVICE_STATE_MOTOR2_ENA:
+    case SERVICE_STATE_MOTOR3_ENA:
+    case SERVICE_STATE_MOTOR4_ENA:
+    case SERVICE_STATE_MOTOR5_ENA:
+    case SERVICE_STATE_MOTOR6_ENA:
+    case SERVICE_STATE_MOTOR7_ENA:
+        t1 = data->service_state - SERVICE_STATE_MOTOR0_ENA;
+        if (t1 > 0) {
+            dc_motor_off(t1 - 1);
+        }
+        dc_motor_on(t1);
         data->wait_btn = 1;
         break;
     case SERVICE_STATE_MOTOR_DIS:
-        motor_dc_stop(1);
-        uart_printf("[%d] Pump[1] stopped\r\n", xTaskGetTickCount());
+        dc_motor_off(7);
+        uart_printf("[%d] Pump[7] stopped\r\n", xTaskGetTickCount());
         data->service_state++;
         break;
     case SERVICE_STATE_END:

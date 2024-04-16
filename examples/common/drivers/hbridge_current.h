@@ -13,28 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 #pragma once
 
+#include <gardemarin.h>
 #include <prjtypes.h>
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
-#include <BinInterface.h>
-#include <gpio_drv.h>
+#include <SensorInterface.h>
 
-class RelaisDriver : public FwObject,
-                     public BinInterface {
+
+class SensorCurrent : public SensorInterface {
  public:
-    RelaisDriver(const char *name, int instidx);
+    SensorCurrent(FwObject *parent, int idx);
 
-    // FwObject interface:
-    virtual void Init() override;
+    // Common interface
+    void Init();
 
-    // BinInterface:
-    virtual void setBinEnabled() override;
-    virtual void setBinDisabled() override;
+    // SensorInterface:
+    virtual void setSensorValue(uint32_t val) override;
+    virtual void setSensorOffset(uint32_t offset) override {}
+    virtual void setSensorAlpha(double alpha) override {}
+    virtual uint32_t getSensorValue() override { return value_.to_uint32(); }
+    virtual double getSensorPhysical() override { return ampere_.to_float(); }
 
  protected:
-    gpio_pin_type gpio_cfg_;
-    FwAttribute state_;
+    FwObject *parent_;
+    int idx_;     // sensor index 0..1
+
+    FwAttribute value_;
+    FwAttribute ampere_;
 };

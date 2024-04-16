@@ -23,8 +23,6 @@
 #include <user_btn.h>
 #include <user_led.h>
 #include <loadsensor.h>
-#include <ledstrip.h>
-#include <motor.h>
 #include <can_drv.h>
 
 #define APP_TASK_NAME "app"
@@ -48,8 +46,14 @@
 #define SERVICE_STATE_SCALES_SLEEP 16
 #define SERVICE_STATE_MOTOR0_ENA   17
 #define SERVICE_STATE_MOTOR1_ENA   18
-#define SERVICE_STATE_MOTOR_DIS    19
-#define SERVICE_STATE_END          20
+#define SERVICE_STATE_MOTOR2_ENA   19
+#define SERVICE_STATE_MOTOR3_ENA   20
+#define SERVICE_STATE_MOTOR4_ENA   21
+#define SERVICE_STATE_MOTOR5_ENA   22
+#define SERVICE_STATE_MOTOR6_ENA   23
+#define SERVICE_STATE_MOTOR7_ENA   24
+#define SERVICE_STATE_MOTOR_DIS    25
+#define SERVICE_STATE_END          26
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +66,6 @@ typedef struct task500ms_data_type {
     int wait_btn;
 
     user_btn_type user_btn;
-    motor_driver_type motor_data;
 } task500ms_data_type;
 
 portTASK_FUNCTION(task500ms, args);

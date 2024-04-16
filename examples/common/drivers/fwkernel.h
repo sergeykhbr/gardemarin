@@ -24,6 +24,7 @@
 #include "can_drv.h"
 #include "loadsensor.h"
 #include "user_led.h"
+#include "hbridge.h"
 #include "dbc.h"
 
 class KernelClass : public FwObject {
@@ -45,5 +46,9 @@ class KernelClass : public FwObject {
     CanDriver can2_;
     LoadSensorDriver scales_;
     UserLedDriver uled0_;
+    HBridgeDriver hbrg0_;
+    HBridgeDriver hbrg1_;
+    HBridgeDriver hbrg2_;
+    HBridgeDriver hbrg3_;
     DbcConverter dbc_;        // CAN database converter
 };

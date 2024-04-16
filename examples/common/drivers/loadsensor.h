@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
 #include <gardemarin.h>
 #include <prjtypes.h>
@@ -23,8 +24,6 @@
 #include <TimerInterface.h>
 #include <SensorInterface.h>
 #include <gpio_drv.h>
-
-#pragma once
 
 class LoadSensorPort : public SensorInterface {
  public:

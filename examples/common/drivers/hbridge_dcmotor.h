@@ -15,26 +15,37 @@
  */
 #pragma once
 
+#include <gardemarin.h>
 #include <prjtypes.h>
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
-#include <BinInterface.h>
-#include <gpio_drv.h>
+#include <PwmInterface.h>
 
-class RelaisDriver : public FwObject,
-                     public BinInterface {
+class DcMotor : public PwmInterface {
  public:
-    RelaisDriver(const char *name, int instidx);
+    DcMotor(FwObject *parent, int idx);
 
-    // FwObject interface:
-    virtual void Init() override;
+    // Common interface
+    void Init();
 
-    // BinInterface:
-    virtual void setBinEnabled() override;
-    virtual void setBinDisabled() override;
+    // PwmInterface:
+    // Typical: 200 - 400 Hz for LED Strip
+    //          18000 - 24000 Hz for brushless motors
+    //          80000 - 100000 Hz for brushed motors/pumps
+    virtual void setPwmHz(int hz) override;
+    // Percentage 1..100 duty cycle
+    //   100 = No PWM fully enabled
+    //   0 = disabled
+    virtual void setPwmDutyCycle(int duty) override;
+    virtual void enablePwm() override;
+    virtual void disablePwm() override;
 
  protected:
-    gpio_pin_type gpio_cfg_;
-    FwAttribute state_;
+    FwObject *parent_;
+    int idx_;     // dcmotor index 0..1
+
+    FwAttribute direction_;
+    FwAttribute hz_;
+    FwAttribute duty_;
 };

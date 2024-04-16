@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
 #include <gardemarin.h>
 #include <prjtypes.h>
@@ -21,8 +22,6 @@
 #include <FwAttribute.h>
 #include <BinInterface.h>
 #include <gpio_drv.h>
-
-#pragma once
 
 class UserLedDriver : public FwObject,
                       public BinInterface {

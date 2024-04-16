@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
 #include <prjtypes.h>
 #include <fwlist.h>
@@ -23,8 +24,6 @@
 #include <IrqInterface.h>
 #include <gpio_drv.h>
 #include <can.h>
-
-#pragma once
 
 class CanDriver : public FwObject,
                   public RunInterface,

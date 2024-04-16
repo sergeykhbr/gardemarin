@@ -13,28 +13,47 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 #pragma once
 
+#include <gardemarin.h>
 #include <prjtypes.h>
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
 #include <BinInterface.h>
+#include <SensorInterface.h>
+#include <TimerInterface.h>
 #include <gpio_drv.h>
+#include "hbridge_current.h"
+#include "hbridge_dcmotor.h"
 
-class RelaisDriver : public FwObject,
-                     public BinInterface {
+class HBridgeDriver : public FwObject,
+                      public BinInterface,
+                      public TimerListenerInterface {
  public:
-    RelaisDriver(const char *name, int instidx);
+    explicit HBridgeDriver(int idx);
 
     // FwObject interface:
     virtual void Init() override;
 
-    // BinInterface:
+    // BinInterface: control "DRV_MODE" pin output
     virtual void setBinEnabled() override;
     virtual void setBinDisabled() override;
 
+    // TimerListenerInterface
+    virtual void callbackTimer(uint64_t tickcnt) override;
+
+    // Common methods:
+    void startDcMotor(int idx);
+    void stopDcMotor(int idx);
+
  protected:
-    gpio_pin_type gpio_cfg_;
-    FwAttribute state_;
+    FwAttribute drvmode_;
+    int idx_;
+
+    DcMotor dc0_;
+    DcMotor dc1_;
+    SensorCurrent i0_;
+    SensorCurrent i1_;
 };

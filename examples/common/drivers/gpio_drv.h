@@ -13,12 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
 #include <prjtypes.h>
 #include <stm32f4xx_map.h>
 #include <gpio.h>
-
-#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +51,8 @@ void gpio_pin_as_output(const gpio_pin_type *p,
 
 void gpio_pin_as_alternate(const gpio_pin_type *p,
                            uint32_t ADx);
+
+void gpio_pin_as_analog(const gpio_pin_type *p);
 
 void gpio_pin_set(const gpio_pin_type *p);
 void gpio_pin_clear(const gpio_pin_type *p);

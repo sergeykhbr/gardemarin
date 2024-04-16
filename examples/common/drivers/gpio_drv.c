@@ -89,6 +89,15 @@ void gpio_pin_as_alternate(const gpio_pin_type *p,
     write32(&p->port->AFR[p->pinidx >> 3], t1);
 }
 
+void gpio_pin_as_analog(const gpio_pin_type *p) {
+    uint32_t t1;
+
+    // 00 input; 01 output; 10 alternate; 11 analog
+    t1 = read32(&p->port->MODER);
+    t1 |= (0x3 << 2*p->pinidx);
+    write32(&p->port->MODER, t1);
+}
+
 void gpio_pin_set(const gpio_pin_type *p) {
     write16(&p->port->BSRRL, (1 << p->pinidx));
 }
