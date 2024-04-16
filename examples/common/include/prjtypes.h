@@ -31,6 +31,8 @@ int system_clock_hz();
 
 #define RV_PRI64 "I64"
 
+typedef uint64_t addr_t;
+
 void write8(const volatile uint8_t *adr, uint8_t val);
 void write16(const volatile uint16_t *adr, uint16_t val);
 void write32(const volatile uint32_t *adr, uint32_t val);
@@ -47,6 +49,8 @@ static inline void memory_barrier() {}
 #else
 
 #define RV_PRI64 "ll"
+
+typedef uint32_t addr_t;
 
 static inline void write8(const volatile uint8_t *adr, uint8_t val) {
     *((volatile uint8_t *)adr) = val;

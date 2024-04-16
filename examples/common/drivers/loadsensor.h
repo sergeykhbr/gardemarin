@@ -33,7 +33,7 @@ class LoadSensorPort : public SensorInterface {
     // SensorInterface:
     virtual void setSensorValue(uint32_t val) override;
     virtual void setSensorOffset(uint32_t offset) override { offset_.make_uint32(offset); }
-    virtual void setSensorAlpha(double alpha) override { alpha_.make_float(alpha); }
+    virtual void setSensorAlpha(double alpha) override { alpha_.make_double(alpha); }
     virtual uint32_t getSensorValue() override { return value_.to_uint32(); }
     virtual double getSensorPhysical() override { return gram_.to_float(); }
 

@@ -13,28 +13,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 #pragma once
 
-#include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <s32k148api.h>
+#include <devgen.h>
+#include <list>
+#include "nvicsim.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+enum EIsrId {
+    Interrupt_Total = 256
+};
 
-#define USER_BTN_DRV_NAME "ubtn"
+class S32K148Sim : public DeviceGeneric {
+ public:
+    S32K148Sim(const char *name);
 
-#define BTN_EVENT_PRESSED  0x01
-#define BTN_EVENT_RELEASED 0x02
+    void runFirmware(void *);
+    void stopFirmware();
+    void registerIsr(int idx, isr_type handler);
+    void requestIrq(int idx);
+    int setOption(int optname, void *optval);
 
-typedef struct user_btn_type {
-    uint32_t event;
-    uint64_t tm_count;     // copied from task 500 ms (for now)
-    uint64_t tm_pressed;
-} user_btn_type;
+ private:
+    void handleInterrupts();
 
-void user_btn_init();
-
-#ifdef __cplusplus
-}
-#endif
+ private:
+    std::list<DeviceGeneric *> devlist_;
+    void *hFwThread_;
+    void *eventIsrAsync_;
+    bool enabled_;
+    isr_type vector_[Interrupt_Total];
+    NVICSim *nvic_;
+};

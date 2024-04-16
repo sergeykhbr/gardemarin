@@ -27,7 +27,7 @@
 #include <adc.h>
 
 /* System Control Space memory map */
-#define SCS_BASE              ((uint32_t)0xE000E000)
+#define SCS_BASE              ((addr_t)0xE000E000)
 
 #define SCS_ACTLR             (SCS_BASE + 0x0080)   // [RW] Auxiliary Control Register
 #define SysTick_BASE          (SCS_BASE + 0x0010)
