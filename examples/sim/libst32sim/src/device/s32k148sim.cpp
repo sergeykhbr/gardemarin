@@ -24,12 +24,14 @@
 #include "scbsim.h"
 #include "uartsim.h"
 #include "wdogsim.h"
+#include "systicksim.h"
 
 typedef unsigned (__stdcall* fw_thread_type)(void *args);
 
 
 S32K148Sim::S32K148Sim(const char *name) :
     DeviceGeneric(name, 0, 0xFFFFFFFFul) {
+    devlist_.push_back(new SysTickSim("stck", SysTick_BASE, sizeof(SysTick_registers_type)));
     devlist_.push_back(new CANSim("can1", CAN1_BASE, sizeof(CAN_registers_type)));
     devlist_.push_back(new CANSim("can2", CAN2_BASE, sizeof(CAN_registers_type)));
     devlist_.push_back(new GPIOSim("pa", GPIOA_BASE, sizeof(GPIO_registers_type)));
