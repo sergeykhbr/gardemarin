@@ -16,6 +16,8 @@ set(_st32_root ".")
 set(_simcommon "../simcommon")
 
 include_directories(
+    ${_st32_root}/../../common/include
+    ${_st32_root}/../../common/include/devs
     ${_simcommon}
     ${_st32_root}/src
     ${_st32_root}/src/include

@@ -20,6 +20,8 @@ add_subdirectory(libst32sim)
 add_subdirectory(libfw)
 
 include_directories(
+    ../common/include
+    simcommon
     libst32sim/src
 )
 

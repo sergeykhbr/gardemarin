@@ -274,11 +274,12 @@ void DbcConverter::printDbcObject(int obj_idx,
     FwAttribute *atr;
 
     while (atrlist) {
-        atrlist = atrlist->next;
+        atr = reinterpret_cast<FwAttribute *>(fwlist_get_payload(atrlist));
         if (bits_total < atr->BitSize()) {
              bits_total = atr->BitSize();
         }
         atr_idx++;
+        atrlist = atrlist->next;
     }
     if (atr_idx > 1) {
         bits_total += 8;

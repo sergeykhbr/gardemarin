@@ -1,5 +1,22 @@
+/*
+ *  Copyright 2023 Sergey Khabarov, sergeykhbr@gmail.com
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #pragma once
 
+#include <prjtypes.h>
 #include <stdarg.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -7,9 +24,6 @@
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
     #include <windows.h>
     #include <process.h>
-
-    #define RV_PRI64 "I64"
-    #define __attribute__()
 
     typedef CRITICAL_SECTION mutex_def;
     typedef HANDLE thread_def;
@@ -19,12 +33,6 @@
         bool state;
     } event_def;
 #else
-    # if defined(__WORDSIZE) && (__WORDSIZE == 64)
-    #  define RV_PRI64 "l"
-    # else
-    #  define RV_PRI64 "ll"
-    # endif
-
     typedef pthread_mutex_t mutex_def;
     typedef pthread_t thread_def;
     typedef struct event_def {

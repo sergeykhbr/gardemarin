@@ -14,16 +14,14 @@
  *  limitations under the License.
  */
 
-#include <s32k148regs.h>
+#include <stm32f4xx_map.h>
 #include "s32k148sim.h"
 #include "cansim.h"
 #include "gpiosim.h"
-#include "lpitsim.h"
 #include "nvicsim.h"
 #include "pccsim.h"
 #include "portsim.h"
 #include "scbsim.h"
-#include "scgsim.h"
 #include "uartsim.h"
 #include "wdogsim.h"
 
@@ -32,22 +30,18 @@ typedef unsigned (__stdcall* fw_thread_type)(void *args);
 
 S32K148Sim::S32K148Sim(const char *name) :
     DeviceGeneric(name, 0, 0xFFFFFFFFul) {
-    devlist_.push_back(new CANSim("can0", CAN0_BASE, sizeof(CAN_Type)));
-    devlist_.push_back(new GPIOSim("pta", PTA_BASE, sizeof(GPIO_Type)));
-    devlist_.push_back(new GPIOSim("ptc", PTC_BASE, sizeof(GPIO_Type)));
-    devlist_.push_back(new GPIOSim("ptd", PTD_BASE, sizeof(GPIO_Type)));
-    devlist_.push_back(new GPIOSim("pte", PTE_BASE, sizeof(GPIO_Type)));
-    devlist_.push_back(new LPITSim("lpit0", LPIT0_BASE, sizeof(LPIT_Type)));
-    devlist_.push_back(nvic_ = new NVICSim("s32_nvic", S32_NVIC_BASE, sizeof(S32_NVIC_Type)));
-    devlist_.push_back(new PCCSim("pcc", PCC_BASE, sizeof(PCC_Type)));
-    devlist_.push_back(new PORTSim("porta", PORTA_BASE, sizeof(PORT_Type)));
-    devlist_.push_back(new PORTSim("portc", PORTC_BASE, sizeof(PORT_Type)));
-    devlist_.push_back(new PORTSim("portd", PORTD_BASE, sizeof(PORT_Type)));
-    devlist_.push_back(new PORTSim("porte", PORTE_BASE, sizeof(PORT_Type)));
-    devlist_.push_back(new SCBSim("s32_scb", S32_SCB_BASE, sizeof(S32_SCB_Type)));
-    devlist_.push_back(new SCGSim("scg", SCG_BASE, sizeof(SCG_Type)));
-    devlist_.push_back(new UARTSim("uart1", LPUART1_BASE, sizeof(LPUART_Type)));
-    devlist_.push_back(new WDOGSim("wdog", WDOG_BASE, sizeof(WDOG_Type)));
+    devlist_.push_back(new CANSim("can1", CAN1_BASE, sizeof(CAN_registers_type)));
+    devlist_.push_back(new CANSim("can2", CAN2_BASE, sizeof(CAN_registers_type)));
+    devlist_.push_back(new GPIOSim("pa", GPIOA_BASE, sizeof(GPIO_registers_type)));
+    devlist_.push_back(new GPIOSim("pb", GPIOB_BASE, sizeof(GPIO_registers_type)));
+    devlist_.push_back(new GPIOSim("pc", GPIOC_BASE, sizeof(GPIO_registers_type)));
+    devlist_.push_back(new GPIOSim("pd", GPIOD_BASE, sizeof(GPIO_registers_type)));
+    devlist_.push_back(new GPIOSim("pe", GPIOE_BASE, sizeof(GPIO_registers_type)));
+    devlist_.push_back(new GPIOSim("pf", GPIOF_BASE, sizeof(GPIO_registers_type)));
+    devlist_.push_back(nvic_ = new NVICSim("nvic", NVIC_BASE, sizeof(NVIC_registers_type)));
+    devlist_.push_back(new SCBSim("scb", SCB_BASE, sizeof(SCB_registers_type)));
+    devlist_.push_back(new UARTSim("uart1", USART1_BASE, sizeof(USART_registers_type)));
+    //devlist_.push_back(new WDOGSim("wdog", WWDG_BASE, sizeof(WDG_registers_type)));
 
     for (auto it = devlist_.begin(); it != devlist_.end(); it++) {
         (*it)->init();

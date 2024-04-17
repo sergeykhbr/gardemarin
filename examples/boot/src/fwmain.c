@@ -59,7 +59,7 @@ void init_systick() {
     write32(&systick->CSR, t1);
 }
 
-int main(int argcnt, char *args[]) {
+int fwmain(int argcnt, char *args[]) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
 

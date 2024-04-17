@@ -77,7 +77,7 @@ SOURCES = isr_vector \
 	fwkernel \
 	dbc \
 	task500ms \
-	main
+	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))
 COMMONNAME = app_os_simple

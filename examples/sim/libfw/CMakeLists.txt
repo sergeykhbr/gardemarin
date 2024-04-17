@@ -34,6 +34,13 @@ file(
     "${_fw_root}/../common/*.h"
     "${_fw_root}/src/*.c*"
     "${_fw_root}/src/*.h"
+    "${_fw_root}/../freertos/event_groups.c"
+    "${_fw_root}/../freertos/list.c"
+    "${_fw_root}/../freertos/queue.c"
+    "${_fw_root}/../freertos/stream_buffer.c"
+    "${_fw_root}/../freertos/tasks.c"
+    "${_fw_root}/../freertos/timers.c"
+    "${_fw_root}/../freertos/MemMang/heap_4.c"
     "./freertos/*.c"
     "./freertos/*.h"
 )

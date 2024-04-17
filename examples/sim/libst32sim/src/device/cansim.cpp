@@ -1,4 +1,20 @@
-#include <s32k148regs.h>
+/*
+ *  Copyright 2024 Sergey Khabarov, sergeykhbr@gmail.com
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+#include <can.h>
 #include <s32k148api.h>
 #include <string>
 #include "cansim.h"
@@ -6,6 +22,7 @@
 CANSim::CANSim(const char *name, uint64_t addr, size_t sz) :
     DeviceGeneric(name, addr, sz),
     MCR(static_cast<DeviceGeneric *>(this), "MCR", addr + 0x0),
+    MSR(static_cast<DeviceGeneric *>(this), "MSR", addr + 0x4),
     RXMGMASK(static_cast<DeviceGeneric *>(this), "RXMGMASK", addr + 0x10),
     IMASK1(static_cast<DeviceGeneric *>(this), "IMASK1", addr + 0x28),
     IFLAG1(static_cast<DeviceGeneric *>(this), "IFLAG1", addr + 0x30) {
@@ -130,44 +147,39 @@ bool CANSim::isBusy() {
 }
 
 
-uint32_t CANSim::CAN_MCR_TYPE::read_action(uint32_t prev) {
-    CANSim *p = static_cast<CANSim *>(parent_);
-    can_mcr_reg_t t1;
-    t1.value = prev;
-    switch (p->getState()) {
-    case State_Off:
-        t1.bits.MDIS = 1;
-        t1.bits.FRZ = 1;
-        t1.bits.HALT = 1;
-        t1.bits.NOTRDY = 1;
-        break;
-    case State_Freez:
-        t1.bits.FRZACK = 1;
-        t1.bits.FRZ = 1;
-        t1.bits.HALT = 1;
-        t1.bits.NOTRDY = 1;
-        break;
-    default:
-        t1.bits.FRZ = 0;
-        t1.bits.HALT = 0;
-        t1.bits.NOTRDY = 0;
-    }
-    return t1.value;
-}
-
 uint32_t CANSim::CAN_MCR_TYPE::write_action(uint32_t nxt) {
     CANSim *p = static_cast<CANSim *>(parent_);
-    can_mcr_reg_t t1;
-    t1.value = nxt;
-    if (t1.bits.MDIS) {
-        p->setState(State_Off);
-    } else if (t1.bits.FRZ) {
-        p->setState(State_Freez);
+    CAN_MCR_type t1;
+    t1.val = nxt;
+    if (t1.b.INRQ) {
+        p->setState(State_Init);
+    } else if (t1.b.SLEEP) {
+        p->setState(State_Sleep);
     } else {
         p->setState(State_Idle);
     }
-    return t1.value;
+    return t1.val;
 }
+
+uint32_t CANSim::CAN_MSR_TYPE::read_action(uint32_t prev) {
+    CANSim *p = static_cast<CANSim *>(parent_);
+    CAN_MSR_type t1;
+    t1.val = 0;
+    switch (p->getState()) {
+    case State_Init:
+        t1.b.INAK = 1;
+        break;
+    case State_Rx:
+        t1.b.RXM = 1;
+        break;
+    case State_Tx:
+        t1.b.TXM = 1;
+        break;
+    default:;
+    }
+    return t1.val;
+}
+
 
 int CANSim::checkRxFrameID() {
 #if 0

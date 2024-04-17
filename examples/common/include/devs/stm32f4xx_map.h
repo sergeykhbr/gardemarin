@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <prjtypes.h>
 #include <scs.h>
 #include <syscfg.h>
 #include <rcc.h>
@@ -25,6 +26,7 @@
 #include <usart.h>
 #include <exti.h>
 #include <adc.h>
+#include <can.h>
 
 /* System Control Space memory map */
 #define SCS_BASE              ((addr_t)0xE000E000)

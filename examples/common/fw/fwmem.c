@@ -36,7 +36,7 @@ typedef struct ram_data_type {
 } ram_data_type;
 
 typedef struct memanager_type {
-    uint32_t end;                                 // pinter to heap end
+    char *end;                                    // pinter to heap end
     uint32_t allocated_sz;                        // heap size used
     void *magic;                                  // pointer to itself to mark initialization
     int data_cnt;                                 // Number of registered RAM modules
@@ -67,7 +67,7 @@ void fw_malloc_init() {
     // Do not clear memory if it was already initialzed to continue after reset
     if (pool->magic != pool) {
         memset(pool, 0, sizeof(memanager_type));
-        pool->end = (uint32_t)__heap_start__;
+        pool->end = (char *)__heap_start__;
         pool->magic = pool;
     }
 }

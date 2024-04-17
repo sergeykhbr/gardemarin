@@ -26,7 +26,7 @@ typedef struct app_data_type  {
     task500ms_data_type task500ms_arg;
 } app_data_type;
 
-extern "C" int main_fw(int argcnt, char *args[]) {
+extern "C" int fwmain(int argcnt, char *args[]) {
     app_data_type *appdata;
 
     fw_init();

@@ -52,8 +52,9 @@
 #define portDOUBLE        double
 #define portLONG          long
 #define portSHORT         short
-#define portSTACK_TYPE    uint32_t
+#define portSTACK_TYPE    uint64_t
 #define portBASE_TYPE     long
+#define portPOINTER_SIZE_TYPE    uint64_t
 
 typedef portSTACK_TYPE   StackType_t;
 typedef long             BaseType_t;
@@ -85,6 +86,8 @@ typedef unsigned long    UBaseType_t;
 /*-----------------------------------------------------------*/
 
 /* Scheduler utilities. */
+#define portYIELD()
+#if 0
 #define portYIELD()                                     \
     {                                                   \
         /* Set a PendSV to request a context switch. */ \
@@ -95,6 +98,7 @@ typedef unsigned long    UBaseType_t;
         __asm volatile ( "dsb" ::: "memory" );                     \
         __asm volatile ( "isb" );                                  \
     }
+#endif
 
 #define portNVIC_INT_CTRL_REG     ( *( ( volatile uint32_t * ) 0xe000ed04 ) )
 #define portNVIC_PENDSVSET_BIT    ( 1UL << 28UL )
@@ -153,6 +157,13 @@ extern void vPortExitCritical( void );
         uint8_t ucReturn = 0;
 
         //__asm volatile ( "clz %0, %1" : "=r" ( ucReturn ) : "r" ( ulBitmap ) : "memory" );
+
+        // instruction BLZ counts number of leading zero:
+        //    returns 32 if bitmap=0; and 0 if bitmap[31]=1
+        while (ucReturn < 32 && (ulBitmap & 0x80000000) == 0) {
+            ucReturn++;
+            ulBitmap <<= 1;
+        }
 
         return ucReturn;
     }
@@ -257,7 +268,8 @@ portFORCE_INLINE static void vPortSetBASEPRI( uint32_t ulNewMaskValue )
 }
 /*-----------------------------------------------------------*/
 
-#define portMEMORY_BARRIER()    __asm volatile ( "" ::: "memory" )
+#//define portMEMORY_BARRIER()    __asm volatile ( "" ::: "memory" )
+#define portMEMORY_BARRIER()
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

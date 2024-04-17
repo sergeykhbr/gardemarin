@@ -38,6 +38,9 @@ static inline void fwlist_set_payload(FwList *p, void *payload) {
  * @return      Pointer to the allocated CommonInterface stored as payload
  */
 static inline void *fwlist_get_payload(FwList *p) {
+    if (p == 0) {
+        return 0;
+    }
     return p->payload;
 }
 

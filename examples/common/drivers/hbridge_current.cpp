@@ -47,5 +47,5 @@ void SensorCurrent::Init() {
 
 void SensorCurrent::setSensorValue(uint32_t val) {
     value_.make_uint32(val);
-    ampere_.make_float((1.0/ 255.0) * static_cast<double>(val));
+    ampere_.make_double((1.0/ 255.0) * static_cast<double>(val));
 }

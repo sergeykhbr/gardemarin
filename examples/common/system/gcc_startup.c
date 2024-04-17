@@ -17,7 +17,7 @@
 #include <prjtypes.h>
 #include <string.h>
 
-extern void main_fw(void);
+extern void fwmain(void);
 
 #if!defined _WIN32
 
@@ -118,7 +118,7 @@ int __main (void)
    copy_data_section();
 
     // Call the main entry point, and save the exit code.
-    main_fw();
+    fwmain();
 
     // Run the C++ static destructors.
     __run_fini_array();

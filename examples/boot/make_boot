@@ -39,7 +39,7 @@ SOURCES = isr_vector \
 	vprintfmt \
 	uart \
 	memanager \
-	main
+	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))
 COMMONNAME = boot
