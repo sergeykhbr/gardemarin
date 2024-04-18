@@ -162,6 +162,21 @@ extern "C" void *fw_get_obj_by_index(int obj_idx) {
     return ret;
 }
 
+extern "C" void *fw_get_obj_attr_by_name(void *obj, const char *atrname) {
+    FwAttribute *attr = 0;
+    FwList *pitem = reinterpret_cast<FwObject *>(obj)->GetAttributes();
+    // Find object with the specified index
+    while (pitem) {
+        attr = reinterpret_cast<FwAttribute *>(fwlist_get_payload(pitem));
+        if (strcmp(attr->name(), atrname) == 0) {
+            return attr;
+        }
+        pitem = pitem->next;
+    }
+
+    return 0;
+}
+
 /**
  * @brief Get FwAttribute interface using DBC index corresponding to
  *        index in attribute list
@@ -170,7 +185,7 @@ extern "C" void *fw_get_obj_by_index(int obj_idx) {
  * @return Interface to FwAttribute in case if this index exists or zero
  *         if attribute not found.
  */
-extern "C" void *fw_get_attr_by_index(void *obj,
+extern "C" void *fw_get_obj_attr_by_index(void *obj,
                                       int atr_idx) {
     int tcnt = 0;
     FwList *pitem = reinterpret_cast<FwObject *>(obj)->GetAttributes();

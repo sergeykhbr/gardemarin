@@ -65,6 +65,7 @@ class LoadSensorDriver : public FwObject,
     virtual void setSleep() override;
 
     // TimerListenerInterface
+    virtual uint64_t getTimerInterval() { return 500; }
     virtual void callbackTimer(uint64_t tickcnt) override;
 
  protected:

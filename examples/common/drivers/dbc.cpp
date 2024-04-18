@@ -122,7 +122,7 @@ void DbcConverter::RawCallback(const char *buf, int sz) {
 
     obj = reinterpret_cast<FwObject *>(fw_get_obj_by_index(obj_idx));
     if (obj != 0) {
-        attr = reinterpret_cast<FwAttribute *>(fw_get_attr_by_index(obj, atr_idx));
+        attr = reinterpret_cast<FwAttribute *>(fw_get_obj_attr_by_index(obj, atr_idx));
         if (attr) {
             uart_printf("DBC write to %s::%s\r\n",
                         obj->ObjectName(),

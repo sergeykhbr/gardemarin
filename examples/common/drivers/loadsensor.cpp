@@ -46,7 +46,6 @@ static const gpio_pin_type SPI3_MISO = {(GPIO_registers_type *)GPIOC_BASE, 11};
 static const gpio_pin_type SPI3_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10};
 
 LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
-    gpio_pin_type pin_cfg;
     for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
         chn_[i].port = new(fw_malloc(sizeof(LoadSensorPort)))
                LoadSensorPort(static_cast<FwObject *>(this), i);
@@ -130,16 +129,6 @@ void LoadSensorDriver::callbackTimer(uint64_t tickcnt) {
     }
 
     selectChannel(-1);    // deselect all
-
-    for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
-        if (((ready >> i) & 1) == 0) {
-            continue;
-        }
-        uart_printf("%d %08x %d\r\n", 
-                    i,
-                    chn_[i].port->getSensorValue(),
-                    static_cast<int>(chn_[i].port->getSensorPhysical()));
-    }
 }
 
 
@@ -175,7 +164,7 @@ void LoadSensorPort::Init() {
 
 void LoadSensorPort::setSensorValue(uint32_t val) {
     value_.make_uint32(val);
-    double phys = static_cast<double>(
+    float phys = static_cast<float>(
         val - offset_.to_uint32()) * alpha_.to_float();
     gram_.make_float(phys);
 }

@@ -17,18 +17,21 @@
 
 #include "CommonInterface.h"
 
-class TimerListenerInterface : public CommonInterface {
+class KeyListenerInterface : public CommonInterface {
  public:
-    TimerListenerInterface() : CommonInterface("TimerListenerInterface") {}
+    KeyListenerInterface() : CommonInterface("KeyListenerInterface") {}
 
-    virtual uint64_t getTimerInterval() = 0;
-    virtual void callbackTimer(uint64_t tickcnt) = 0;
+    virtual void keyPressed() = 0;
+    virtual void keyReleased() = 0;
+    virtual void keyClick() = 0;
+    virtual void keyDoubleClick() = 0;
+    virtual void keyLongClick() = 0;
 };
 
 
-class TimerInterface : public CommonInterface {
+class KeyInterface : public CommonInterface {
  public:
-    TimerInterface() : CommonInterface("TimerInterface") {}
+    KeyInterface() : CommonInterface("KeyInterface") {}
 
-    virtual void registerCallbackListener(TimerListenerInterface *iface) = 0;
+    virtual void registerKeyListener(KeyListenerInterface *iface) = 0;
 };

@@ -76,6 +76,7 @@ SOURCES = isr_vector \
 	fwobject \
 	fwkernel \
 	dbc \
+	task10ms \
 	task500ms \
 	fwmain
 

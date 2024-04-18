@@ -15,19 +15,44 @@
  */
 
 #include <prjtypes.h>
+#include <string.h>
 #include <stdio.h>
 #include <stm32f4xx_map.h>
 #include <fwapi.h>
 #include <uart.h>
+#include <gpio_drv.h>
 #include "user_btn.h"
 
 //    PC13 - User btn (internal pull-up). 0=btn is pressed
-extern "C" void user_btn_init() {
+static const gpio_pin_type ubtn_pin = {
+    (GPIO_registers_type *)GPIOC_BASE, 13
+};
+
+// EXTI15_10
+extern "C" void Btn_IRQHandler() {
+    EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
+
+    IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("ubtn0", "IrqHandlerInterface"));
+    if (iface) {
+        int state = static_cast<int>(gpio_pin_get(&ubtn_pin));
+        iface->handleInterrupt(&state);
+    }
+
+    write32(&EXTI->PR, 1 << ubtn_pin.pinidx);   // Pending register, cleared by programming it to 1
+    nvic_irq_clear(40);
+}
+
+
+UserButtonDriver::UserButtonDriver(const char *name)
+    : FwObject(name),
+    event_(0),
+    ms_cnt_(0),
+    ms_pressed_(0),
+    listener_(0) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
-    GPIO_registers_type *P = (GPIO_registers_type *)GPIOC_BASE;
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
-    int bitidx = 13;
     uint32_t t1;
 
     // enable clocks for bullet proof
@@ -40,26 +65,9 @@ extern "C" void user_btn_init() {
     write32(&RCC->APB2ENR, t1);
 
 
-    // 00 input; 01 output; 10 alternate; 11 analog
-    t1 = read32(&P->MODER);
-    t1 &= ~(0x3 << 2*bitidx);
-    write32(&P->MODER, t1);
-
-    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
-    t1 = read32(&P->OTYPER);
-    t1 &= ~(1 << bitidx);
-    write32(&P->OTYPER, t1);
-
-    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
-    t1 = read32(&P->OSPEEDR);
-    t1 &= ~(0x3 << 2*bitidx);
-    write32(&P->OSPEEDR, t1);
-
-    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down; 11=reserved
-    t1 = read32(&P->PUPDR);
-    t1 &= ~(0x3 << 2*bitidx);
-    t1 |= (0x1 << 2*bitidx);
-    write32(&P->PUPDR, t1);
+    gpio_pin_as_input(&ubtn_pin,
+                      GPIO_SLOW,
+                      GPIO_PULL_UP);
 
     // connect EXTI13 request to port PC
     t1 = read32(&SYSCFG->EXTICR[3]);
@@ -68,40 +76,57 @@ extern "C" void user_btn_init() {
     write32(&SYSCFG->EXTICR[3], t1);
 
 
-    write32(&EXTI->IMR, 1 << 13);     // Interrupt mask: 0 line is masked; 1=unmasked
-    write32(&EXTI->RTSR, 1 << 13);    // Rising trigger selection
-    write32(&EXTI->FTSR, 1 << 13);    // Falling trigger selection
+    write32(&EXTI->IMR, 1 << ubtn_pin.pinidx);     // Interrupt mask: 0 line is masked; 1=unmasked
+    write32(&EXTI->RTSR, 1 << ubtn_pin.pinidx);    // Rising trigger selection
+    write32(&EXTI->FTSR, 1 << ubtn_pin.pinidx);    // Falling trigger selection
 
-    write32(&EXTI->PR, 1 << 13);   // Pending register, cleared by programming it to 1
+    write32(&EXTI->PR, 1 << ubtn_pin.pinidx);   // Pending register, cleared by programming it to 1
+
+}
+
+void UserButtonDriver::Init() {
+    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
+    RegisterInterface(static_cast<TimerListenerInterface *>(this));
+    RegisterInterface(static_cast<KeyInterface *>(this));
 
     // prio: 0 highest; 7 is lowest
     nvic_irq_enable(40, 3);
 }
 
-// EXTI15_10
-extern "C" void Btn_IRQHandler() {
-    GPIO_registers_type *PC = (GPIO_registers_type *)GPIOC_BASE;
-    EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
-    user_btn_type *p = (user_btn_type *)fw_get_ram_data(USER_BTN_DRV_NAME);
-    uint32_t state;
-
-    write32(&EXTI->PR, 1 << 13);   // Pending register, cleared by programming it to 1
-    nvic_irq_clear(40);
-
-    if (p == 0) {
-        // Something is totally wrong
-        return;
-    }
-
-    state = (read32(&PC->IDR) >> 13) & 1;
-
+void UserButtonDriver::handleInterrupt(int *state) {
     // inversed, if LOW btn is pressed
-    if (state == 0) {
-        if ((p->tm_count - p->tm_pressed) >= 2) {   // 1=500ms
-            p->event |= BTN_EVENT_PRESSED;
+    if (*state == 0) {
+        if ((ms_cnt_ - ms_pressed_) >= 50) {
+            event_ |= BTN_EVENT_PRESSED;
         }
-        p->tm_pressed = p->tm_count;
+        ms_pressed_ = ms_cnt_;
     } else {
-        p->event |= BTN_EVENT_RELEASED;
+        event_ |= BTN_EVENT_RELEASED;
     }
+}
+
+void UserButtonDriver::registerKeyListener(KeyListenerInterface *iface) {
+    FwList *item = reinterpret_cast<FwList *>(fw_malloc(sizeof(FwList)));
+    fwlist_set_payload(item, iface);
+    fwlist_add(&listener_, item);
+}
+
+void UserButtonDriver::callbackTimer(uint64_t tickcnt) {
+    uint32_t ev = event_;
+    event_ ^= ev;
+#ifdef _WIN32
+if ((tickcnt % 5000) == 4999) {
+    ev |= BTN_EVENT_PRESSED; 
+}
+#endif
+    if (ev & BTN_EVENT_PRESSED) {
+        FwList *p = listener_;
+        KeyListenerInterface *iface;
+        while (p) {
+            iface = reinterpret_cast<KeyListenerInterface *>(fwlist_get_payload(p));
+            iface->keyPressed();
+            p = p->next;
+        }
+    }
+    ms_cnt_ = tickcnt;
 }

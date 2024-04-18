@@ -97,6 +97,16 @@ void *fw_get_object_port_interface(const char *objname,
  */
 void *fw_get_obj_by_index(int obj_idx);
 
+
+/**
+ * @brief Get FwAttribute interface
+ * @param[in] obj Pointer to FwObject interface
+ * @param[in] atr_idx Index of FwAttribute in the list of object's attributes
+ * @return Interface to FwAttribute in case if this index exists or zero
+ *         if attribute not found.
+ */
+void *fw_get_obj_attr_by_name(void *obj, const char *atrname);
+
 /**
  * @brief Get FwAttribute interface using DBC index corresponding to
  *        index in attribute list
@@ -105,7 +115,7 @@ void *fw_get_obj_by_index(int obj_idx);
  * @return Interface to FwAttribute in case if this index exists or zero
  *         if attribute not found.
  */
-void *fw_get_attr_by_index(void *obj, int atr_idx);
+void *fw_get_obj_attr_by_index(void *obj, int atr_idx);
 
 
 #ifdef __cplusplus

@@ -42,6 +42,7 @@ class HBridgeDriver : public FwObject,
     virtual void setBinDisabled() override;
 
     // TimerListenerInterface
+    virtual uint64_t getTimerInterval() { return 10; }
     virtual void callbackTimer(uint64_t tickcnt) override;
 
     // Common methods:

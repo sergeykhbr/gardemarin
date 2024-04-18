@@ -81,7 +81,7 @@ void LedStripDriver::Init() {
 }
 
 void LedStripDriver::handleInterrupt(int *argv) {
-    int cnt;
+    uint32_t cnt;
     ColorChannelType *pch;
     ++tim_cnt_;
 

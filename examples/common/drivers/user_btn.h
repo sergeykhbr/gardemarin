@@ -16,25 +16,41 @@
 #pragma once
 
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define USER_BTN_DRV_NAME "ubtn"
+#include <fwlist.h>
+#include <fwobject.h>
+#include <FwAttribute.h>
+#include <IrqInterface.h>
+#include <TimerInterface.h>
+#include <KeyInterface.h>
 
 #define BTN_EVENT_PRESSED  0x01
 #define BTN_EVENT_RELEASED 0x02
 
-typedef struct user_btn_type {
-    uint32_t event;
-    uint64_t tm_count;     // copied from task 500 ms (for now)
-    uint64_t tm_pressed;
-} user_btn_type;
+class UserButtonDriver : public FwObject,
+                         public IrqHandlerInterface,
+                         public TimerListenerInterface,
+                         public KeyInterface {
+ public:
+    explicit UserButtonDriver(const char *name);
 
-void user_btn_init();
+    // FwObject interface:
+    virtual void Init() override;
 
-#ifdef __cplusplus
-}
-#endif
+    // IrqHandlerInterface
+    virtual void handleInterrupt(int *argv) override;
+
+    // TimerListenerInterface
+    virtual uint64_t getTimerInterval() override { return 1; }
+    virtual void callbackTimer(uint64_t tickcnt) override;
+
+    // KeyInterface
+    virtual void registerKeyListener(KeyListenerInterface *iface) override;
+
+ protected:
+    static const int LISTENERS_MAX = 4;
+
+    uint32_t event_;
+    uint64_t ms_cnt_;
+    uint64_t ms_pressed_;
+    FwList *listener_;
+};

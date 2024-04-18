@@ -20,11 +20,8 @@
 #include <stm32f4xx_map.h>
 #include <fwapi.h>
 #include <uart.h>
-#include "task500ms.h"
-
-typedef struct app_data_type  {
-    task500ms_data_type task500ms_arg;
-} app_data_type;
+#include <new>
+#include "app_tasks.h"
 
 extern "C" int fwmain(int argcnt, char *args[]) {
     app_data_type *appdata;
@@ -36,22 +33,31 @@ extern "C" int fwmain(int argcnt, char *args[]) {
         appdata = (app_data_type *)fw_malloc(sizeof(app_data_type));
         //appdata = pvPortMalloc(sizeof(app_data_type));
         memset(appdata, 0, sizeof(app_data_type));
+        appdata->keyNotifier = 
+                new(fw_malloc(sizeof(KeyNotifierType))) KeyNotifierType();
+        appdata->keyNotifier->data = appdata;
+        appdata->keyNotifier->btnClick = false;
 
         fw_register_ram_data(APP_TASK_NAME, appdata);
-        fw_register_ram_data(USER_BTN_DRV_NAME, &appdata->task500ms_arg.user_btn);
     }
 
-    user_btn_init();
     EnableIrqGlobal();
 
     uart_printf("%s\n", "Starting FreeRTOS scheduler!\r\n");
 
+    xTaskCreate(task1ms,
+                 APP_TASK_NAME,
+                 configMINIMAL_STACK_SIZE,
+                 appdata,
+                 tskIDLE_PRIORITY + 1UL,
+                 &appdata->handleTask1ms);
+
     xTaskCreate(task500ms,
                  APP_TASK_NAME,
                  configMINIMAL_STACK_SIZE,
-                 &appdata->task500ms_arg,
+                 appdata,
                  tskIDLE_PRIORITY + 1UL,
-                 (TaskHandle_t *) NULL);
+                 &appdata->handleTask500ms);
 
     vTaskStartScheduler();
 
