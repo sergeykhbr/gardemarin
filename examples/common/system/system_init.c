@@ -338,17 +338,12 @@ void setup_gpio() {
 
 void setup_uart() {
     USART_registers_type *UART1 = (USART_registers_type *)USART1_BASE;
-    uint16_t fraction;
-    uint16_t mantissa;
     uint16_t t1;
 
     // UART1 on APB2 = 72 MHz
     // 72000000/(16*115200) = 39.0625
-    fraction = 1;     // 0.0625 * 16
-    mantissa = 39;
     // APB2 = HCLK / 2
     uint32_t t2 = system_clock_hz() / 2 / 115200;
-//    write16(&UART1->BRR, (mantissa << 4) | fraction);
     write16(&UART1->BRR, (uint16_t)t2);
 
     // [15] OVER8: Oversampling: 0=16; 1=8
@@ -360,7 +355,7 @@ void setup_uart() {
     // [8] PEIE: PE irq ena
     // [7] TXEIE: TXE irq ena
     // [6] TCIE: Transmission complete irq en
-    // [5] RXNEIE: RXNE irq ena
+    // [5] RXNEIE: RX not empty irq ena
     // [4] EDLEIE: IDLE irq ena
     // [3] TE: transmitter ena
     // [2] RE: receiver ena

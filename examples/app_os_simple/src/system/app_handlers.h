@@ -26,6 +26,7 @@ extern void CAN1_FIFO0_irq_handler();
 extern void CAN1_FIFO1_irq_handler();
 extern void CAN2_FIFO0_irq_handler();
 extern void CAN2_FIFO1_irq_handler();
+extern void USART1_irq_handler();
 
 #define WWDG_IRQHandler DefaultISR
 #define PVD_IRQHandler DefaultISR
@@ -64,7 +65,7 @@ extern void CAN2_FIFO1_irq_handler();
 #define I2C2_ER_IRQHandler DefaultISR
 #define SPI1_IRQHandler DefaultISR
 #define SPI2_IRQHandler DefaultISR
-#define USART1_IRQHandler DefaultISR
+#define USART1_IRQHandler USART1_irq_handler
 #define USART2_IRQHandler DefaultISR
 #define USART3_IRQHandler DefaultISR
 #define EXTI15_10_IRQHandler Btn_IRQHandler

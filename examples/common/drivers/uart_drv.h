@@ -18,20 +18,18 @@
 #include <prjtypes.h>
 #include <fwlist.h>
 #include <fwobject.h>
+#include <fwfifo.h>
 #include <FwAttribute.h>
 #include <IrqInterface.h>
 #include <TimerInterface.h>
-#include <KeyInterface.h>
+#include <RawInterface.h>
 
-#define BTN_EVENT_PRESSED  0x01
-#define BTN_EVENT_RELEASED 0x02
-
-class UserButtonDriver : public FwObject,
-                         public IrqHandlerInterface,
-                         public TimerListenerInterface,
-                         public KeyInterface {
+class UartDriver : public FwObject,
+                   public IrqHandlerInterface,
+                   public TimerListenerInterface,
+                   public RawInterface {
  public:
-    explicit UserButtonDriver(const char *name);
+    explicit UartDriver(const char *name);
 
     // FwObject interface:
     virtual void Init() override;
@@ -43,12 +41,14 @@ class UserButtonDriver : public FwObject,
     virtual uint64_t getTimerInterval() override { return 1; }
     virtual void callbackTimer(uint64_t tickcnt) override;
 
-    // KeyInterface
-    virtual void registerKeyListener(KeyListenerInterface *iface) override;
+    // RawInterface
+    virtual void WriteData(const char *buf, int sz) override;
+    virtual void RegisterRawListener(RawListenerInterface *iface) override;
 
  protected:
-    uint32_t event_;
-    uint64_t ms_cnt_;
-    uint64_t ms_pressed_;
     FwList *listener_;
+
+    FwFifo<char> rxfifo_;
+    char rxbuf_[16];
+    int rxcnt_;
 };

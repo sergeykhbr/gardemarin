@@ -302,7 +302,7 @@ void KeyNotifierType::keyPressed() {
 void KeyNotifierType::waitKeyPressed() {
     uint32_t notifiedValue;
     xTaskNotifyWait(0x00,   // don't clear any notification bits on entry
-                    ULONG_MAX,  // Reset the notification value to 0 on exit
+                    0xffffffffUL,  // Reset the notification value to 0 on exit
                     &notifiedValue,
                     portMAX_DELAY); // Block indefinetly
 }

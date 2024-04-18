@@ -19,6 +19,7 @@
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
+#include <uart_drv.h>
 #include "relais.h"
 #include "ledstrip.h"
 #include "can_drv.h"
@@ -40,6 +41,7 @@ class KernelClass : public FwObject {
     /** @brief Kernel Version attribute */
     FwAttribute version_;
 
+    UartDriver uart1_;
     RelaisDriver relais0_;
     RelaisDriver relais1_;
     LedStripDriver ledrbw_;

@@ -63,6 +63,7 @@ SOURCES = isr_vector \
 	gpio_drv \
 	user_btn \
 	user_led \
+	uart_drv \
 	relais \
 	loadsensor \
 	ledstrip \
@@ -76,7 +77,7 @@ SOURCES = isr_vector \
 	fwobject \
 	fwkernel \
 	dbc \
-	task10ms \
+	task1ms \
 	task500ms \
 	fwmain
 
