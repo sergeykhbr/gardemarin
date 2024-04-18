@@ -125,5 +125,12 @@ int __main (void)
 
     return 0;
 }
+#else
+
+int __main (void) {
+    // Call the main entry point, and save the exit code.
+    fwmain();
+    return 0;
+}
 
 #endif  // !_WIN32
