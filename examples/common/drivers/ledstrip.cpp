@@ -31,19 +31,19 @@ static const gpio_pin_type gpio_cfg[GARDEMARIN_LED_STRIP_TOTAL] = {
 };
 
 LedStripDriver::LedStripDriver(const char *name) : FwObject(name),
-    tim_hz_("tim_hz"),
-    red_hz_("red_hz"),
-    red_duty_("red_duty"),
-    blue_hz_("blue_hz"),
-    blue_duty_("blue_duty"),
-    white_hz_("white_hz"),
-    white_duty_("white_duty"),
-    mixed_hz_("mixed_hz"),
-    mixed_duty_("mixed_duty"),
     red_(static_cast<FwObject *>(this), &gpio_cfg[0], "red", 0),
     blue_(static_cast<FwObject *>(this), &gpio_cfg[1], "blue", 1),
     white_(static_cast<FwObject *>(this), &gpio_cfg[2], "white", 2),
-    mixed_(static_cast<FwObject *>(this), &gpio_cfg[3], "mixed", 3) {
+    mixed_(static_cast<FwObject *>(this), &gpio_cfg[3], "mixed", 3),
+    tim_hz_("tim_hz"),
+    red_hz_("red_hz"),
+    red_duty_("red_duty", static_cast<PwmInterface *>(&red_)),
+    blue_hz_("blue_hz"),
+    blue_duty_("blue_duty", static_cast<PwmInterface *>(&blue_)),
+    white_hz_("white_hz"),
+    white_duty_("white_duty", static_cast<PwmInterface *>(&white_)),
+    mixed_hz_("mixed_hz"),
+    mixed_duty_("mixed_duty", static_cast<PwmInterface *>(&mixed_)) {
 
     tim_cnt_ = 0;
 

@@ -41,7 +41,6 @@ extern "C" void USART1_irq_handler() {
         int argv = 0;
         iface->handleInterrupt(&argv);
     }
-
     nvic_irq_clear(37);
 }
 
@@ -115,6 +114,16 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
     FwList *p = listener_;
     RawListenerInterface *iface;
 
+#ifdef _WIN32
+    if (tickcnt == 5000) {
+        const char *xxx = ">!00000104,2,8256";
+        while (p) {
+            iface = reinterpret_cast<RawListenerInterface *>(fwlist_get_payload(p));
+            iface->RawCallback(xxx, strlen(xxx));
+            p = p->next;
+        }
+    }
+#endif
     if (rxfifo_.isEmpty()) {
         return;
     }
@@ -129,13 +138,6 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
         iface->RawCallback(rxbuf_, rxcnt_);
         p = p->next;
     }
-
-    // Debug ouput of input stream:
-    if (rxcnt_ >= sizeof(rxbuf_)) {
-        rxcnt_ = sizeof(rxbuf_) - 1;
-    }
-    rxbuf_[rxcnt_] = '\0';
-    uart_printf(">>%s\r\n", rxbuf_);
 }
 
 void UartDriver::WriteData(const char *buf, int sz) {

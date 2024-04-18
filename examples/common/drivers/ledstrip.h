@@ -62,22 +62,39 @@ class LedStripDriver : public FwObject,
     void setChannelPwmHz(int chidx, int hz) {}
     void setChannelPwmDutyCycle(int chidx, int duty) {}
 
+    class PwmDutyAttribute : public FwAttribute {
+     public:
+        explicit PwmDutyAttribute(const char *name, PwmInterface *ipwm) :
+            FwAttribute(name), ipwm_(ipwm) {
+            make_int8(0);
+        }
+
+        virtual void post_write() override {
+            if (to_int8()) {
+                ipwm_->enablePwm();
+            } else {
+                ipwm_->disablePwm();
+            }
+        }
+     private:
+        PwmInterface *ipwm_;
+    };
 
  protected:
-    FwAttribute tim_hz_;
-    FwAttribute red_hz_;
-    FwAttribute red_duty_;
-    FwAttribute blue_hz_;
-    FwAttribute blue_duty_;
-    FwAttribute white_hz_;
-    FwAttribute white_duty_;
-    FwAttribute mixed_hz_;
-    FwAttribute mixed_duty_;
-
     LedColorPort red_;
     LedColorPort blue_;
     LedColorPort white_;
     LedColorPort mixed_;
+
+    FwAttribute tim_hz_;
+    FwAttribute red_hz_;
+    PwmDutyAttribute red_duty_;
+    FwAttribute blue_hz_;
+    PwmDutyAttribute blue_duty_;
+    FwAttribute white_hz_;
+    PwmDutyAttribute white_duty_;
+    FwAttribute mixed_hz_;
+    PwmDutyAttribute mixed_duty_;
 
     uint32_t tim_cnt_;
 

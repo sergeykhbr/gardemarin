@@ -26,6 +26,7 @@
  */
 DbcConverter::DbcConverter(const char *name) : FwObject(name),
     tmpRx_("trx") {
+    erawstate_ = State_PRM1;
 }
 
 /**
@@ -103,6 +104,12 @@ void DbcConverter::PostInit() {
     uart_printf("\r\n");
 
     // TODO: add enum format output
+
+    RawInterface *iraw = reinterpret_cast<RawInterface *>(
+        fw_get_object_interface("uart1", "RawInterface"));
+    if (iraw) {
+        iraw->RegisterRawListener(static_cast<RawListenerInterface *>(this));
+    }
 }
 
 /**
@@ -112,26 +119,68 @@ void DbcConverter::PostInit() {
  * @param[in] sz Input buffer size in Bytes
  */
 void DbcConverter::RawCallback(const char *buf, int sz) {
-    int obj_idx;
-    int atr_idx;
-    FwObject *obj;
-    FwAttribute *attr;
-
-    obj_idx = buf[0] & 0xFF;
-    atr_idx = buf[1] & 0xFF;
-
-    obj = reinterpret_cast<FwObject *>(fw_get_obj_by_index(obj_idx));
-    if (obj != 0) {
-        attr = reinterpret_cast<FwAttribute *>(fw_get_obj_attr_by_index(obj, atr_idx));
-        if (attr) {
-            uart_printf("DBC write to %s::%s\r\n",
-                        obj->ObjectName(),
-                        attr->name());
-            ConvertDataToAttribute(buf, attr->kind(), &tmpRx_);
-
-            // Generate Request to object that attribtue was modified
-            // externally
-            obj->ModifyAttribute(attr, &tmpRx_);
+    for (int i = 0; i < sz; i++) {
+        switch (erawstate_) {
+        case State_PRM1:
+            if (buf[i] == '>') {
+                erawstate_ = State_PRM2;
+            }
+            break;
+        case State_PRM2:
+            if (buf[i] == '!') {
+                erawstate_ = State_CanId;
+                rawcnt_ = 0;
+            } else {
+                erawstate_ = State_PRM1;
+            }
+            break;
+        case State_CanId:
+            rawid_[rawcnt_++] = buf[i];
+            if (rawcnt_ == 8) {
+                erawstate_ = State_Comma1;
+            }
+            break;
+        case State_Comma1:
+            if (buf[i] == ',') {
+                erawstate_ = State_DLC;
+            } else {
+                erawstate_ = State_PRM1;
+            }
+            break;
+        case State_DLC:
+            if (buf[i] >= '1' && buf[i] <= '8') {
+                erawstate_ = State_Comma2;
+                rawcnt_ = 0;
+                rawdlc_ = buf[i] - '0';
+            } else {
+                erawstate_ = State_PRM1;
+            }
+            break;
+        case State_Comma2:
+            if (buf[i] == ',') {
+                erawstate_ = State_Payload;
+            } else {
+                erawstate_ = State_PRM1;
+            }
+            break;
+        case State_Payload:
+            rawpayload_[rawcnt_] = buf[i];
+            rawpayload_[rawcnt_ + 1] = '\0';
+            if (++rawcnt_ == 2*rawdlc_) {
+                erawstate_ = State_PRM1;
+                can_frame_type frame;
+                frame.busid = 0;
+                frame.id = str2hex32(rawid_, 8);
+                frame.dlc = static_cast<uint8_t>(rawdlc_);
+                for (uint8_t n = 0; n < frame.dlc; n++) {
+                    frame.data.u8[n] = 
+                        static_cast<uint8_t>(str2hex32(&rawpayload_[2*n], 2));
+                }
+                
+                processRxCanFrame(&frame);
+            }
+            break;
+        default:;
         }
     }
 }
@@ -224,6 +273,52 @@ void DbcConverter::ConvertDataToAttribute(const char *buf,
  */
 int DbcConverter::GetCanMessageDlc() {
     return 8;
+}
+
+uint32_t DbcConverter::str2hex32(char *buf, int sz) {
+    uint32_t ret = 0;
+    for (int i = 0; i < sz; i++) {
+        ret <<= 4;
+        if (buf[i] >= '0' && buf[i] <= '9') {
+            ret |= buf[i] - '0';
+        } else if (buf[i] >= 'a' && buf[i] <= 'f') {
+            ret |= buf[i] - 'a' + 10;
+        } else if (buf[i] >= 'A' && buf[i] <= 'F') {
+            ret |= buf[i] - 'A' + 10;
+        }
+    }
+    return ret;
+}
+
+void DbcConverter::processRxCanFrame(can_frame_type *frame) {
+    int obj_idx;
+    int atr_idx;
+    int we;
+    FwObject *obj;
+    FwAttribute *attr;
+
+    obj_idx = frame->id & 0xFF;
+    atr_idx = frame->data.u8[0] & 0x7F;
+    we = (frame->data.u8[0] >> 7) & 1;
+
+    obj = reinterpret_cast<FwObject *>(fw_get_obj_by_index(obj_idx));
+    if (obj != 0) {
+        attr = reinterpret_cast<FwAttribute *>(fw_get_obj_attr_by_index(obj, atr_idx));
+        if (attr) {
+            uart_printf("DBC write to %s::%s\r\n",
+                        obj->ObjectName(),
+                        attr->name());
+            if (we) {
+                attr->write(&frame->data.s8[1], frame->dlc - 1);
+            }
+            //ConvertDataToAttribute(buf, attr->kind(), &tmpRx_);
+
+            // Generate Request to object that attribtue was modified
+            // externally
+            //obj->ModifyAttribute(attr, &tmpRx_);
+        }
+    }
+
 }
 
 /**

@@ -32,22 +32,27 @@ extern "C" void fw_init() {
 
     fw_malloc_init();
 
+uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     new (fw_malloc(sizeof(KernelClass))) KernelClass("kernel");
 
+uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     // It is possible to create JSON-configration file and platoform loading here
     p = fw_get_objects_list();
+uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     while (p) {
         obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         obj->Init();
         p = p->next;
     }
 
+uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     p = fw_get_objects_list();
     while (p) {
         obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         obj->PostInit();
         p = p->next;
     }
+uart_printf("%s,%d\r\n", __FILE__, __LINE__);
 }
 
 extern "C" FwList *fw_empty_list_item() {
@@ -149,7 +154,7 @@ void *fw_get_object_port_interface(const char *objname,
 extern "C" void *fw_get_obj_by_index(int obj_idx) {
     int tcnt = 0;
     FwList *pitem = fw_get_objects_list();
-    CommonInterface *ret = 0;
+    FwObject *ret = 0;
     // Find object with the specified index
     while (pitem != 0 && tcnt != obj_idx) {
         pitem = pitem->next;
@@ -157,7 +162,7 @@ extern "C" void *fw_get_obj_by_index(int obj_idx) {
     }
 
     if (pitem != 0 && tcnt == obj_idx) {
-        ret = reinterpret_cast<CommonInterface *>(fwlist_get_payload(pitem));
+        ret = reinterpret_cast<FwObject *>(fwlist_get_payload(pitem));
     }
     return ret;
 }

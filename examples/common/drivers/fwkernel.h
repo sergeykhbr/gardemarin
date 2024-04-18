@@ -50,9 +50,9 @@ class KernelClass : public FwObject {
     LoadSensorDriver scales_;
     UserLedDriver uled0_;
     UserButtonDriver ubtn0_;
-    HBridgeDriver hbrg0_;
-    HBridgeDriver hbrg1_;
-    HBridgeDriver hbrg2_;
-    HBridgeDriver hbrg3_;
+    //HBridgeDriver hbrg0_;
+    //HBridgeDriver hbrg1_;
+    //HBridgeDriver hbrg2_;
+    //HBridgeDriver hbrg3_;
     DbcConverter dbc_;        // CAN database converter
 };

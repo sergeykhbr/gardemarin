@@ -236,6 +236,19 @@ class FwAttribute : public CommonInterface {
     void set_byte(int idx, char v);
 
     /**
+     * @brief modify attribute throught external interface
+     */
+    void write(char *buf, int sz);
+
+    /**
+     * @brief modify attribute throught external interface
+     */
+    void read(char *buf, int sz);
+
+    virtual void pre_read() {}
+    virtual void post_write() {}
+
+    /**
      * @brief Detect number of bits need to represent attribute in DBC message
      * @return Number of bits need to represent attribute
      */

@@ -43,6 +43,7 @@ static const uint32_t CAN_MSG_ID_WRITE_DATA = 0x778;
 typedef union can_payload_type {
     uint32_t u32[2];
     uint8_t u8[8];
+    char s8[8];
 } can_payload_type;
 
 typedef struct can_frame_type {

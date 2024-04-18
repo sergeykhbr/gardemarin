@@ -38,6 +38,10 @@ class DbcConverter : public FwObject,
  private:
     int GetCanMessageDlc();
 
+    uint32_t str2hex32(char *buf, int sz);
+
+    void processRxCanFrame(can_frame_type *frame);
+
     /**
      * @brief Print SG_ lines for a attribute of the object into DBG output
      */
@@ -72,5 +76,17 @@ class DbcConverter : public FwObject,
     /** Temporary attribute to convert CAN message into modify request. No need
       * to register it in attribute list */
     FwAttribute tmpRx_;
-
+    enum ERawState {
+        State_PRM1,     // 1 B = ">"
+        State_PRM2,     // 1 B = "!"
+        State_CanId,    // 8 B = "12345678" hex in string format
+        State_Comma1,   // 1 B = ","
+        State_DLC,      // 1 B = "1"..."8"
+        State_Comma2,   // 1 B = ","
+        State_Payload   // 16 B
+    } erawstate_;
+    char rawid_[11];
+    char rawdlc_;
+    char rawpayload_[17];
+    int rawcnt_;
 };

@@ -233,6 +233,20 @@ void FwAttribute::set_byte(int idx, char v) {
     u_.data[idx & 0x7] = v;
 }
 
+void FwAttribute::write(char *buf, int sz) {
+    for (int i = 0; i < sz; i++) {
+        u_.data[i & 0x7] = buf[i];
+    }
+    post_write();
+}
+
+void FwAttribute::read(char *buf, int sz) {
+    pre_read();
+    for (int i = 0; i < BitSize() / 8; i++) {
+        buf[i] = u_.data[i & 0x7];
+    }
+}
+
 /**
  * @brief Detect number of bits need to represent attribute in DBC message
  * @return Number of bits need to represent attribute
