@@ -22,6 +22,7 @@
 #include "nvicsim.h"
 
 enum EIsrId {
+    Nmi_Total = 15,
     Interrupt_Total = 256
 };
 
@@ -43,6 +44,7 @@ class S32K148Sim : public DeviceGeneric {
     void *hFwThread_;
     void *eventIsrAsync_;
     bool enabled_;
-    isr_type vector_[Interrupt_Total];
+    isr_type vector_[Interrupt_Total + Nmi_Total];
     NVICSim *nvic_;
+    int nmi_request_;
 };

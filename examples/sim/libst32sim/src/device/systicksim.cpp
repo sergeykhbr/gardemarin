@@ -14,7 +14,8 @@
  *  limitations under the License.
  */
 
-#include "systicksim.h"
+ #include "systicksim.h"
+#include <s32k148api.h>
 
 SysTickSim::SysTickSim(const char *name, uint64_t addr, size_t sz) :
     DeviceGeneric(name, addr, sz),
@@ -22,11 +23,36 @@ SysTickSim::SysTickSim(const char *name, uint64_t addr, size_t sz) :
     RVR(static_cast<DeviceGeneric *>(this), "RVR", addr + 0x4),
     CVR(static_cast<DeviceGeneric *>(this), "CVR", addr + 0x8),
     CALIB(static_cast<DeviceGeneric *>(this), "CALIB", addr + 0xc) {
+    sysclk_hz_ = 144000000; // 1 clock 7ns
+    time_ = 0;
 }
 
 void SysTickSim::update(double dt) {
-    if (!CSR.isIrqEnabled())  {
+    bool overflow = false;
+    uint64_t cvr_prv;
+    uint64_t cvr_cur;
+    uint32_t rvr = RVR.get() + 1;
+    if (!CSR.isEnabled()) {
+        time_ = 0;
         return;
+    }
+    cvr_prv = static_cast<uint64_t>(time_ * sysclk_hz_);
+    cvr_prv %= rvr;
+
+    time_ += dt;
+    cvr_cur = static_cast<uint64_t>(time_ * sysclk_hz_);
+    cvr_cur %= rvr;
+    CVR.set(rvr - static_cast<uint32_t>(cvr_cur));
+
+    if (cvr_cur < cvr_prv && CSR.isIrqEnabled())  {
+        s32k148_request_interrupt(-1);
     }
 }
 
+// small delta time to emulate CPU delay
+uint32_t SysTickSim::CVR_TYPE::read_action(uint32_t prev) {
+    prev -= 100;
+    prev &= ((1 << 24) - 1);
+    set(prev);
+    return prev;
+}

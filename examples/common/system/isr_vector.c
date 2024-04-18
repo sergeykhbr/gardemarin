@@ -28,21 +28,21 @@ __attribute__ ((section(".isr_vector"),used))
 irq_handler_type __isr_vectors[98] =
 { //
     (irq_handler_type)(__stack_base),                // The initial stack pointer
-    Reset_Handler,                                   /* Reset Handler */
-    NMI_Handler,                                     /* NMI Handler*/
-    HardFault_Handler,                               /* Hard Fault Handler*/
-    MemManage_Handler,                               /* MPU Fault Handler*/
-    BusFault_Handler,                                /* Bus Fault Handler*/
-    UsageFault_Handler,                              /* Usage Fault Handler*/
-    0,                                               /* Reserved*/
-    0,                                               /* Reserved*/
-    0,                                               /* Reserved*/
-    0,                                               /* Reserved*/
-    SVC_Handler,                                     /* SVCall Handler*/
-    DebugMon_Handler,                                /* Debug Monitor Handler*/
-    0,                                               /* Reserved*/
-    PendSV_Handler,                                  /* PendSV Handler*/
-    SysTick_Handler,                                 /* SysTick Handler*/
+    Reset_Handler,                                   /* -15 Reset Handler */
+    NMI_Handler,                                     /* -14 NMI Handler*/
+    HardFault_Handler,                               /* -13 Hard Fault Handler*/
+    MemManage_Handler,                               /* -12 MPU Fault Handler*/
+    BusFault_Handler,                                /* -11 Bus Fault Handler*/
+    UsageFault_Handler,                              /* -10 Usage Fault Handler*/
+    0,                                               /* -9 Reserved*/
+    0,                                               /* -8 Reserved*/
+    0,                                               /* -7 Reserved*/
+    0,                                               /* -6 Reserved*/
+    SVC_Handler,                                     /* -5 SVCall Handler*/
+    DebugMon_Handler,                                /* -4 Debug Monitor Handler*/
+    0,                                               /* -3 Reserved*/
+    PendSV_Handler,                                  /* -2 PendSV Handler*/
+    SysTick_Handler,                                 /* -1 SysTick Handler*/
 
     /* Vendor specific interrupts: */
     WWDG_IRQHandler,                   /* 0 Window WatchDog */

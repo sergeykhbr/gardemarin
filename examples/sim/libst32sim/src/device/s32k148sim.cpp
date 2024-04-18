@@ -49,6 +49,7 @@ S32K148Sim::S32K148Sim(const char *name) :
         (*it)->init();
         addMap(static_cast<ISimMemoryInterface *>(*it));
     }
+    nmi_request_ = 0;
     hFwThread_ = 0;
     memset(vector_, 0, sizeof(vector_));
     eventIsrAsync_ = CreateEventW(NULL, TRUE, FALSE, L"eventIsrAsync");
@@ -68,7 +69,7 @@ void S32K148Sim::runFirmware(void *fw) {
         // Simulate single core CPU:
         SuspendThread(hFwThread_);
         for (auto it = devlist_.begin(); it != devlist_.end(); it++) {
-            (*it)->update(0.001);
+            (*it)->update(0.0005);
         }
         handleInterrupts();
 
@@ -86,25 +87,35 @@ void S32K148Sim::stopFirmware() {
 }
 
 void S32K148Sim::registerIsr(int idx, isr_type handler) {
-    if (idx < 0 || idx >= Interrupt_Total) {
+    if (idx < 0 && idx > -16) {
+        vector_[idx + Nmi_Total] = handler;
+    } else if (idx < Interrupt_Total) {
+        vector_[idx + Nmi_Total] = handler;
+    } else {
         printf("wrong ISR index %d\n", idx);
-        return;
     }
-    vector_[idx] = handler;
 }
 
 void S32K148Sim::requestIrq(int idx) {
-    if (idx < 0) {
-        // TODO: unmaskable interrupts
+    if (idx > -16 && idx < 0) {
+        nmi_request_ |= 1 << (idx + 15);
+        SetEvent(eventIsrAsync_);
     } else if (nvic_->requestIrq(idx)) {
         SetEvent(eventIsrAsync_);
     }
 }
 
 void S32K148Sim::handleInterrupts() {
-    int idx;
+    int idx = 0;
+    while (nmi_request_) {
+        if (nmi_request_ & 0x1) {
+            vector_[idx]();
+        }
+        nmi_request_ >>= 1;
+        idx++;
+    }
     while ((idx = nvic_->nextPendingIrq()) >= 0) {
-        vector_[idx]();
+        vector_[idx + Nmi_Total]();
     }
 }
 

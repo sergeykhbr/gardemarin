@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     param = 0;
     s32k148_set_opt(S32K148_OPT_VXL_DRIVER, &param);
 
-    s32k148_register_isr(5, SysTick_Handler);
+    s32k148_register_isr(-1, SysTick_Handler);
 //    s32k148_register_isr(61, PORTC_ISR);
 //    s32k148_register_isr(81, CAN0_MSG_0_15_ISR);
     s32k148_run_firmware(fw_thread);

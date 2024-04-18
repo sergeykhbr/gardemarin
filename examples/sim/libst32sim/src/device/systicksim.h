@@ -34,12 +34,25 @@ class SysTickSim : public DeviceGeneric {
             : Reg32Generic(parent, name, off) {
         }
 
+        bool isEnabled() { return (regvalue_ & 0x1) ? true: false; }
         bool isIrqEnabled() { return (regvalue_ & 0x2) ? true: false; }
+    };
+
+    // Current value
+    class CVR_TYPE : public Reg32Generic {
+     public:
+        CVR_TYPE(DeviceGeneric *parent, const char *name, uint64_t off)
+            : Reg32Generic(parent, name, off) {
+        }
+        virtual uint32_t read_action(uint32_t prev) override;
     };
 
  private:
     CSR_TYPE CSR;
     Reg32Generic RVR;   // reload value
-    Reg32Generic CVR;   // Current value
+    CVR_TYPE CVR;       // Current value
     Reg32Generic CALIB; // calibration value
+
+    uint32_t sysclk_hz_;
+    double time_;
 };
