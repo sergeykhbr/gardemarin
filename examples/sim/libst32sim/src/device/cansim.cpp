@@ -15,7 +15,7 @@
  */
 
 #include <can.h>
-#include <s32k148api.h>
+#include <sim_api.h>
 #include <string>
 #include "cansim.h"
 
@@ -100,7 +100,7 @@ void CANSim::update(double dt) {
 
     if (irqRequest_) {
         irqRequest_ = false;
-        s32k148_request_interrupt(81);
+        sim_request_interrupt(81);
     }
 }
 

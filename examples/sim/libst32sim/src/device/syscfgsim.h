@@ -16,35 +16,12 @@
 
 #pragma once
 
-#include <s32k148api.h>
 #include <devgen.h>
-#include <list>
-#include "nvicsim.h"
+#include <reggen.h>
 
-enum EIsrId {
-    Nmi_Total = 15,
-    Interrupt_Total = 256
-};
-
-class S32K148Sim : public DeviceGeneric {
+class SYSCFGSim : public DeviceGeneric {
  public:
-    S32K148Sim(const char *name);
-
-    void runFirmware(void *);
-    void stopFirmware();
-    void registerIsr(int idx, isr_type handler);
-    void requestIrq(int idx);
-    int setOption(int optname, void *optval);
+    SYSCFGSim(const char *name, uint64_t addr, size_t sz);
 
  private:
-    void handleInterrupts();
-
- private:
-    std::list<DeviceGeneric *> devlist_;
-    void *hFwThread_;
-    void *eventIsrAsync_;
-    bool enabled_;
-    isr_type vector_[Interrupt_Total + Nmi_Total];
-    NVICSim *nvic_;
-    int nmi_request_;
 };

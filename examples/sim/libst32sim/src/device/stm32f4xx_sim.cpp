@@ -15,21 +15,24 @@
  */
 
 #include <stm32f4xx_map.h>
-#include "s32k148sim.h"
+#include "stm32f4xx_sim.h"
 #include "cansim.h"
 #include "gpiosim.h"
 #include "nvicsim.h"
 #include "pccsim.h"
 #include "portsim.h"
 #include "scbsim.h"
+#include "rccsim.h"
+#include "syscfgsim.h"
 #include "uartsim.h"
 #include "wdogsim.h"
 #include "systicksim.h"
+#include "extisim.h"
 
 typedef unsigned (__stdcall* fw_thread_type)(void *args);
 
 
-S32K148Sim::S32K148Sim(const char *name) :
+ST32F4xxSim::ST32F4xxSim(const char *name) :
     DeviceGeneric(name, 0, 0xFFFFFFFFul) {
     devlist_.push_back(new SysTickSim("stck", SysTick_BASE, sizeof(SysTick_registers_type)));
     devlist_.push_back(new CANSim("can1", CAN1_BASE, sizeof(CAN_registers_type)));
@@ -41,8 +44,11 @@ S32K148Sim::S32K148Sim(const char *name) :
     devlist_.push_back(new GPIOSim("pe", GPIOE_BASE, sizeof(GPIO_registers_type)));
     devlist_.push_back(new GPIOSim("pf", GPIOF_BASE, sizeof(GPIO_registers_type)));
     devlist_.push_back(nvic_ = new NVICSim("nvic", NVIC_BASE, sizeof(NVIC_registers_type)));
-    devlist_.push_back(new SCBSim("scb", SCB_BASE, sizeof(SCB_registers_type)));
     devlist_.push_back(new UARTSim("uart1", USART1_BASE, sizeof(USART_registers_type)));
+    devlist_.push_back(new SCBSim("scb", SCB_BASE, sizeof(SCB_registers_type)));
+    devlist_.push_back(new RCCSim("rcc", RCC_BASE, sizeof(RCC_registers_type)));
+    devlist_.push_back(new SYSCFGSim("syscfg", SYSCFG_BASE, sizeof(SYSCFG_registers_type)));
+    devlist_.push_back(new EXTISim("exti", EXTI_BASE, sizeof(EXTI_registers_type)));
     //devlist_.push_back(new WDOGSim("wdog", WWDG_BASE, sizeof(WDG_registers_type)));
 
     for (auto it = devlist_.begin(); it != devlist_.end(); it++) {
@@ -56,7 +62,7 @@ S32K148Sim::S32K148Sim(const char *name) :
 
 }
 
-void S32K148Sim::runFirmware(void *fw) {
+void ST32F4xxSim::runFirmware(void *fw) {
     fw_thread_type fw_thread = (fw_thread_type)fw;
     hFwThread_ = (HANDLE)_beginthreadex(0, 0, fw_thread, NULL, 0, 0);
     enabled_ = true;
@@ -78,7 +84,7 @@ void S32K148Sim::runFirmware(void *fw) {
     }
 }
 
-void S32K148Sim::stopFirmware() {
+void ST32F4xxSim::stopFirmware() {
     enabled_ = false;
     if (hFwThread_) {
         WaitForSingleObject(hFwThread_, 50000);
@@ -86,7 +92,7 @@ void S32K148Sim::stopFirmware() {
     hFwThread_ = 0;
 }
 
-void S32K148Sim::registerIsr(int idx, isr_type handler) {
+void ST32F4xxSim::registerIsr(int idx, isr_type handler) {
     if (idx < 0 && idx > -16) {
         vector_[idx + Nmi_Total] = handler;
     } else if (idx < Interrupt_Total) {
@@ -96,7 +102,7 @@ void S32K148Sim::registerIsr(int idx, isr_type handler) {
     }
 }
 
-void S32K148Sim::requestIrq(int idx) {
+void ST32F4xxSim::requestIrq(int idx) {
     if (idx > -16 && idx < 0) {
         nmi_request_ |= 1 << (idx + 15);
         SetEvent(eventIsrAsync_);
@@ -105,7 +111,7 @@ void S32K148Sim::requestIrq(int idx) {
     }
 }
 
-void S32K148Sim::handleInterrupts() {
+void ST32F4xxSim::handleInterrupts() {
     int idx = 0;
     while (nmi_request_) {
         if (nmi_request_ & 0x1) {
@@ -119,11 +125,11 @@ void S32K148Sim::handleInterrupts() {
     }
 }
 
-int S32K148Sim::setOption(int optname, void *optval) {
+int ST32F4xxSim::setOption(int optname, void *optval) {
     int param1 = *reinterpret_cast<int *>(optval);
     switch (optname)
     {
-    case S32K148_OPT_VXL_DRIVER:
+    case SIM_OPT_VXL_DRIVER:
         for (auto it = devlist_.begin(); it != devlist_.end(); it++) {
             if (strcmp((*it)->deviceName(), "can0") != 0) {
                 continue;

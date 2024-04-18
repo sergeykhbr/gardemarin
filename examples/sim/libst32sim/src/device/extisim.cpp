@@ -14,32 +14,8 @@
  *  limitations under the License.
  */
 
-#include <sim_api.h>
-#include <simutils.h>
+#include "extisim.h"
 
-extern "C" void SystemInit();
-extern "C" int fwmain();
-extern "C" void SysTick_Handler();
-
-uint32_t __stdcall fw_thread(void *) {
-    fwmain();
-    return 0;
-}
-
-int main(int argc, char *argv[]) {
-    int param;
-    sim_init();
-
-    // Enable VXL driver usage
-    param = 0;
-    sim_set_opt(SIM_OPT_VXL_DRIVER, &param);
-
-    sim_register_isr(-1, SysTick_Handler);
-    sim_run_firmware(fw_thread);
-
-    while (1) {
-        Sleep(500);
-    }
-    sim_destroy();
-    return 0;
+EXTISim::EXTISim(const char *name, uint64_t addr, size_t sz) :
+    DeviceGeneric(name, addr, sz) {
 }

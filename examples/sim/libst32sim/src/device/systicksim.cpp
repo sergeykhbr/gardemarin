@@ -15,7 +15,7 @@
  */
 
  #include "systicksim.h"
-#include <s32k148api.h>
+#include <sim_api.h>
 
 SysTickSim::SysTickSim(const char *name, uint64_t addr, size_t sz) :
     DeviceGeneric(name, addr, sz),
@@ -45,7 +45,7 @@ void SysTickSim::update(double dt) {
     CVR.set(rvr - static_cast<uint32_t>(cvr_cur));
 
     if (cvr_cur < cvr_prv && CSR.isIrqEnabled())  {
-        s32k148_request_interrupt(-1);
+        sim_request_interrupt(-1);
     }
 }
 

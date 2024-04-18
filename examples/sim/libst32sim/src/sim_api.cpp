@@ -14,38 +14,38 @@
  *  limitations under the License.
  */
 
-#include <s32k148api.h>
-#include "device/s32k148sim.h"
+#include <sim_api.h>
+#include "device/stm32f4xx_sim.h"
 
 extern "C" {
 
-static S32K148Sim *s32k = 0;
+static ST32F4xxSim *board_ = 0;
 
-void s32k148_init() {
-    s32k = new S32K148Sim("s32k148");
+void sim_init() {
+    board_ = new ST32F4xxSim("s32k148");
 }
 
-void s32k148_destroy() {
-    s32k->stopFirmware();
-    delete s32k;
+void sim_destroy() {
+    board_->stopFirmware();
+    delete board_;
 }
 
-void s32k148_register_isr(int idx, isr_type handler) {
-    s32k->registerIsr(idx, handler);
+void sim_register_isr(int idx, isr_type handler) {
+    board_->registerIsr(idx, handler);
 }
 
-void s32k148_run_firmware(void *entry) {
-    s32k->runFirmware(entry);
+void sim_run_firmware(void *entry) {
+    board_->runFirmware(entry);
 }
 
-void s32k148_request_interrupt(int idx) {
-    s32k->requestIrq(idx);
+void sim_request_interrupt(int idx) {
+    board_->requestIrq(idx);
 }
 
 /** Set simulation model option */
-int s32k148_set_opt(int optname, void *optval)
+int sim_set_opt(int optname, void *optval)
 {
-    return s32k->setOption(optname, optval);
+    return board_->setOption(optname, optval);
 }
 
 void write8(const volatile uint8_t *adr, uint8_t val) {
@@ -54,7 +54,7 @@ void write8(const volatile uint8_t *adr, uint8_t val) {
     memop.size = 1;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
     memcpy(memop.payload.u8, &val, sizeof(val));
-    s32k->operation(&memop);
+    board_->operation(&memop);
 }
 
 void write16(const volatile uint16_t *adr, uint16_t val) {
@@ -63,7 +63,7 @@ void write16(const volatile uint16_t *adr, uint16_t val) {
     memop.size = 2;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
     memcpy(memop.payload.u8, &val, sizeof(val));
-    s32k->operation(&memop);
+    board_->operation(&memop);
 }
 
 void write32(const volatile uint32_t *adr, uint32_t val) {
@@ -72,7 +72,7 @@ void write32(const volatile uint32_t *adr, uint32_t val) {
     memop.size = 4;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
     memcpy(memop.payload.u8, &val, sizeof(val));
-    s32k->operation(&memop);
+    board_->operation(&memop);
 }
 
 void write64(const volatile uint64_t *adr, uint64_t val) {
@@ -81,7 +81,7 @@ void write64(const volatile uint64_t *adr, uint64_t val) {
     memop.size = 8;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
     memcpy(memop.payload.u8, &val, sizeof(val));
-    s32k->operation(&memop);
+    board_->operation(&memop);
 }
 
 uint8_t read8(const volatile uint8_t *adr) {
@@ -89,7 +89,7 @@ uint8_t read8(const volatile uint8_t *adr) {
     memop.type = Memop_Read;
     memop.size = 1;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
-    s32k->operation(&memop);
+    board_->operation(&memop);
     return memop.payload.u8[0];
 
 }
@@ -99,7 +99,7 @@ uint16_t read16(const volatile uint16_t *adr) {
     memop.type = Memop_Read;
     memop.size = 2;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
-    s32k->operation(&memop);
+    board_->operation(&memop);
     return memop.payload.u16[0];
 
 }
@@ -109,7 +109,7 @@ uint32_t read32(const volatile uint32_t *adr) {
     memop.type = Memop_Read;
     memop.size = 4;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
-    s32k->operation(&memop);
+    board_->operation(&memop);
     return memop.payload.u32[0];
 }
 
@@ -118,7 +118,7 @@ uint64_t read64(const volatile uint64_t *adr) {
     memop.type = Memop_Read;
     memop.size = 8;
     memop.addr = reinterpret_cast<uint64_t>(adr) & 0xFFFFFFFFull;
-    s32k->operation(&memop);
+    board_->operation(&memop);
     return memop.payload.u64;
 }
 

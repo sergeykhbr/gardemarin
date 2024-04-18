@@ -20,7 +20,6 @@ include_directories(
     ${_st32_root}/../../common/include/devs
     ${_simcommon}
     ${_st32_root}/src
-    ${_st32_root}/src/include
     ${_st32_root}/src/generic
     ${_st32_root}/src/utils
 )

@@ -18,7 +18,7 @@
 
 #include <inttypes.h>
 #include <string>
-#include <isimface.h>
+#include <CommonInterface.h>
 
 typedef enum EMemopAction {
     Memop_Read,
@@ -37,7 +37,7 @@ struct MemoryOperationType {
     } payload;
 };
 
-class ISimMemoryInterface : public ISimFace {
+class ISimMemoryInterface : public CommonInterface {
  public:
     ISimMemoryInterface();
     virtual ~ISimMemoryInterface();

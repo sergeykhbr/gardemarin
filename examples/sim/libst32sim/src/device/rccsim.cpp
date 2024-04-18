@@ -14,12 +14,8 @@
  *  limitations under the License.
  */
 
-#pragma once
+#include "rccsim.h"
 
-class ISimFace {
- public:
-    ISimFace(const char *name) : face_name_(name) {}
-    virtual const char *getFaceName() { return face_name_; }
- private:
-    const char *face_name_;
-};
+RCCSim::RCCSim(const char *name, uint64_t addr, size_t sz) :
+    DeviceGeneric(name, addr, sz) {
+}

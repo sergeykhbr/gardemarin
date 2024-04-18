@@ -17,7 +17,7 @@
 #include <simutils.h>
 #include "memopgen.h"
 
-ISimMemoryInterface::ISimMemoryInterface() : ISimFace("ISimMemoryInterface") {
+ISimMemoryInterface::ISimMemoryInterface() : CommonInterface("ISimMemoryInterface") {
     memAddr_ = 0;
     memSize_ = 0;
     mem_ = 0;

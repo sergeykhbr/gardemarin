@@ -14,13 +14,16 @@ DIR_KEY=-B
 
 INCL_PATH = \
 	$(TOP_DIR)/../common/include \
+	$(TOP_DIR)/../common/include/devs \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/fw \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/src
 
 # source files directories list:
 SRC_PATH = \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/fw \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/src
 
@@ -38,7 +41,7 @@ SOURCES = isr_vector \
 	gcc_newlib \
 	vprintfmt \
 	uart \
-	memanager \
+	fwmem \
 	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))
