@@ -32,7 +32,7 @@ class HBridgeDriver : public FwObject,
                       public BinInterface,
                       public TimerListenerInterface {
  public:
-    explicit HBridgeDriver(int idx);
+    HBridgeDriver(const char *name, int idx);
 
     // FwObject interface:
     virtual void Init() override;
@@ -50,8 +50,8 @@ class HBridgeDriver : public FwObject,
     void stopDcMotor(int idx);
 
  protected:
-    FwAttribute drvmode_;
     int idx_;
+    FwAttribute drvmode_;
 
     DcMotor dc0_;
     DcMotor dc1_;

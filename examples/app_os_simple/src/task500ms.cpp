@@ -61,6 +61,20 @@ void output_scales() {
 }
 
 
+void write_obj_attribute(const char *objname,
+                         const char *atrname,
+                         char *buf,
+                         int sz) {
+    FwAttribute *atr = reinterpret_cast<FwAttribute *>(
+                fw_get_object_attribute(objname, atrname));
+    if (atr) {
+        atr->write(buf, sz);
+    } else {
+        uart_printf("[%d] %s:%s not found\r\n",
+            xTaskGetTickCount(), objname, atrname);
+    }
+}
+
 void relais_on(const char *name) {
     CommonInterface *iface = reinterpret_cast<CommonInterface *>(
                 fw_get_object_interface(name, "BinInterface"));
@@ -143,29 +157,21 @@ void update_service_state(app_data_type *data) {
     // LED blinking in service mode:
     CommonInterface *iface;
     int btnClick = data->keyNotifier->btnClick;
+    char rawbuf[4];
     data->keyNotifier->btnClick = 0;
-
-    iface = reinterpret_cast<CommonInterface *>(
-              fw_get_object_interface("uled0", "BinInterface"));
-    if (iface == 0) {
-        uart_printf("[%d] uled BinInterface not available\r\n", xTaskGetTickCount());
-    } else if (data->service_state == SERVICE_STATE_IDLE
-             || (data->cnt & 1) != 0) {
-        static_cast<BinInterface *>(iface)->setBinEnabled();
-    } else {
-        static_cast<BinInterface *>(iface)->setBinDisabled();
-    }
 
     // Expected current through the Relay at 5V is 89.3 mA
     // Relay[0]=off; Relay[1]=off; I=60 mA
     // Relay[0]=off; Relay[1]=on;  I=150 mA
     // Relay[0]=on;  Relay[1]=off; I=150 mA
     // Relay[0]=on;  Relay[1]=on;  I=230 mA
-    
+   
     switch (data->service_state) {
     case SERVICE_STATE_IDLE:
         data->service_start_time = data->cnt;
         if (btnClick) {
+            rawbuf[0] = 2;      // Blink mode
+            write_obj_attribute("uled0", "state", rawbuf, 1);
             data->service_state++;
         }
         break;
@@ -286,6 +292,8 @@ void update_service_state(app_data_type *data) {
         break;
     case SERVICE_STATE_END:
         uart_printf("[%d] End of service\r\n", xTaskGetTickCount());
+        rawbuf[0] = 1;      // On mode
+        write_obj_attribute("uled0", "state", rawbuf, 1);
         data->service_state = SERVICE_STATE_IDLE;
         break;
     default:;
@@ -300,7 +308,9 @@ void KeyNotifierType::keyPressed() {
 }
 
 void KeyNotifierType::waitKeyPressed() {
-    uint32_t notifiedValue;
+    uint32_t notifiedValue=0;
+    xTaskNotifyStateClear(
+        reinterpret_cast<app_data_type *>(data)->handleTask500ms);
     xTaskNotifyWait(0x00,   // don't clear any notification bits on entry
                     0xffffffffUL,  // Reset the notification value to 0 on exit
                     &notifiedValue,

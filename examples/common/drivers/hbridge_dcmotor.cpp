@@ -34,9 +34,11 @@ static const DcMotorNamesType DCMOTOR_CFG[GARDEMARIN_DCMOTOR_PER_HBDRIGE] = {
 DcMotor::DcMotor(FwObject *parent, int idx) :
     parent_(parent),
     idx_(idx),
-    direction_(DCMOTOR_CFG[idx].direction_name),
-    hz_(DCMOTOR_CFG[idx].hz_name),
-    duty_(DCMOTOR_CFG[idx].duty_name) {
+    direction_(DCMOTOR_CFG[idx].direction_name, "0=forward;1=backward"),
+    hz_(DCMOTOR_CFG[idx].hz_name, "Typical: 100kHz brushed motor; 18-24kHz brushless motor"),
+    duty_(DCMOTOR_CFG[idx].duty_name, static_cast<PwmInterface *>(this)) {
+    direction_.make_int8(0);
+    hz_.make_int32(20000);
 }
 
 void DcMotor::Init() {

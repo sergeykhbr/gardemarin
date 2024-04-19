@@ -35,6 +35,26 @@ class RelaisDriver : public FwObject,
     virtual void setBinDisabled() override;
 
  protected:
-    gpio_pin_type gpio_cfg_;
-    FwAttribute state_;
+    class BinAttribute : public FwAttribute {
+     public:
+        explicit BinAttribute(const char *name, BinInterface *ibin) :
+            FwAttribute(name,"0=ena, 1=dis"), ibin_(ibin) {
+            make_int8(0);
+        }
+
+        virtual void post_write() override {
+            if (to_int8()) {
+                ibin_->setBinEnabled();
+            } else {
+                ibin_->setBinDisabled();
+            }
+        }
+     private:
+        BinInterface *ibin_;
+    };
+
+
+ protected:
+    int idx_;
+    BinAttribute state_;
 };

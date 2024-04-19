@@ -33,10 +33,10 @@ KernelClass::KernelClass(const char *name) : FwObject(name),
     scales_("scales"),
     uled0_("uled0"),
     ubtn0_("ubtn0"),
-    //hbrg0_(0),
-    //hbrg1_(1),
-    //hbrg2_(2),
-    //hbrg3_(3),
+    hbrg0_("hbrg0", 0),
+    hbrg1_("hbrg1", 1),
+    hbrg2_("hbrg2", 2),
+    hbrg3_("hbrg3", 3),
     dbc_("dbc")
 {
     version_.make_uint32(0x20240804);

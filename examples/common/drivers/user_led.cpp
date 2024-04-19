@@ -24,7 +24,8 @@
 static const gpio_pin_type USER_LED0 = {(GPIO_registers_type *)GPIOE_BASE, 2};
 
 UserLedDriver::UserLedDriver(const char *name) : FwObject(name),
-    state_("state") {
+    state_("state", "0=Off, 1=On, 2=Blink"),
+    hz_("hz", "Blink frequency: 1 Hz default") {
 
     gpio_pin_as_output(&USER_LED0,
                        GPIO_NO_OPEN_DRAIN,
@@ -32,10 +33,14 @@ UserLedDriver::UserLedDriver(const char *name) : FwObject(name),
                        GPIO_NO_PUSH_PULL);
 
     setBinEnabled();
+    state_.make_int32(1);
+    hz_.make_int32(1);
+    cnt_ = 0;
 }
 
 void UserLedDriver::Init() {
     RegisterInterface(static_cast<BinInterface *>(this));
+    RegisterInterface(static_cast<TimerListenerInterface *>(this));
 
     RegisterAttribute(&state_);
 }
@@ -50,4 +55,29 @@ void UserLedDriver::setBinDisabled() {
     // inversed
     gpio_pin_set(&USER_LED0);
     state_.make_uint32(0);
+}
+
+uint64_t UserLedDriver::getTimerInterval() {
+    // half period is On and half period if OFF, so 500 instead of 1000
+    return 500 / hz_.to_int32();
+}
+
+void UserLedDriver::callbackTimer(uint64_t tickcnt) {
+    cnt_++;
+    switch (state_.to_int32()) {
+    case 0:
+        setBinDisabled();
+        break;
+    case 1:
+        setBinEnabled();
+        break;
+    case 2:
+        if (cnt_ & 1) {
+            gpio_pin_clear(&USER_LED0);
+        } else {
+            gpio_pin_set(&USER_LED0);
+        }
+        break;
+    default:;
+    }
 }

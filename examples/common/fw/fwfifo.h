@@ -19,57 +19,21 @@
 #include <inttypes.h>
 #include <fwapi.h>
 
-template <class T>
-class FwFifo {
- public:
-    FwFifo(int sz) {
-        arr_ = reinterpret_cast<T *>(fw_malloc(sz * sizeof(T)));
-        wcnt_ = 1;
-        rcnt_ = 0;
-        size_ = sz;
-    }
+typedef struct FwFifo {
+    char *arr;
+    int wcnt;
+    int rcnt;
+    int size;
+} FwFifo;
 
-    int getCount() {
-        int ret = wcnt_ - rcnt_ - 1;
-        if (ret < 0) {
-            ret += size_;
-        } else if (ret >= size_) {
-            ret -= size_;
-        }
-        return ret;
-    }
+void fw_fifo_init(FwFifo *ff, int sz);
 
-    bool isEmpty() {
-        return getCount() == 0;
-    }
+int fw_fifo_get_count(FwFifo *ff);
 
-    bool isFull() {
-        return wcnt_ == rcnt_;
-    }
+int fw_fifo_is_empty(FwFifo *ff);
 
-    void put(T *v) {
-        if (isFull()) {
-            return;
-        }
-        arr_[wcnt_] = *v;
-        if (++wcnt_ >= size_) {
-            wcnt_ -= size_;
-        }
-    }
+int fw_fifo_is_full(FwFifo *ff);
 
-    void get(T *v) {
-        if (isEmpty()) {
-            return;
-        }
-        if (++rcnt_) {
-            rcnt_ -= size_;
-        }
-        *v = arr_[rcnt_];
-    }
+void fw_fifo_put(FwFifo *ff, char v);
 
- protected:
-    T *arr_;
-    int wcnt_;
-    int rcnt_;
-    int size_;
-};
+void fw_fifo_get(FwFifo *ff, char *v);

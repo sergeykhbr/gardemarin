@@ -21,10 +21,12 @@
 #include <fwobject.h>
 #include <FwAttribute.h>
 #include <BinInterface.h>
+#include <TimerInterface.h>
 #include <gpio_drv.h>
 
 class UserLedDriver : public FwObject,
-                      public BinInterface {
+                      public BinInterface,
+                      public TimerListenerInterface {
  public:
     UserLedDriver(const char *name);
 
@@ -35,7 +37,13 @@ class UserLedDriver : public FwObject,
     virtual void setBinEnabled() override;
     virtual void setBinDisabled() override;
 
+    // TimerListenerInterface
+    virtual uint64_t getTimerInterval() override;
+    virtual void callbackTimer(uint64_t tickcnt) override;
+
  protected:
     FwAttribute state_;
+    FwAttribute hz_;
+    int cnt_;
 };
 

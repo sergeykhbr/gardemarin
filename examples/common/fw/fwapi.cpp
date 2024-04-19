@@ -32,27 +32,22 @@ extern "C" void fw_init() {
 
     fw_malloc_init();
 
-uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     new (fw_malloc(sizeof(KernelClass))) KernelClass("kernel");
 
-uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     // It is possible to create JSON-configration file and platoform loading here
     p = fw_get_objects_list();
-uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     while (p) {
         obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         obj->Init();
         p = p->next;
     }
 
-uart_printf("%s,%d\r\n", __FILE__, __LINE__);
     p = fw_get_objects_list();
     while (p) {
         obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
         obj->PostInit();
         p = p->next;
     }
-uart_printf("%s,%d\r\n", __FILE__, __LINE__);
 }
 
 extern "C" FwList *fw_empty_list_item() {
@@ -143,6 +138,22 @@ void *fw_get_object_port_interface(const char *objname,
     }
     return ret;
 }
+
+/**
+ * @brief Get pointer to the specified attribute interface of the specified FwObject.
+ * @param[i] objname Object name string used as the FwObject identificator.
+ * @param[i] attrname Attribute name to witch the interface is bound.
+ * @return Pointer to FwAttribute if the specified interface was found
+ *         or zero value otherwise
+ */
+void *fw_get_object_attribute(const char *objname, const char *atrname) {
+    FwObject *obj = reinterpret_cast<FwObject *>(fw_get_object(objname));
+    if (obj == 0) {
+        return 0;
+    }
+    return fw_get_obj_attr_by_name(obj, atrname);
+}
+
 
 /**
  * @brief Get FwObject interface using DBC index corresponding to

@@ -42,10 +42,29 @@ class DcMotor : public PwmInterface {
     virtual void disablePwm() override;
 
  protected:
+    class PwmDutyAttribute : public FwAttribute {
+     public:
+        explicit PwmDutyAttribute(const char *name, PwmInterface *ipwm) :
+            FwAttribute(name,"duty cycle in percentage: 0=dis, 100=fully ena"), ipwm_(ipwm) {
+            make_int8(0);
+        }
+
+        virtual void post_write() override {
+            if (to_int8()) {
+                ipwm_->enablePwm();
+            } else {
+                ipwm_->disablePwm();
+            }
+        }
+     private:
+        PwmInterface *ipwm_;
+    };
+
+ protected:
     FwObject *parent_;
     int idx_;     // dcmotor index 0..1
 
     FwAttribute direction_;
     FwAttribute hz_;
-    FwAttribute duty_;
+    PwmDutyAttribute duty_;
 };

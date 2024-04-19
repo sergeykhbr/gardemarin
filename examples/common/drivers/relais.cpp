@@ -16,23 +16,24 @@
 
 #include <prjtypes.h>
 #include <fwapi.h>
+#include <gardemarin.h>
 #include <stm32f4xx_map.h>
 #include "relais.h"
 
-RelaisDriver::RelaisDriver(const char *name, int instidx) : FwObject(name),
-    state_("State") {
-    gpio_cfg_.port = (GPIO_registers_type *)GPIOD_BASE;
+//    PD13 - relais 0
+//    PD14 - relais 1
+static const gpio_pin_type gpio_cfg[GARDEMARIN_RELAIS_TOTAL] = {
+    {(GPIO_registers_type *)GPIOD_BASE, 13},
+    {(GPIO_registers_type *)GPIOD_BASE, 14}
+};
 
-    //    PD13 - relais 0
-    //    PD14 - relais 1
-    if (instidx == 0) {
-        gpio_cfg_.pinidx = 13;
-    } else {
-        gpio_cfg_.pinidx = 14;
-    }
+
+RelaisDriver::RelaisDriver(const char *name, int instidx) : FwObject(name),
+    idx_(instidx),
+    state_("State", static_cast<BinInterface *>(this)) {
     state_.make_int16(0);
 
-    gpio_pin_as_output(&gpio_cfg_,
+    gpio_pin_as_output(&gpio_cfg[idx_],
                        GPIO_NO_OPEN_DRAIN,
                        GPIO_SLOW,
                        GPIO_NO_PUSH_PULL);
@@ -47,11 +48,11 @@ void RelaisDriver::Init() {
 }
 
 void RelaisDriver::setBinEnabled() {
-    gpio_pin_set(&gpio_cfg_);
+    gpio_pin_set(&gpio_cfg[idx_]);
     state_.make_int16(1);
 }
 
 void RelaisDriver::setBinDisabled() {
-    gpio_pin_clear(&gpio_cfg_);
+    gpio_pin_clear(&gpio_cfg[idx_]);
     state_.make_int16(0);
 }

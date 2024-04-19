@@ -20,12 +20,10 @@
 #include <fwobject.h>
 #include <fwfifo.h>
 #include <FwAttribute.h>
-#include <IrqInterface.h>
 #include <TimerInterface.h>
 #include <RawInterface.h>
 
 class UartDriver : public FwObject,
-                   public IrqHandlerInterface,
                    public TimerListenerInterface,
                    public RawInterface {
  public:
@@ -33,9 +31,6 @@ class UartDriver : public FwObject,
 
     // FwObject interface:
     virtual void Init() override;
-
-    // IrqHandlerInterface
-    virtual void handleInterrupt(int *argv) override;
 
     // TimerListenerInterface
     virtual uint64_t getTimerInterval() override { return 1; }
@@ -48,7 +43,7 @@ class UartDriver : public FwObject,
  protected:
     FwList *listener_;
 
-    FwFifo<char> rxfifo_;
-    char rxbuf_[16];
+    FwFifo rxfifo_;
+    char rxbuf_[32];
     int rxcnt_;
 };

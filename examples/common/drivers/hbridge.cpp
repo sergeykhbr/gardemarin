@@ -20,7 +20,6 @@
 #include "hbridge.h"
 
 struct HBridgeConfigType {
-    const char *name;
     gpio_pin_type drvmode;
     struct DcMotorConfigType {
         gpio_pin_type A;
@@ -35,7 +34,6 @@ struct HBridgeConfigType {
 static const HBridgeConfigType CFG_HBRDIGE[GARDEMARIN_HBRDIGE_TOTAL] = {
     // HBRIDGE[0]
     {
-        "hbrg0",
          {(GPIO_registers_type *)GPIOD_BASE, 8},       // 55 PD8 DRV0_MODE
          {
              // dc[0]
@@ -64,7 +62,6 @@ static const HBridgeConfigType CFG_HBRDIGE[GARDEMARIN_HBRDIGE_TOTAL] = {
     },
     // HBRDIGE[1]
     {
-        "hbrg1",
          {(GPIO_registers_type *)GPIOD_BASE, 9},       // 56 PD9 DRV1_MODE
          {
              // dc[0]
@@ -93,7 +90,6 @@ static const HBridgeConfigType CFG_HBRDIGE[GARDEMARIN_HBRDIGE_TOTAL] = {
     },
     // HBRDIGE[2]
     {
-        "hbrg2",
          {(GPIO_registers_type *)GPIOD_BASE, 10},      // 57 PD10 DRV2_MODE
          {
              // dc[0]
@@ -122,7 +118,6 @@ static const HBridgeConfigType CFG_HBRDIGE[GARDEMARIN_HBRDIGE_TOTAL] = {
     },
     // HBRDIGE[3]
     {
-        "hbrg3",
          {(GPIO_registers_type *)GPIOD_BASE, 11},      // 58 PD11 DRV3_MODE
          {
              // dc[0]
@@ -151,7 +146,8 @@ static const HBridgeConfigType CFG_HBRDIGE[GARDEMARIN_HBRDIGE_TOTAL] = {
     }
 };
 
-HBridgeDriver::HBridgeDriver(int idx) : FwObject(CFG_HBRDIGE[idx].name),
+HBridgeDriver::HBridgeDriver(const char *name, int idx) : FwObject(name),
+    idx_(idx),
     drvmode_("drvmode", "Drive mode pin: 0=4-pins control; 1=2-pins control"),
     dc0_(static_cast<FwObject *>(this), 0),
     dc1_(static_cast<FwObject *>(this), 1),

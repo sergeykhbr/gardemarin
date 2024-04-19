@@ -33,22 +33,31 @@ static const gpio_pin_type tx_pin = {
     (GPIO_registers_type *)GPIOA_BASE, 9
 };
 
+static FwFifo *prxFifo_ = 0;
+
 //
 extern "C" void USART1_irq_handler() {
-    IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
-            fw_get_object_interface("uart1", "IrqHandlerInterface"));
-    if (iface) {
-        int argv = 0;
-        iface->handleInterrupt(&argv);
+    USART_registers_type *dev = (USART_registers_type *)USART1_BASE;
+    uint16_t rbyte;
+    while ((read16(&dev->SR) & (1 << 5)) != 0) {    // [5] RXNE: read data register not empty
+        rbyte = read16(&dev->DR);
+        if (prxFifo_) {
+            fw_fifo_put(prxFifo_, static_cast<char>(rbyte));
+        }
+        write16(&dev->DR, rbyte);
     }
+
+    // ORE (overflow) bit is reset by a read to the USART_SR register followed by a USART_DR
+    // register read operation.
+    read16(&dev->SR);
+
     nvic_irq_clear(37);
 }
 
 
 UartDriver::UartDriver(const char *name)
     : FwObject(name),
-    listener_(0),
-    rxfifo_(sizeof(rxbuf_)) {
+    listener_(0) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     USART_registers_type *UART1  = (USART_registers_type *)USART1_BASE;
     uint32_t t1;
@@ -90,10 +99,12 @@ UartDriver::UartDriver(const char *name)
     write16(&UART1->CR1, t1);
     write16(&UART1->CR2, 0);
     write16(&UART1->CR3, 0);
+
+    fw_fifo_init(&rxfifo_, sizeof(rxbuf_) - 1);
+    prxFifo_ = &rxfifo_;
 }
 
 void UartDriver::Init() {
-    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
     RegisterInterface(static_cast<TimerListenerInterface *>(this));
     RegisterInterface(static_cast<RawInterface *>(this));
 
@@ -101,38 +112,55 @@ void UartDriver::Init() {
     nvic_irq_enable(37, 3);
 }
 
-void UartDriver::handleInterrupt(int *argv) {
-    USART_registers_type *dev = (USART_registers_type *)USART1_BASE;
-    char rbyte;
-    while ((read16(&dev->SR) & (1 << 5)) != 0) {    // [5] RXNE: read data register not empty
-        rbyte = static_cast<char>(read16(&dev->DR));
-        rxfifo_.put(&rbyte);
-    }
-}
 
 void UartDriver::callbackTimer(uint64_t tickcnt) {
     FwList *p = listener_;
     RawListenerInterface *iface;
+    char rxbyte;
 
 #ifdef _WIN32
     if (tickcnt == 5000) {
+        // [4,2] rgbw:red enable=0x56 non-zero value
         const char *xxx = ">!00000104,2,8256";
-        while (p) {
-            iface = reinterpret_cast<RawListenerInterface *>(fwlist_get_payload(p));
-            iface->RawCallback(xxx, strlen(xxx));
-            p = p->next;
+        for (int i = 0; i < strlen(xxx); i++) {
+            fw_fifo_put(&rxfifo_, xxx[i]);
+        }
+    } else if (tickcnt == 5001) {
+        // [10,3] hbrg0:dc0_duty enable=0x64(100) any non-zero value
+        const char *xxx = ">!0000010a,2,8364";
+        for (int i = 0; i < strlen(xxx); i++) {
+            fw_fifo_put(&rxfifo_, xxx[i]);
+        }
+    } else if (tickcnt == 5002) {
+        // [10,6] hbrg0:dc1_duty enable=0x64(100) any non-zero value
+        const char *xxx = ">!0000010a,2,8664";
+        for (int i = 0; i < strlen(xxx); i++) {
+            fw_fifo_put(&rxfifo_, xxx[i]);
+        }
+    } else if (tickcnt == 5003) {
+        // [8,0] uled0:state 2 blinking mode
+        const char *xxx = ">!00000108,2,8002";
+        for (int i = 0; i < strlen(xxx); i++) {
+            fw_fifo_put(&rxfifo_, xxx[i]);
+        }
+    } else if (tickcnt == 5004) {
+        // [2,0] relais0:state 1 enable
+        const char *xxx = ">!00000102,2,8001";
+        for (int i = 0; i < strlen(xxx); i++) {
+            fw_fifo_put(&rxfifo_, xxx[i]);
         }
     }
 #endif
-    if (rxfifo_.isEmpty()) {
-        return;
-    }
 
     rxcnt_ = 0;
-    while (!rxfifo_.isEmpty()) {
-        rxfifo_.get(&rxbuf_[rxcnt_++]);
+    while (!fw_fifo_is_empty(&rxfifo_)) {
+        fw_fifo_get(&rxfifo_, &rxbyte);
+        if (rxcnt_ < sizeof(rxbuf_)) {
+            rxbuf_[rxcnt_++] = rxbyte;
+        }
     }
 
+    p = listener_;
     while (p) {
         iface = reinterpret_cast<RawListenerInterface *>(fwlist_get_payload(p));
         iface->RawCallback(rxbuf_, rxcnt_);

@@ -89,6 +89,15 @@ void *fw_get_object_port_interface(const char *objname,
                                    const char *facename);
 
 /**
+ * @brief Get pointer to the specified attribute interface of the specified FwObject.
+ * @param[i] objname Object name string used as the FwObject identificator.
+ * @param[i] attrname Attribute name to witch the interface is bound.
+ * @return Pointer to FwAttribute if the specified interface was found
+ *         or zero value otherwise
+ */
+void *fw_get_object_attribute(const char *objname, const char *atrname);
+
+/**
  * @brief Get FwObject interface using DBC index corresponding to
  *        index in object list
  * @param[in] obj_idx Index of FwObject in the object list
