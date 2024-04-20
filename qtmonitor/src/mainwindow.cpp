@@ -17,40 +17,23 @@
 #include "mainwindow.h"
 
 #include "mainwindow.h"
-#include "console.h"
-//#include "settingsdialog.h"
 
 #include <QLabel>
 #include <QMessageBox>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QMenuBar>
-
+#include <QToolBar>
 #include <chrono>
 
 static constexpr std::chrono::seconds kWriteTimeout = std::chrono::seconds{5};
-
-struct Settings {
-    QString name;
-    qint32 baudRate;
-    QString stringBaudRate;
-    QSerialPort::DataBits dataBits;
-    QString stringDataBits;
-    QSerialPort::Parity parity;
-    QString stringParity;
-    QSerialPort::StopBits stopBits;
-    QString stringStopBits;
-    QSerialPort::FlowControl flowControl;
-    QString stringFlowControl;
-    bool localEchoEnabled;
-};
 
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     m_status(new QLabel),
     m_console(new Console),
-//    m_settings(new SettingsDialog(this)),
+    m_settings(new ComPortSettings(this)),
     m_timer(new QTimer(this)),
     m_serial(new QSerialPort(this))
 {
@@ -61,31 +44,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setSpacing(6);
-    layout->setContentsMargins(11, 11, 11, 11);
-    setLayout(layout);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     m_panel = new ControlPanel(this);
 
     layout->addWidget(m_panel);
     layout->addWidget(m_console);
-    setCentralWidget(m_console);
 
+    QWidget *centralWidget = new QWidget(this);
+    centralWidget->setLayout(layout);
+    setCentralWidget(centralWidget);
 
-#if 0
-  <widget class="QToolBar" name="mainToolBar">
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionConnect"/>
-   <addaction name="actionDisconnect"/>
-   <addaction name="actionConfigure"/>
-   <addaction name="actionClear"/>
-  </widget>
-  <widget class="QStatusBar" name="statusBar"/>
-#endif
 
     actionAbout_ = new QAction(QIcon(tr(":/images/logo.png")),
                               tr("&About"), this);
@@ -94,35 +63,35 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(actionAbout_, &QAction::triggered, this, &MainWindow::about);
 
 
-    actionConnect_ = new QAction(QIcon(tr(":/images/logo.png")),
+    actionConnect_ = new QAction(QIcon(tr(":/images/connect.png")),
                               tr("C&onnect"), this);
     actionConnect_->setToolTip(tr("Connect to serial port"));
     actionConnect_->setShortcut(QKeySequence(tr("Ctrl+O")));
     connect(actionConnect_, &QAction::triggered, this, &MainWindow::openSerialPort);
 
 
-    actionDisconnect_ = new QAction(QIcon(tr(":/images/logo.png")),
+    actionDisconnect_ = new QAction(QIcon(tr(":/images/disconnect.png")),
                               tr("&Disconnect"), this);
     actionDisconnect_->setToolTip(tr("Disconnect from serial port"));
     actionDisconnect_->setShortcut(QKeySequence(tr("Ctrl+D")));
     connect(actionDisconnect_, &QAction::triggered, this, &MainWindow::closeSerialPort);
 
 
-    actionConfigure_ = new QAction(QIcon(tr(":/images/logo.png")),
+    actionConfigure_ = new QAction(QIcon(tr(":/images/settings.png")),
                               tr("&Configure"), this);
     actionConfigure_->setToolTip(tr("Configure serial port"));
     actionConfigure_->setShortcut(QKeySequence(tr("Alt+C")));
-    //connect(actionConfigure_, &QAction::triggered, m_settings, &SettingsDialog::show);
+    connect(actionConfigure_, &QAction::triggered, m_settings, &ComPortSettings::show);
 
 
-    actionClear_ = new QAction(QIcon(tr(":/images/logo.png")),
+    actionClear_ = new QAction(QIcon(tr(":/images/clear.png")),
                               tr("&Clear"), this);
     actionClear_->setToolTip(tr("Clear data"));
     actionClear_->setShortcut(QKeySequence(tr("Alt+L")));
     connect(actionClear_, &QAction::triggered, m_console, &Console::clear);
 
 
-    actionQuit_ = new QAction(QIcon(tr(":/images/logo.png")),
+    actionQuit_ = new QAction(QIcon(tr(":/images/appexit.png")),
                               tr("&Quit"), this);
     actionQuit_->setShortcut(QKeySequence(tr("Ctrl+Q")));
     connect(actionQuit_, &QAction::triggered, this, &MainWindow::close);
@@ -141,13 +110,16 @@ MainWindow::MainWindow(QWidget *parent) :
     menu->addAction(actionConfigure_);
     menu->addAction(actionClear_);
 
-    menu = menuBar()->addMenu(tr("&Tools"));
+    menu = menuBar()->addMenu(tr("&Info"));
     menu->addAction(actionAbout_);
 
-#if 0
- <layoutdefault spacing="6" margin="11"/>
-#endif
 
+    QToolBar *mainToolBar = new QToolBar(this);
+    mainToolBar->addAction(actionConnect_);
+    mainToolBar->addAction(actionDisconnect_);
+    mainToolBar->addAction(actionConfigure_);
+    mainToolBar->addAction(actionClear_);
+    addToolBar(mainToolBar);
 
     m_console->setEnabled(false);
 
@@ -156,6 +128,9 @@ MainWindow::MainWindow(QWidget *parent) :
     actionQuit_->setEnabled(true);
     actionConfigure_->setEnabled(true);
 
+#if 0
+  <widget class="QStatusBar" name="statusBar"/>
+#endif
 //    m_ui->statusBar->addWidget(m_status);
 
 
@@ -169,13 +144,12 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 MainWindow::~MainWindow() {
-//    delete m_settings;
-//    delete m_ui;
+    delete m_settings;
 }
 
 void MainWindow::openSerialPort() {
-    //const SettingsDialog::Settings p = m_settings->settings();
-    Settings p;
+    const ComPortSettings::Settings p = m_settings->settings();
+    /*Settings p;
     p.name = tr("COM3");
     p.baudRate = QSerialPort::Baud115200;
     p.stringBaudRate = tr("115200");
@@ -187,7 +161,7 @@ void MainWindow::openSerialPort() {
     p.stringStopBits = tr("1");
     p.flowControl = QSerialPort::NoFlowControl;
     p.stringFlowControl = tr("None");
-    p.localEchoEnabled = false;
+    p.localEchoEnabled = false;*/
 
 
     m_serial->setPortName(p.name);

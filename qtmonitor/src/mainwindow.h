@@ -20,6 +20,7 @@
 #include <QLabel>
 #include "console.h"
 #include "ctrlpanel.h"
+#include "comsettings.h"
 
 class MainWindow : public QMainWindow
 {
@@ -54,7 +55,7 @@ class MainWindow : public QMainWindow
     MainWindow *m_ui = nullptr;
     QLabel *m_status = nullptr;
     Console *m_console = nullptr;
-//    SettingsDialog *m_settings = nullptr;
+    ComPortSettings *m_settings = nullptr;
     qint64 m_bytesToWrite = 0;
     QTimer *m_timer = nullptr;
     QSerialPort *m_serial = nullptr;
