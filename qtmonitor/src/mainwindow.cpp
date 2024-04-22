@@ -141,6 +141,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readConsoleData);
     connect(m_serial, &QSerialPort::bytesWritten, this, &MainWindow::handleBytesWritten);
     connect(m_console, &Console::getData, this, &MainWindow::writeConsoleData);
+    connect(m_panel, &ControlPanel::signalGetData, this, &MainWindow::writeConsoleData);
 }
 
 MainWindow::~MainWindow() {
@@ -149,20 +150,6 @@ MainWindow::~MainWindow() {
 
 void MainWindow::openSerialPort() {
     const ComPortSettings::Settings p = m_settings->settings();
-    /*Settings p;
-    p.name = tr("COM3");
-    p.baudRate = QSerialPort::Baud115200;
-    p.stringBaudRate = tr("115200");
-    p.dataBits = QSerialPort::Data8;
-    p.stringDataBits = tr("8");
-    p.parity = QSerialPort::NoParity;
-    p.stringParity = tr("None");
-    p.stopBits = QSerialPort::OneStop;
-    p.stringStopBits = tr("1");
-    p.flowControl = QSerialPort::NoFlowControl;
-    p.stringFlowControl = tr("None");
-    p.localEchoEnabled = false;*/
-
 
     m_serial->setPortName(p.name);
     m_serial->setBaudRate(p.baudRate);

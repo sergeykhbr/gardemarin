@@ -27,6 +27,18 @@ class ControlPanel : public QWidget {
     enum EBtnNames {
         KEY_1,
         KEY_2,
+        KEY_red,
+        KEY_blue,
+        KEY_white,
+        KEY_mixed,
+        KEY_dc0,
+        KEY_dc1,
+        KEY_dc2,
+        KEY_dc3,
+        KEY_dc4,
+        KEY_dc5,
+        KEY_dc6,
+        KEY_dc7,
         KEY_Total
     };
 
@@ -34,8 +46,21 @@ class ControlPanel : public QWidget {
  protected slots:
     void slotBtn1Toggled(bool val);
     void slotBtn2Toggled(bool val);
+    void slotBtnRedToggled(bool val);
+    void slotBtnBlueToggled(bool val);
+    void slotBtnWhiteToggled(bool val);
+    void slotBtnMixedToggled(bool val);
+    void slotBtnDc0Toggled(bool val);
+    void slotBtnDc1Toggled(bool val);
+    void slotBtnDc2Toggled(bool val);
+    void slotBtnDc3Toggled(bool val);
+    void slotBtnDc4Toggled(bool val);
+    void slotBtnDc5Toggled(bool val);
+    void slotBtnDc6Toggled(bool val);
+    void slotBtnDc7Toggled(bool val);
 
  protected:
+    void btnToggledGeneric(int idx, bool val);
     bool event(QEvent *e) override;
     void mouseMoveEvent(QMouseEvent *ev) override;
     void mousePressEvent(QMouseEvent *ev) override;
@@ -44,6 +69,19 @@ class ControlPanel : public QWidget {
  signals:
     void signalBtn1Toggled(bool val);
     void signalBtn2Toggled(bool val);
+    void signalBtnRedToggled(bool val);
+    void signalBtnBlueToggled(bool val);
+    void signalBtnWhiteToggled(bool val);
+    void signalBtnMixedToggled(bool val);
+    void signalBtnDc0Toggled(bool val);
+    void signalBtnDc1Toggled(bool val);
+    void signalBtnDc2Toggled(bool val);
+    void signalBtnDc3Toggled(bool val);
+    void signalBtnDc4Toggled(bool val);
+    void signalBtnDc5Toggled(bool val);
+    void signalBtnDc6Toggled(bool val);
+    void signalBtnDc7Toggled(bool val);
+    void signalGetData(const QByteArray &data);
 
  private:
     QPixmap pixmapBkg_;
