@@ -54,7 +54,7 @@ extern "C" int fwmain(int argcnt, char *args[]) {
 
     xTaskCreate(task500ms,
                  APP_TASK_NAME,
-                 configMINIMAL_STACK_SIZE,
+                 2*configMINIMAL_STACK_SIZE,
                  appdata,
                  tskIDLE_PRIORITY + 1UL,
                  &appdata->handleTask500ms);

@@ -26,15 +26,12 @@
 
 #define SERVICE_STATE_IDLE         0
 #define SERVICE_STATE_INIT         1
-#define SERVICE_STATE_CAN1_START   2 
-#define SERVICE_STATE_CAN1_SNIFFER 3 
+#define SERVICE_STATE_CAN1_START   2
+#define SERVICE_STATE_CAN1_SNIFFER 3
 #define SERVICE_STATE_CAN1_STOP    4
-#define SERVICE_STATE_RELAY        5 
-#define SERVICE_STATE_LED          6
-#define SERVICE_STATE_SCALES_READ  7
-#define SERVICE_STATE_SCALES_SLEEP 8
-#define SERVICE_STATE_MOTOR        9
-#define SERVICE_STATE_END          10
+#define SERVICE_STATE_SCALES_READ  5
+#define SERVICE_STATE_SCALES_SLEEP 6
+#define SERVICE_STATE_END          7
 
 class KeyNotifierType : public KeyListenerInterface {
  public:

@@ -53,11 +53,25 @@ void output_scales() {
             fw_get_obj_attr_by_name(obj, "value2"));
     FwAttribute *value3 = reinterpret_cast<FwAttribute *>(
             fw_get_obj_attr_by_name(obj, "value3"));
-    uart_printf("0 %08x  1 %08x  2 %08x  3 %08x\r\n",
+
+    FwAttribute *gram0 = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "gram0"));
+    FwAttribute *gram1 = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "gram1"));
+    FwAttribute *gram2 = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "gram2"));
+    FwAttribute *gram3 = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "gram3"));
+
+    uart_printf("0 %08x %d  1 %08x %d  2 %08x %d  3 %08x %d\r\n",
                 value0->to_uint32(),
+                static_cast<int32_t>(gram0->to_float()),
                 value1->to_uint32(),
+                static_cast<int32_t>(gram1->to_float()),
                 value2->to_uint32(),
-                value3->to_uint32());
+                static_cast<int32_t>(gram2->to_float()),
+                value3->to_uint32(),
+                static_cast<int32_t>(gram3->to_float()));
 }
 
 
@@ -200,47 +214,6 @@ void update_service_state(app_data_type *data) {
         uart_printf("[%d] CAN1 stopped\r\n", xTaskGetTickCount());
         data->service_state++;
         break;
-    case SERVICE_STATE_RELAY:
-        relais_on("relais0");
-        data->keyNotifier->waitKeyPressed();
-
-        relais_on("relais1");
-        data->keyNotifier->waitKeyPressed();
-
-        relais_off("relais0");
-        relais_off("relais1");
-        data->keyNotifier->btnClick = 0;
-        data->service_state++;
-        break;
-    case SERVICE_STATE_LED:
-        led_strip_on("red");
-        data->keyNotifier->waitKeyPressed();
-
-        led_strip_off("red");
-        led_strip_on("blue");
-        data->keyNotifier->waitKeyPressed();
-
-        led_strip_off("blue");
-        led_strip_on("white");
-        data->keyNotifier->waitKeyPressed();
-
-        led_strip_off("white");
-        led_strip_on("mixed");
-        data->keyNotifier->waitKeyPressed();
-
-        led_strip_on("red");
-        led_strip_on("blue");
-        led_strip_on("white");
-        led_strip_on("mixed");
-        data->keyNotifier->waitKeyPressed();
-
-        led_strip_off("red");
-        led_strip_off("blue");
-        led_strip_off("white");
-        led_strip_off("mixed");
-        data->keyNotifier->btnClick = 0;
-        data->service_state++;
-        break;
     case SERVICE_STATE_SCALES_READ:
         output_scales();
         if (btnClick) {
@@ -256,38 +229,6 @@ void update_service_state(app_data_type *data) {
         } else {
             uart_printf("[%d] Scales RunInterface not found\r\n", xTaskGetTickCount());
         }
-        data->service_state++;
-        break;
-    case SERVICE_STATE_MOTOR:
-        dc_motor_on(0);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(0);
-        dc_motor_on(1);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(1);
-        dc_motor_on(2);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(2);
-        dc_motor_on(3);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(3);
-        dc_motor_on(4);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(5);
-        dc_motor_on(6);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(6);
-        dc_motor_on(7);
-        data->keyNotifier->waitKeyPressed();
-
-        dc_motor_off(7);
-        data->keyNotifier->btnClick = 0;
         data->service_state++;
         break;
     case SERVICE_STATE_END:

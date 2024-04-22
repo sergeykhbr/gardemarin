@@ -47,6 +47,7 @@ class LoadSensorPort : public SensorInterface {
     FwAttribute gram_;
     FwAttribute offset_;
     FwAttribute alpha_;
+    FwAttribute zeroLevel_;
     int idx_;
 };
 

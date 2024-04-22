@@ -29,13 +29,14 @@ struct LoadCellCfgType {
     const char *attr_gram_name;    
     const char *attr_offset_name;    
     const char *attr_alpha_name;
+    const char *attr_zerolevel_name;
 };
 
 static const LoadCellCfgType CELL_CONFIG[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
-    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "gram0", "offset0", "alpha0"},
-    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "gram1", "offset1", "alpha1"},
-    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "gram2", "offset2", "alpha2"},
-    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "gram3", "offset3", "alpha3"}
+    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "gram0", "offset0", "alpha0", "zero0"},
+    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "gram1", "offset1", "alpha1", "zero0"},
+    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "gram2", "offset2", "alpha2", "zero0"},
+    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "gram3", "offset3", "alpha3", "zero0"}
 };
 
 // PC[12] = SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
@@ -139,6 +140,7 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     gram_(CELL_CONFIG[idx].attr_gram_name),
     offset_(CELL_CONFIG[idx].attr_offset_name),
     alpha_(CELL_CONFIG[idx].attr_alpha_name),
+    zeroLevel_(CELL_CONFIG[idx].attr_zerolevel_name),
     idx_(idx) {
 
     gpio_pin_as_output(&CELL_CONFIG[idx].cs_gpio_cfg,
@@ -150,7 +152,8 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     value_.make_uint32(0);
     gram_.make_float(0);
     offset_.make_uint32(0);
-    alpha_.make_float(1.0);
+    alpha_.make_float(1.0 / 420.0);
+    zeroLevel_.make_float(535.0);
 }
 
 void LoadSensorPort::Init() {
@@ -164,7 +167,12 @@ void LoadSensorPort::Init() {
 
 void LoadSensorPort::setSensorValue(uint32_t val) {
     value_.make_uint32(val);
+
+    int32_t t1 = static_cast<int32_t>(val);
+    if (t1 & 0x04000000) {
+        t1 |= 0xf8000000;
+    }
     float phys = static_cast<float>(
-        val - offset_.to_uint32()) * alpha_.to_float();
-    gram_.make_float(phys);
+        t1 - offset_.to_int32()) * alpha_.to_float();
+    gram_.make_float(phys + zeroLevel_.to_float());
 }
