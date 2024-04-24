@@ -152,8 +152,8 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     value_.make_uint32(0);
     gram_.make_float(0);
     offset_.make_uint32(0);
-    alpha_.make_float(1.0 / 420.0);
-    zeroLevel_.make_float(535.0);
+    alpha_.make_float(1.0f / 420.0f);
+    zeroLevel_.make_float(535.0f);
 }
 
 void LoadSensorPort::Init() {

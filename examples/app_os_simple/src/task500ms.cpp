@@ -74,6 +74,41 @@ void output_scales() {
                 static_cast<int32_t>(gram3->to_float()));
 }
 
+void output_adc() {
+    FwObject *obj = reinterpret_cast<FwObject *>(fw_get_object("adc1"));
+    FwAttribute *temp = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "temperature"));
+    FwAttribute *vref = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "Vref"));
+    FwAttribute *vbat = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "Vbat"));
+
+    uart_printf("adc1 %08x %08x %08x\r\n",
+                temp->to_uint32(),
+                vref->to_uint32(),
+                vbat->to_uint32());
+
+    obj = reinterpret_cast<FwObject *>(fw_get_object("hbrg0"));
+    FwAttribute *i0_value = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "i0_value"));
+    FwAttribute *i1_value = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "i1_value"));
+
+    uart_printf("hrg0 %08x %08x\r\n",
+                i0_value->to_uint32(),
+                i1_value->to_uint32());
+
+    obj = reinterpret_cast<FwObject *>(fw_get_object("hbrg1"));
+    i0_value = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "i0_value"));
+    i1_value = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "i1_value"));
+
+    uart_printf("hrg1 %08x %08x\r\n",
+                i0_value->to_uint32(),
+                i1_value->to_uint32());
+}
+
 
 void write_obj_attribute(const char *objname,
                          const char *atrname,
@@ -230,6 +265,12 @@ void update_service_state(app_data_type *data) {
             uart_printf("[%d] Scales RunInterface not found\r\n", xTaskGetTickCount());
         }
         data->service_state++;
+        break;
+    case SERVICE_ADC_CHECK:
+        output_adc();
+        if (btnClick) {
+            data->service_state++;
+        }
         break;
     case SERVICE_STATE_END:
         uart_printf("[%d] End of service\r\n", xTaskGetTickCount());

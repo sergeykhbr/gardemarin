@@ -31,14 +31,14 @@ class LoadSensorPort : public SensorInterface {
                    int idx);
 
     // SensorInterface:
-    virtual void setSensorValue(uint32_t val) override;
     virtual void setSensorOffset(uint32_t offset) override { offset_.make_uint32(offset); }
     virtual void setSensorAlpha(double alpha) override { alpha_.make_double(alpha); }
     virtual uint32_t getSensorValue() override { return value_.to_uint32(); }
     virtual double getSensorPhysical() override { return gram_.to_float(); }
 
     // Common interface
-    virtual void Init();     // register attribute in parent class
+    void Init();     // register attribute in parent class
+    void setSensorValue(uint32_t val);
 
  protected:
     FwObject *parent_;

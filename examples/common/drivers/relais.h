@@ -33,24 +33,28 @@ class RelaisDriver : public FwObject,
     // BinInterface:
     virtual void setBinEnabled() override;
     virtual void setBinDisabled() override;
+    virtual uint8_t getBinState() override;
 
  protected:
     class BinAttribute : public FwAttribute {
      public:
-        explicit BinAttribute(const char *name, BinInterface *ibin) :
-            FwAttribute(name,"0=ena, 1=dis"), ibin_(ibin) {
-            make_int8(0);
+        explicit BinAttribute(RelaisDriver *parent, const char *name) :
+            FwAttribute(name,"0=ena, 1=dis"), parent_(parent) {
+        }
+
+        virtual void pre_read() override {
+            u_.u8 = parent_->getBinState();
         }
 
         virtual void post_write() override {
-            if (to_int8()) {
-                ibin_->setBinEnabled();
+            if (u_.i8) {
+                parent_->setBinEnabled();
             } else {
-                ibin_->setBinDisabled();
+                parent_->setBinDisabled();
             }
         }
      private:
-        BinInterface *ibin_;
+        RelaisDriver *parent_;
     };
 
 

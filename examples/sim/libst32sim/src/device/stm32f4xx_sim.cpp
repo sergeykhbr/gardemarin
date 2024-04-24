@@ -28,6 +28,7 @@
 #include "wdogsim.h"
 #include "systicksim.h"
 #include "extisim.h"
+#include "adcsim.h"
 
 typedef unsigned (__stdcall* fw_thread_type)(void *args);
 
@@ -49,6 +50,7 @@ ST32F4xxSim::ST32F4xxSim(const char *name) :
     devlist_.push_back(new RCCSim("rcc", RCC_BASE, sizeof(RCC_registers_type)));
     devlist_.push_back(new SYSCFGSim("syscfg", SYSCFG_BASE, sizeof(SYSCFG_registers_type)));
     devlist_.push_back(new EXTISim("exti", EXTI_BASE, sizeof(EXTI_registers_type)));
+    devlist_.push_back(new AdcSim("adc", ADC1_BASE, 0x400));       // include ADC1,2,3 and common registers
     //devlist_.push_back(new WDOGSim("wdog", WWDG_BASE, sizeof(WDG_registers_type)));
 
     for (auto it = devlist_.begin(); it != devlist_.end(); it++) {

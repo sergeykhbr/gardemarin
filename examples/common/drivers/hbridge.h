@@ -36,10 +36,12 @@ class HBridgeDriver : public FwObject,
 
     // FwObject interface:
     virtual void Init() override;
+    virtual void PostInit() override;
 
     // BinInterface: control "DRV_MODE" pin output
     virtual void setBinEnabled() override;
     virtual void setBinDisabled() override;
+    virtual uint8_t getBinState() override;
 
     // TimerListenerInterface
     virtual uint64_t getTimerInterval() { return 10; }
@@ -50,8 +52,22 @@ class HBridgeDriver : public FwObject,
     void stopDcMotor(int idx);
 
  protected:
+    class DriveModeAttribute : public FwAttribute {
+     public:
+        DriveModeAttribute(HBridgeDriver *parent, const char *name) :
+            FwAttribute(name, "Drive mode pin: 0=4-pins control; 1=2-pins control"),
+            parent_(parent) {
+        }
+
+        virtual void pre_read() override;
+        virtual void post_write() override;
+     protected:
+        HBridgeDriver *parent_;
+    };
+
+ protected:
     int idx_;
-    FwAttribute drvmode_;
+    DriveModeAttribute drvmode_;
 
     DcMotor dc0_;
     DcMotor dc1_;

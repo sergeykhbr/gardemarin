@@ -23,5 +23,6 @@ class BinInterface : public CommonInterface {
 
     virtual void setBinEnabled() = 0;
     virtual void setBinDisabled() = 0;
+    virtual uint8_t getBinState() = 0;
 };
 

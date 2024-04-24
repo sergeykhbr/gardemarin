@@ -31,6 +31,7 @@ FwAttribute::FwAttribute(const char *name, const char *descr) :
 void FwAttribute::make_nil() {
     kind_ = Attr_Nil;
     u_.u64 = 0;
+    post_write();
 }
 
 /**
@@ -40,6 +41,7 @@ void FwAttribute::make_nil() {
 void FwAttribute::make_string(const char *v) {
     kind_ = Attr_String;
     u_.string = v;
+    post_write();
 }
 
 /**
@@ -48,6 +50,7 @@ void FwAttribute::make_string(const char *v) {
 * @return Pointer to a string that stored in the attribute
 */
 const char *FwAttribute::to_string() {
+    pre_read();
     return u_.string;
 }
 
@@ -58,6 +61,7 @@ const char *FwAttribute::to_string() {
 void FwAttribute::make_int8(int8_t v) {
     kind_ = Attr_Int8;
     u_.i8 = v;
+    post_write();
 }
 
 /**
@@ -65,6 +69,7 @@ void FwAttribute::make_int8(int8_t v) {
 * @return Signed byte value stored in the attribute
 */
 int8_t FwAttribute::to_int8() {
+    pre_read();
     return u_.i8;
 }
 
@@ -75,6 +80,7 @@ int8_t FwAttribute::to_int8() {
 void FwAttribute::make_uint8(uint8_t v) {
     kind_ = Attr_UInt8;
     u_.u8 = v;
+    post_write();
 }
 
 /**
@@ -82,6 +88,7 @@ void FwAttribute::make_uint8(uint8_t v) {
 * @return Unsigned byte value stored in the attribute
 */
 uint8_t FwAttribute::to_uint8() {
+    pre_read();
     return u_.u8;
 }
 
@@ -92,6 +99,7 @@ uint8_t FwAttribute::to_uint8() {
 void FwAttribute::make_int16(int16_t v) {
     kind_ = Attr_Int16;
     u_.i16 = v;
+    post_write();
 }
 
 /**
@@ -99,6 +107,7 @@ void FwAttribute::make_int16(int16_t v) {
 * @return Signed word value stored in the attribute
 */
 int16_t FwAttribute::to_int16() {
+    pre_read();
     return u_.i16;
 }
 
@@ -109,6 +118,7 @@ int16_t FwAttribute::to_int16() {
 void FwAttribute::make_uint16(uint16_t v) {
     kind_ = Attr_UInt16;
     u_.u16 = v;
+    post_write();
 }
 
 /**
@@ -116,6 +126,7 @@ void FwAttribute::make_uint16(uint16_t v) {
 * @return Unsigned word value stored in the attribute
 */
 uint16_t FwAttribute::to_uint16() {
+    pre_read();
     return u_.u16;
 }
 
@@ -126,6 +137,7 @@ uint16_t FwAttribute::to_uint16() {
 void FwAttribute::make_int32(int32_t v) {
     kind_ = Attr_Int32;
     u_.i32 = v;
+    post_write();
 }
 
 /**
@@ -133,6 +145,7 @@ void FwAttribute::make_int32(int32_t v) {
 * @return Signed double word value stored in the attribute
 */
 int32_t FwAttribute::to_int32() {
+    pre_read();
     return u_.i32;
 }
 
@@ -143,6 +156,7 @@ int32_t FwAttribute::to_int32() {
 void FwAttribute::make_uint32(uint32_t v) {
     kind_ = Attr_UInt32;
     u_.u32 = v;
+    post_write();
 }
 
 /**
@@ -150,6 +164,7 @@ void FwAttribute::make_uint32(uint32_t v) {
 * @return Unsigned double word value stored in the attribute
 */
 uint32_t FwAttribute::to_uint32() {
+    pre_read();
     return u_.u32;
 }
 
@@ -160,6 +175,7 @@ uint32_t FwAttribute::to_uint32() {
 void FwAttribute::make_int64(int64_t v) {
     kind_ = Attr_Int64;
     u_.i64 = v;
+    post_write();
 }
 
 /**
@@ -167,6 +183,7 @@ void FwAttribute::make_int64(int64_t v) {
 * @return Signed quad word value stored in the attribute
 */
 int64_t FwAttribute::to_int64() {
+    pre_read();
     return u_.i64;
 }
 
@@ -177,6 +194,7 @@ int64_t FwAttribute::to_int64() {
 void FwAttribute::make_uint64(uint64_t v) {
     kind_ = Attr_UInt64;
     u_.u64 = v;
+    post_write();
 }
 
 /**
@@ -184,6 +202,7 @@ void FwAttribute::make_uint64(uint64_t v) {
 * @return Unsigned quad word value stored in the attribute
 */
 uint64_t FwAttribute::to_uint64() {
+    pre_read();
     return u_.u64;
 }
 
@@ -194,6 +213,7 @@ uint64_t FwAttribute::to_uint64() {
 void FwAttribute::make_float(float v) {
     kind_ = Attr_Float;
     u_.f = v;
+    post_write();
 }
 
 /**
@@ -201,6 +221,7 @@ void FwAttribute::make_float(float v) {
 * @return Single precision floating point value stored in the attribute
 */
 float FwAttribute::to_float() {
+    pre_read();
     return u_.f;
 }
 
@@ -211,6 +232,7 @@ float FwAttribute::to_float() {
 void FwAttribute::make_double(double v) {
     kind_ = Attr_Double;
     u_.d = v;
+    post_write();
 }
 
 /**
@@ -218,6 +240,7 @@ void FwAttribute::make_double(double v) {
 * @return Double precision floating point value stored in the attribute
 */
 double FwAttribute::to_double() {
+    pre_read();
     return u_.d;
 }
 

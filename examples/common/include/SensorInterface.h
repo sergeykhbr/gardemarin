@@ -21,8 +21,6 @@ class SensorInterface : public CommonInterface {
  public:
     SensorInterface() : CommonInterface("SensorInterface") {}
 
-    // set value from external interface
-    virtual void setSensorValue(uint32_t val) = 0;
     // linear polynom of 1-st order: physical = a0 + a1 * adc
     virtual void setSensorOffset(uint32_t offset) = 0;
     virtual void setSensorAlpha(double alpha) = 0;

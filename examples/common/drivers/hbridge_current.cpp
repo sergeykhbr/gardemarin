@@ -30,22 +30,32 @@ static const CurrentSensorNamesType CURRENT_SENSOR_CFG[GARDEMARIN_DCMOTOR_PER_HB
 };
 
 
-SensorCurrent::SensorCurrent(FwObject *parent, int idx) :
+SensorCurrent::SensorCurrent(FwObject *parent, int idx, const char *adcport) :
     parent_(parent),
     idx_(idx),
-    value_(CURRENT_SENSOR_CFG[idx].value_name),
-    ampere_(CURRENT_SENSOR_CFG[idx].ampere_name) {
-    setSensorValue(0);
+    adcport_(adcport),
+    isensor_(0),
+    value_(this, CURRENT_SENSOR_CFG[idx].value_name),
+    ampere_(this, CURRENT_SENSOR_CFG[idx].ampere_name) {
 }
 
 void SensorCurrent::Init() {
-    parent_->RegisterPortInterface(CURRENT_SENSOR_CFG[idx_].portname,
-                                   static_cast<SensorInterface *>(this));
     parent_->RegisterAttribute(&value_);
     parent_->RegisterAttribute(&ampere_);
 }
 
-void SensorCurrent::setSensorValue(uint32_t val) {
-    value_.make_uint32(val);
-    ampere_.make_double((1.0/ 255.0) * static_cast<double>(val));
+void SensorCurrent::PostInit() {
+    isensor_ =
+        reinterpret_cast<SensorInterface *>(fw_get_object_port_interface(
+                "adc1",
+                adcport_,
+                "SensorInterface"));
+}
+
+uint32_t SensorCurrent::getRawValue() {
+    uint32_t ret = 0;
+    if (isensor_) {
+        ret = isensor_->getSensorValue();
+    }
+    return ret;
 }

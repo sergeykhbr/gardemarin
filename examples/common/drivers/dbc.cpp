@@ -37,6 +37,7 @@ void DbcConverter::Init() {
 }
 
 void DbcConverter::PostInit() {
+#ifdef SHOW_DBC
     FwObject *obj;
     FwList *p;
     int obj_idx = 0;
@@ -102,6 +103,7 @@ void DbcConverter::PostInit() {
     uart_printf("CM_ BO_ %u \"Debug output strings\";\r\n",
                 0x80000000 | CAN_MSG_ID_DBG_OUTPT);
     uart_printf("\r\n");
+#endif
 
     // TODO: add enum format output
 

@@ -57,6 +57,10 @@ void UserLedDriver::setBinDisabled() {
     state_.make_uint32(0);
 }
 
+uint8_t UserLedDriver::getBinState() {
+    return static_cast<uint8_t>(gpio_pin_get(&USER_LED0));
+}
+
 uint64_t UserLedDriver::getTimerInterval() {
     // half period is On and half period if OFF, so 500 instead of 1000
     return 500 / hz_.to_int32();

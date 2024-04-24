@@ -5,7 +5,7 @@ CC=arm-none-eabi-gcc
 OBJDUMP=arm-none-eabi-objdump
 OBJCOPY=arm-none-eabi-objcopy
 
-CFLAGS= -c -g -static -Os -mcpu=cortex-m4 -mfloat-abi=hard
+CFLAGS= -c -g -static -Os -mcpu=cortex-m4 -mfloat-abi=hard -DxSHOW_DBC
 CFLAGS+=-fno-common
 
 LDFLAGS=-T ../common/system/stm32f4xx.ld -nostartfiles -mcpu=cortex-m4 -mfloat-abi=hard
@@ -64,6 +64,7 @@ SOURCES = isr_vector \
 	user_btn \
 	user_led \
 	uart_drv \
+	adc_drv \
 	relais \
 	loadsensor \
 	ledstrip \

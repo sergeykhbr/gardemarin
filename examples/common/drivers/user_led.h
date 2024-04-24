@@ -36,6 +36,7 @@ class UserLedDriver : public FwObject,
     // BinInterface
     virtual void setBinEnabled() override;
     virtual void setBinDisabled() override;
+    virtual uint8_t getBinState() override;
 
     // TimerListenerInterface
     virtual uint64_t getTimerInterval() override;

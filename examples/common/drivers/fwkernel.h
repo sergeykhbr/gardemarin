@@ -26,6 +26,7 @@
 #include "loadsensor.h"
 #include "user_led.h"
 #include "user_btn.h"
+#include "adc_drv.h"
 #include "hbridge.h"
 #include "dbc.h"
 
@@ -50,6 +51,7 @@ class KernelClass : public FwObject {
     LoadSensorDriver scales_;
     UserLedDriver uled0_;
     UserButtonDriver ubtn0_;
+    AdcDriver adc1_;
     HBridgeDriver hbrg0_;
     HBridgeDriver hbrg1_;
     HBridgeDriver hbrg2_;

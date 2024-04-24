@@ -24,24 +24,46 @@
 #include <SensorInterface.h>
 
 
-class SensorCurrent : public SensorInterface {
+class SensorCurrent {
  public:
-    SensorCurrent(FwObject *parent, int idx);
+    SensorCurrent(FwObject *parent, int idx, const char *adcport);
 
     // Common interface
     void Init();
+    void PostInit();
+    uint32_t getRawValue();
 
-    // SensorInterface:
-    virtual void setSensorValue(uint32_t val) override;
-    virtual void setSensorOffset(uint32_t offset) override {}
-    virtual void setSensorAlpha(double alpha) override {}
-    virtual uint32_t getSensorValue() override { return value_.to_uint32(); }
-    virtual double getSensorPhysical() override { return ampere_.to_float(); }
+ protected:
+    class AdcValueAttribute : public FwAttribute {
+     public:
+        explicit AdcValueAttribute(SensorCurrent *parent, const char *name)
+            : FwAttribute(name, "ADC I-sensor raw value"), parent_(parent) {
+        }
+
+        virtual void pre_read() override {
+            u_.u32 = parent_->getRawValue();
+        }
+        SensorCurrent *parent_;
+    };
+
+    class AmpereAttribute : public FwAttribute {
+     public:
+        explicit AmpereAttribute(SensorCurrent *parent, const char *name)
+            : FwAttribute(name, "I-sensor mA"), parent_(parent) {
+        }
+
+        virtual void pre_read() override {
+            u_.f = static_cast<float>(parent_->getRawValue());
+        }
+        SensorCurrent *parent_;
+    };
 
  protected:
     FwObject *parent_;
     int idx_;     // sensor index 0..1
+    const char *adcport_;
+    SensorInterface *isensor_;
 
-    FwAttribute value_;
-    FwAttribute ampere_;
+    AdcValueAttribute value_;
+    AmpereAttribute ampere_;
 };
