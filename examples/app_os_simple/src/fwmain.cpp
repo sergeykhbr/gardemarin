@@ -47,14 +47,14 @@ extern "C" int fwmain(int argcnt, char *args[]) {
 
     xTaskCreate(task1ms,
                  APP_TASK_NAME,
-                 configMINIMAL_STACK_SIZE,
+                 512,
                  appdata,
                  tskIDLE_PRIORITY + 1UL,
                  &appdata->handleTask1ms);
 
     xTaskCreate(task500ms,
                  APP_TASK_NAME,
-                 2*configMINIMAL_STACK_SIZE,
+                 1024,
                  appdata,
                  tskIDLE_PRIORITY + 1UL,
                  &appdata->handleTask500ms);
