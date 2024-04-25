@@ -127,13 +127,13 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
         }
     } else if (tickcnt == 5001) {
         // [10,3] hbrg0:dc0_duty enable=0x64(100) any non-zero value
-        const char *xxx = ">!0000010a,2,8364";
+        const char *xxx = ">!0000010B,2,8364";
         for (int i = 0; i < strlen(xxx); i++) {
             fw_fifo_put(&rxfifo_, xxx[i]);
         }
     } else if (tickcnt == 5002) {
         // [10,6] hbrg0:dc1_duty enable=0x64(100) any non-zero value
-        const char *xxx = ">!0000010a,2,8664";
+        const char *xxx = ">!0000010B,2,8664";
         for (int i = 0; i < strlen(xxx); i++) {
             fw_fifo_put(&rxfifo_, xxx[i]);
         }

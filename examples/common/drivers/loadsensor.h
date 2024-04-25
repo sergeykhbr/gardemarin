@@ -25,16 +25,14 @@
 #include <SensorInterface.h>
 #include <gpio_drv.h>
 
-class LoadSensorPort : public SensorInterface {
+class LoadSensorPort : public FwAttribute,
+                       public SensorInterface {
  public:
     LoadSensorPort(FwObject *parent,
                    int idx);
 
     // SensorInterface:
-    virtual void setSensorOffset(uint32_t offset) override { offset_.make_uint32(offset); }
-    virtual void setSensorAlpha(double alpha) override { alpha_.make_double(alpha); }
-    virtual uint32_t getSensorValue() override { return value_.to_uint32(); }
-    virtual double getSensorPhysical() override { return gram_.to_float(); }
+    virtual int32_t getSensorValue() override { return to_int32(); }
 
     // Common interface
     void Init();     // register attribute in parent class
@@ -42,8 +40,6 @@ class LoadSensorPort : public SensorInterface {
 
  protected:
     FwObject *parent_;
-    const char *portname_;
-    FwAttribute value_;
     FwAttribute gram_;
     FwAttribute offset_;
     FwAttribute alpha_;

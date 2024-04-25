@@ -52,7 +52,7 @@ void SensorCurrent::PostInit() {
                 "SensorInterface"));
 }
 
-uint32_t SensorCurrent::getRawValue() {
+int32_t SensorCurrent::getRawValue() {
     uint32_t ret = 0;
     if (isensor_) {
         ret = isensor_->getSensorValue();

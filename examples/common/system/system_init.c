@@ -562,7 +562,8 @@ void system_init(void)
     // [1] GPIOBEN: IO port B clock en
     // [0] GPIOAEN: IO port A clock en
     t1 = read32(&RCC->AHB1ENR);
-    t1 |= (1 << 18)    // Backup SRAM
+    t1 |= (1 << 21)    // DMA1EN
+        | (1 << 18)    // Backup SRAM
         | (1 << 4)     // PE
         | (1 << 3)     // PD
         | (1 << 2)     // PC

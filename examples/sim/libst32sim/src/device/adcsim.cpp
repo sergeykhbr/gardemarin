@@ -33,7 +33,7 @@ void AdcSim::update(double dt) {
 
     if (CR1.isIrqEnabled()) {
         DR.set(0x10 * seqcnt_);
-        sim_request_interrupt(18);
+        //sim_request_interrupt(18);  // only on overflow
         if (++seqcnt_ >= 11) {
             seqcnt_ = 0;
             SR.setEndOfSequence();

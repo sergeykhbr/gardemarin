@@ -31,7 +31,7 @@ class SensorCurrent {
     // Common interface
     void Init();
     void PostInit();
-    uint32_t getRawValue();
+    int32_t getRawValue();
 
  protected:
     class AdcValueAttribute : public FwAttribute {
@@ -41,7 +41,7 @@ class SensorCurrent {
         }
 
         virtual void pre_read() override {
-            u_.u32 = parent_->getRawValue();
+            u_.i32 = parent_->getRawValue();
         }
         SensorCurrent *parent_;
     };

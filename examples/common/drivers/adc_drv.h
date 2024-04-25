@@ -24,70 +24,50 @@
 #include <TimerInterface.h>
 #include <gpio_drv.h>
 
-class AdcChannel : public SensorInterface {
+class AdcChannel : public FwAttribute,
+                   public SensorInterface {
  public:
-    AdcChannel(FwObject *parent, const char *name, int idx);
+    AdcChannel(FwObject *parent, const char *name, int idx, const char *descr);
+
+    // FwAttribute
+    virtual void pre_read() override {
+        float V = 3.3f * getSensorValue() / 4095.0f;
+        u_.i32 = static_cast<int>(100.0f * V);
+    }
 
     // SensorInterface
-    virtual void setSensorOffset(uint32_t offset) override {}
-    virtual void setSensorAlpha(double alpha) override {}
-    virtual uint32_t getSensorValue() override;
-    virtual double getSensorPhysical() override { return 0;}
+    virtual int32_t getSensorValue() override;
 
     // Common methods
     void Init();
 
   protected:
     FwObject *parent_;
-    const char *name_;
     int idx_;
 };
 
+class TemperatureAdcChannel : public AdcChannel {
+ public:
+    TemperatureAdcChannel(FwObject *parent, int idx)
+        : AdcChannel(parent, "temperature", idx, "CPU temperature") {
+    }
+
+    virtual void pre_read() override {
+        AdcChannel::pre_read();
+        float V_SENSE = static_cast<float>(u_.i32 / 100.0f);
+        static const float V25 = 0.76f;            // Voltage at 25 C [V]
+        static const float Avg_Slope = 0.0025f;    // 2.5 [mV/C]
+
+        u_.i32 = static_cast<int>(10.0f * (V_SENSE - V25) / Avg_Slope) + 250;
+    }
+};
+
 class AdcDriver : public FwObject {
-friend class TemperatureAttribute;
-friend class VoltageRefAttribute;
  public:
     AdcDriver(const char *name);
 
     // FwObject interface:
     virtual void Init() override;
-
- protected:
-    class TemperatureAttribute : public FwAttribute {
-     public:
-        explicit TemperatureAttribute(AdcDriver *parent, const char *name)
-            : FwAttribute(name, "CPU temperature"), parent_(parent) {
-        }
-
-        virtual void pre_read() override {
-            u_.u32 = parent_->temp_.getSensorValue();
-        }
-        AdcDriver *parent_;
-    };
-
-    class VoltageRefAttribute : public FwAttribute {
-     public:
-        explicit VoltageRefAttribute(AdcDriver *parent, const char *name)
-            : FwAttribute(name, "CPU Internal Voltage"), parent_(parent) {
-        }
-
-        virtual void pre_read() override {
-            u_.u32 = parent_->vint_.getSensorValue();
-        }
-        AdcDriver *parent_;
-    };
-
-    class BatteryAttribute : public FwAttribute {
-     public:
-        explicit BatteryAttribute(AdcDriver *parent, const char *name)
-            : FwAttribute(name, "Battery Voltage"), parent_(parent) {
-        }
-
-        virtual void pre_read() override {
-            u_.u32 = parent_->vbat_.getSensorValue();
-        }
-        AdcDriver *parent_;
-    };
 
  protected:
     AdcChannel in0_;
@@ -98,12 +78,8 @@ friend class VoltageRefAttribute;
     AdcChannel in8_;
     AdcChannel in9_;
     AdcChannel in10_;
-    AdcChannel temp_;   // temperature
+    TemperatureAdcChannel temp_;   // temperature
     AdcChannel vint_;   // V_INT
     AdcChannel vbat_;   // V_BAT
-
-    TemperatureAttribute temperature_;
-    VoltageRefAttribute voltageRef_;
-    BatteryAttribute voltageBattery_;
 };
 

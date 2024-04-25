@@ -134,9 +134,8 @@ void LoadSensorDriver::callbackTimer(uint64_t tickcnt) {
 
 
 LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) : 
+    FwAttribute(CELL_CONFIG[idx].attr_value_name),
     parent_(parent),
-    portname_(CELL_CONFIG[idx].portname),
-    value_(CELL_CONFIG[idx].attr_value_name),
     gram_(CELL_CONFIG[idx].attr_gram_name),
     offset_(CELL_CONFIG[idx].attr_offset_name),
     alpha_(CELL_CONFIG[idx].attr_alpha_name),
@@ -145,11 +144,11 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
 
     gpio_pin_as_output(&CELL_CONFIG[idx].cs_gpio_cfg,
                        GPIO_NO_OPEN_DRAIN,
-                       GPIO_SLOW,
+                       GPIO_MEDIUM,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_set(&CELL_CONFIG[idx].cs_gpio_cfg);
 
-    value_.make_uint32(0);
+    make_int32(0);
     gram_.make_float(0);
     offset_.make_uint32(0);
     alpha_.make_float(1.0f / 420.0f);
@@ -157,16 +156,17 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
 }
 
 void LoadSensorPort::Init() {
-    parent_->RegisterPortInterface(portname_, static_cast<SensorInterface *>(this));
+    parent_->RegisterPortInterface(CELL_CONFIG[idx_].attr_value_name,
+                                    static_cast<SensorInterface *>(this));
 
-    parent_->RegisterAttribute(&value_);
+    parent_->RegisterAttribute(static_cast<FwAttribute *>(this));
     parent_->RegisterAttribute(&gram_);
     parent_->RegisterAttribute(&offset_);
     parent_->RegisterAttribute(&alpha_);
 }
 
 void LoadSensorPort::setSensorValue(uint32_t val) {
-    value_.make_uint32(val);
+    make_uint32(val);
 
     int32_t t1 = static_cast<int32_t>(val);
     if (t1 & 0x04000000) {

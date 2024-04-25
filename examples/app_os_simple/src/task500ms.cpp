@@ -83,10 +83,10 @@ void output_adc() {
     FwAttribute *vbat = reinterpret_cast<FwAttribute *>(
             fw_get_obj_attr_by_name(obj, "Vbat"));
 
-    uart_printf("adc1 %08x %08x %08x\r\n",
-                temp->to_uint32(),
-                vref->to_uint32(),
-                vbat->to_uint32());
+    uart_printf("adc1 T=%d VREFINT=%d VBAT=%d\r\n",
+                temp->to_int32(),
+                vref->to_int32(),
+                vbat->to_int32());
 
     obj = reinterpret_cast<FwObject *>(fw_get_object("hbrg0"));
     FwAttribute *i0_value = reinterpret_cast<FwAttribute *>(
@@ -94,9 +94,9 @@ void output_adc() {
     FwAttribute *i1_value = reinterpret_cast<FwAttribute *>(
             fw_get_obj_attr_by_name(obj, "i1_value"));
 
-    uart_printf("hrg0 %08x %08x\r\n",
-                i0_value->to_uint32(),
-                i1_value->to_uint32());
+    uart_printf("hrg0 %d %d\r\n",
+                i0_value->to_int32(),
+                i1_value->to_int32());
 
     obj = reinterpret_cast<FwObject *>(fw_get_object("hbrg1"));
     i0_value = reinterpret_cast<FwAttribute *>(
@@ -104,9 +104,9 @@ void output_adc() {
     i1_value = reinterpret_cast<FwAttribute *>(
             fw_get_obj_attr_by_name(obj, "i1_value"));
 
-    uart_printf("hrg1 %08x %08x\r\n",
-                i0_value->to_uint32(),
-                i1_value->to_uint32());
+    uart_printf("hrg1 %d %d\r\n",
+                i0_value->to_int32(),
+                i1_value->to_int32());
 }
 
 

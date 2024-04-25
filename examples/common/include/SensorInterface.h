@@ -21,11 +21,7 @@ class SensorInterface : public CommonInterface {
  public:
     SensorInterface() : CommonInterface("SensorInterface") {}
 
-    // linear polynom of 1-st order: physical = a0 + a1 * adc
-    virtual void setSensorOffset(uint32_t offset) = 0;
-    virtual void setSensorAlpha(double alpha) = 0;
-    // get ADC and convertd values
-    virtual uint32_t getSensorValue() = 0;
-    virtual double getSensorPhysical() = 0;
+    // get ADC and converted values
+    virtual int32_t getSensorValue() = 0;
 };
 
