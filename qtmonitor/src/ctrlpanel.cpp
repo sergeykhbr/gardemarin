@@ -41,22 +41,13 @@ toggle_signal_type signalArray_[ControlPanel::KEY_Total] = {
     &ControlPanel::signalBtnDc7Toggled,
 };
 
-/* 
- * objid: 2 = relais0, atrid: 0=state
- * objid: 3 = relais1, atrid: 0=state
- * objid: 4 = ledrbw, atrid: 2=red_duty; 4=blue_duty; 6=white_duty; 8=mixed_duty
- * objid: 10 = hbrdg0, atrid: 3=dc0_duty; 6=dc1_duty
- * objid: 11 = hbrdg1, atrid: 3=dc0_duty; 6=dc1_duty
- * objid: 12 = hbrdg2, atrid: 3=dc0_duty; 6=dc1_duty
- * objid: 13 = hbrdg3, atrid: 3=dc0_duty; 6=dc1_duty
- */
 static const char *commandArray_[2*ControlPanel::KEY_Total] = {
     ">!00000102,2,8000\r\n", ">!00000102,2,8001\r\n",       // relais0  enable/disable
     ">!00000103,2,8000\r\n", ">!00000103,2,8001\r\n",       // relais1  enable/disable
-    ">!00000104,2,8200\r\n", ">!00000104,2,8264\r\n",       // red_duty = 100/0
-    ">!00000104,2,8400\r\n", ">!00000104,2,8464\r\n",       // blue_duty = 100/0
-    ">!00000104,2,8600\r\n", ">!00000104,2,8664\r\n",       // white_duty = 100/0
-    ">!00000104,2,8800\r\n", ">!00000104,2,8864\r\n",       // mixed_duty = 100/0
+    ">!00000104,2,8100\r\n", ">!00000104,2,8164\r\n",       // duty0 = 100/0
+    ">!00000104,2,8200\r\n", ">!00000104,2,8264\r\n",       // duty1 = 100/0
+    ">!00000104,2,8300\r\n", ">!00000104,2,8364\r\n",       // duty2 = 100/0
+    ">!00000104,2,8400\r\n", ">!00000104,2,8464\r\n",       // duty3 = 100/0
     ">!0000010B,2,8300\r\n", ">!0000010B,2,8364\r\n",       // hbrg0::dc0_duty = 100/0
     ">!0000010B,2,8600\r\n", ">!0000010B,2,8664\r\n",       // hbrg0::dc1_duty = 100/0
     ">!0000010C,2,8300\r\n", ">!0000010C,2,8364\r\n",       // hbrg1::dc0_duty = 100/0

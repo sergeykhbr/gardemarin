@@ -68,6 +68,13 @@ LedStripDriver::LedStripDriver(const char *name) : FwObject(name),
 
     tim_cnt_ = 0;
 
+    for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
+        gpio_pin_as_output(&GPIO_CFG[i],
+                           GPIO_NO_OPEN_DRAIN,
+                           GPIO_MEDIUM,
+                           GPIO_NO_PUSH_PULL);
+    }
+
     // adc clock on APB1 = 144/4 = 36 MHz
     uint32_t t1 = read32(&RCC->APB1ENR);
     t1 |= (1 << 0);             // APB1[0] TIM2EN
