@@ -18,30 +18,16 @@
 #include <fwapi.h>
 #include "hbridge_current.h"
 
-struct CurrentSensorNamesType {
-    const char *portname;
-    const char *value_name;
-    const char *ampere_name;
-};
-
-static const CurrentSensorNamesType CURRENT_SENSOR_CFG[GARDEMARIN_DCMOTOR_PER_HBDRIGE] = {
-    {"i0", "i0_value", "i0_ampere"},
-    {"i1", "i1_value", "i1_ampere"}
-};
-
-
-SensorCurrent::SensorCurrent(FwObject *parent, int idx, const char *adcport) :
+SensorCurrent::SensorCurrent(FwObject *parent, const char *name, const char *adcport)
+    : FwAttribute(name, "I-sensor mA"), 
     parent_(parent),
-    idx_(idx),
     adcport_(adcport),
-    isensor_(0),
-    value_(this, CURRENT_SENSOR_CFG[idx].value_name),
-    ampere_(this, CURRENT_SENSOR_CFG[idx].ampere_name) {
+    isensor_(0) {
+    make_int32(0);
 }
 
 void SensorCurrent::Init() {
-    parent_->RegisterAttribute(&value_);
-    parent_->RegisterAttribute(&ampere_);
+    parent_->RegisterAttribute(this);
 }
 
 void SensorCurrent::PostInit() {
@@ -58,4 +44,9 @@ int32_t SensorCurrent::getRawValue() {
         ret = isensor_->getSensorValue();
     }
     return ret;
+}
+
+void SensorCurrent::pre_read() {
+    // TODO: ADC value to mA
+    make_int32(getRawValue());
 }

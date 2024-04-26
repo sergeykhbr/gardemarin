@@ -57,6 +57,7 @@ class HBridgeDriver : public FwObject,
         DriveModeAttribute(HBridgeDriver *parent, const char *name) :
             FwAttribute(name, "Drive mode pin: 0=4-pins control; 1=2-pins control"),
             parent_(parent) {
+            kind_ = Attr_Int8;
         }
 
         virtual void pre_read() override;

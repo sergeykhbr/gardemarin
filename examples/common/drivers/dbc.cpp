@@ -307,20 +307,32 @@ void DbcConverter::processRxCanFrame(can_frame_type *frame) {
     if (obj != 0) {
         attr = reinterpret_cast<FwAttribute *>(fw_get_obj_attr_by_index(obj, atr_idx));
         if (attr) {
-            uart_printf("DBC write to %s::%s\r\n",
-                        obj->ObjectName(),
-                        attr->name());
             if (we) {
+                uart_printf("DBC write to %s::%s\r\n",
+                            obj->ObjectName(),
+                            attr->name());
                 attr->write(&frame->data.s8[1], frame->dlc - 1);
-            }
-            //ConvertDataToAttribute(buf, attr->kind(), &tmpRx_);
+            } else {
+                uart_printf("DBC read from %s::%s\r\n",
+                            obj->ObjectName(),
+                            attr->name());
 
-            // Generate Request to object that attribtue was modified
-            // externally
-            //obj->ModifyAttribute(attr, &tmpRx_);
+                attr->read(&frame->data.s8[1], attr->BitSize() / 8);
+                frame->dlc = 1 + attr->BitSize() / 8;
+                processTxCanFrame(frame);   
+            }
         }
     }
+}
 
+// TODO: through the CAN interface
+void DbcConverter::processTxCanFrame(can_frame_type *frame) {
+    frame->data.u8[0] &= 0x7F;  //
+    uart_printf("<!%08x,%d,", frame->id, frame->dlc);
+    for (uint8_t i = 0; i < frame->dlc; i++) {
+        uart_printf("%02x", frame->data.u8[i]);
+    }
+    uart_printf("%s", "\r\n");
 }
 
 /**

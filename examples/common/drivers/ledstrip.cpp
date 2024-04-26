@@ -18,113 +18,102 @@
 #include <stm32f4xx_map.h>
 #include <fwapi.h>
 #include "ledstrip.h"
+#include <uart.h>
 
 // LED[0] PB[10] TIM2_CH3
 // LED[1] PE[0]
 // LED[2] PE[1]
 // LED[3] PE[15]
-static const gpio_pin_type gpio_cfg[GARDEMARIN_LED_STRIP_TOTAL] = {
+static const gpio_pin_type GPIO_CFG[GARDEMARIN_LED_STRIP_TOTAL] = {
     {(GPIO_registers_type *)GPIOB_BASE, 10},
     {(GPIO_registers_type *)GPIOE_BASE, 0},
     {(GPIO_registers_type *)GPIOE_BASE, 1},
     {(GPIO_registers_type *)GPIOE_BASE, 15}
 };
 
+// Access from interrupt
+int8_t duty_[GARDEMARIN_LED_STRIP_TOTAL] = {0};
+int8_t tim_cnt_ = 0;
+
+extern "C" void TIM2_irq_handler() {
+    TIM_registers_type *TIM2 = (TIM_registers_type *)TIM2_BASE;
+
+    if (++tim_cnt_ >= 100) {
+        tim_cnt_ = 0;
+    }
+
+    for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
+        if (duty_[i] > tim_cnt_) {
+            gpio_pin_set(&GPIO_CFG[i]);
+        } else {
+            gpio_pin_clear(&GPIO_CFG[i]);
+        }
+    }
+
+    write16(&TIM2->SR, 0);  // clear all pending bits
+    nvic_irq_clear(28);
+}
+
+// TIM2 is used as PWM period generator
 LedStripDriver::LedStripDriver(const char *name) : FwObject(name),
-    red_(static_cast<FwObject *>(this), &gpio_cfg[0], "red", 0),
-    blue_(static_cast<FwObject *>(this), &gpio_cfg[1], "blue", 1),
-    white_(static_cast<FwObject *>(this), &gpio_cfg[2], "white", 2),
-    mixed_(static_cast<FwObject *>(this), &gpio_cfg[3], "mixed", 3),
     tim_hz_("tim_hz"),
-    red_hz_("red_hz"),
-    red_duty_("red_duty", static_cast<PwmInterface *>(&red_)),
-    blue_hz_("blue_hz"),
-    blue_duty_("blue_duty", static_cast<PwmInterface *>(&blue_)),
-    white_hz_("white_hz"),
-    white_duty_("white_duty", static_cast<PwmInterface *>(&white_)),
-    mixed_hz_("mixed_hz"),
-    mixed_duty_("mixed_duty", static_cast<PwmInterface *>(&mixed_)) {
+    duty0_("duty0", 0),
+    duty1_("duty1", 1),
+    duty2_("duty2", 2),
+    duty3_("duty3", 3) {
+
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    TIM_registers_type *TIM2 = (TIM_registers_type *)TIM2_BASE;
+    tim_cr1_reg_type cr1;
 
     tim_cnt_ = 0;
 
-    // access by index:
-    chn_[0].hz = &red_hz_;
-    chn_[0].duty = &red_duty_;
-    chn_[0].port = &red_;
-    chn_[1].hz = &blue_hz_;
-    chn_[1].duty = &blue_duty_;
-    chn_[1].port = &blue_;
-    chn_[2].hz = &white_hz_;
-    chn_[2].duty = &white_duty_;
-    chn_[2].port = &white_;
-    chn_[3].hz = &mixed_hz_;
-    chn_[3].duty = &mixed_duty_;
-    chn_[3].port = &mixed_;
+    // adc clock on APB1 = 144/4 = 36 MHz
+    uint32_t t1 = read32(&RCC->APB1ENR);
+    t1 |= (1 << 0);             // APB1[0] TIM2EN
+    write32(&RCC->APB1ENR, t1);
+
+    cr1.val = 0;
+    write32(&TIM2->CR1.val, cr1.val);   // stop counter
+    write16(&TIM2->PSC, 35);            // to form 1 MHz count
+    tim_hz_.make_int32(200);
+    write16(&TIM2->DIER, 1);            // [0] UIE - update interrupt enabled
+
+    cr1.val = 0;
+    cr1.bits.CEN = 1;
+    write32(&TIM2->CR1.val, cr1.val);
+
+    // prio: 0 highest; 7 is lowest
+    nvic_irq_enable(28, 3);
 }
 
 void LedStripDriver::Init() {
     RegisterAttribute(&tim_hz_);
-    RegisterAttribute(&red_hz_);
-    RegisterAttribute(&red_duty_);
-    RegisterAttribute(&blue_hz_);
-    RegisterAttribute(&blue_duty_);
-    RegisterAttribute(&white_hz_);
-    RegisterAttribute(&white_duty_);
-    RegisterAttribute(&mixed_hz_);
-    RegisterAttribute(&mixed_duty_);
-
-    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
-    RegisterPortInterface("red", static_cast<PwmInterface *>(&red_));
-    RegisterPortInterface("blue", static_cast<PwmInterface *>(&blue_));
-    RegisterPortInterface("white", static_cast<PwmInterface *>(&white_));
-    RegisterPortInterface("mixed", static_cast<PwmInterface *>(&mixed_));
+    RegisterAttribute(&duty0_);
+    RegisterAttribute(&duty1_);
+    RegisterAttribute(&duty2_);
+    RegisterAttribute(&duty3_);
 }
 
-void LedStripDriver::handleInterrupt(int *argv) {
-    uint32_t cnt;
-    ColorChannelType *pch;
-    ++tim_cnt_;
+void LedStripDriver::DutyAttribute::pre_read() {
+    u_.i8 = duty_[idx_];
+}
 
-    for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
-        pch = &chn_[i];
-        cnt = tim_cnt_ % pch->cnt_modulo;
-        if (cnt < pch->cnt_switch) {
-            pch->port->disablePwm();
-        } else {
-            pch->port->enablePwm();
-        }
+void LedStripDriver::DutyAttribute::post_write() {
+    if (u_.i8 > 100) {
+        u_.i8 = 100;
+    } else if (u_.i8 < 0) {
+        u_.i8 = 0;
     }
+    duty_[idx_] = u_.i8;
 }
 
-LedColorPort::LedColorPort(FwObject *parent,
-                           const gpio_pin_type *pin,
-                           const char *portname,
-                           int idx) :
-    parent_(parent),
-    pin_(pin),
-    idx_(idx) {
-
-    gpio_pin_as_output(pin,
-                       GPIO_NO_OPEN_DRAIN,
-                       GPIO_SLOW,
-                       GPIO_NO_PUSH_PULL);
-    disablePwm();
-}
-
-void LedColorPort::setPwmHz(int hz) {
-    LedStripDriver *p = static_cast<LedStripDriver *>(parent_);
-    p->setChannelPwmHz(idx_, hz);
-}
-
-void LedColorPort::setPwmDutyCycle(int duty) {
-    LedStripDriver *p = static_cast<LedStripDriver *>(parent_);
-    p->setChannelPwmDutyCycle(idx_, duty);
-}
-
-void LedColorPort::enablePwm() {
-    gpio_pin_set(pin_);
-}
-
-void LedColorPort::disablePwm() {
-    gpio_pin_clear(pin_);
+void LedStripDriver::HzAttribute::post_write() {
+    TIM_registers_type *TIM2 = (TIM_registers_type *)TIM2_BASE;
+    if (u_.i32 < 10) {
+        u_.i32 = 10;
+    } else if (u_.i32 > 10000) {
+        u_.i32 = 10000;
+    }
+    write32(&TIM2->ARR, 1000000/(100 * u_.i32) - 1);
 }

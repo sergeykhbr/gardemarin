@@ -28,6 +28,7 @@
 #include <adc.h>
 #include <can.h>
 #include <dma.h>
+#include <tim.h>
 
 /* System Control Space memory map */
 #define SCS_BASE              ((addr_t)0xE000E000)

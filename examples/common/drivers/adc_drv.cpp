@@ -55,9 +55,11 @@ void init_dma() {
     cr.val = 0;
     write32(&strm->CR.val, cr.val);  // set EN=0
 
-    write32(&strm->NDTR, GARDEMARIN_ADC_CHANNEL_USED);   // number of data ites to transfer
-    write32(&strm->PAR, reinterpret_cast<uint32_t>(&adc1->DR)); // periph addr
-    write32(&strm->M0AR, reinterpret_cast<uint32_t>(chanData_));        // Mem0 address
+    write32(&strm->NDTR, GARDEMARIN_ADC_CHANNEL_USED);  // number of data items to transfer
+    write32(&strm->PAR, static_cast<uint32_t>(
+        reinterpret_cast<size_t>(&adc1->DR)));          // periph addr
+    write32(&strm->M0AR, static_cast<uint32_t>(
+        reinterpret_cast<size_t>(chanData_)));          // Mem0 address
 
     cr.bits.CHSEL = 0;      // channel 0 of stream 0 = ADC1
     cr.bits.MSIZE = 2;      // 2=WORD (32-bit)
@@ -217,7 +219,7 @@ void AdcDriver::Init() {
 AdcChannel::AdcChannel(FwObject *parent, const char *name, int idx,
     const char *descr) : FwAttribute(name, descr),
     parent_(parent), idx_(idx) {
-    
+    make_int32(0);;
 }
 
 void AdcChannel::Init() {
@@ -231,3 +233,11 @@ void AdcChannel::Init() {
 int32_t AdcChannel::getSensorValue() {
     return static_cast<int>(chanData_[idx_]);
 }
+
+void AdcChannel::pre_read() {
+    // scale factor 10000: 3.3V * 10000 = 33000
+    float V = getSensorValue() * 
+        static_cast<float>(getScaleRateValue()) * (3.3f / 4095.0f) + 0.5f;
+    make_int32(static_cast<int>(V));
+}
+

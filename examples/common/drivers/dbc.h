@@ -20,6 +20,7 @@
 #include <fwobject.h>
 #include <FwAttribute.h>
 #include <RawInterface.h>
+#include <CanInterface.h>
 
 // CAN Data Base Converter
 class DbcConverter : public FwObject,
@@ -41,6 +42,7 @@ class DbcConverter : public FwObject,
     uint32_t str2hex32(char *buf, int sz);
 
     void processRxCanFrame(can_frame_type *frame);
+    void processTxCanFrame(can_frame_type *frame);
 
     /**
      * @brief Print SG_ lines for a attribute of the object into DBG output

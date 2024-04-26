@@ -163,6 +163,7 @@ void LoadSensorPort::Init() {
     parent_->RegisterAttribute(&gram_);
     parent_->RegisterAttribute(&offset_);
     parent_->RegisterAttribute(&alpha_);
+    parent_->RegisterAttribute(&zeroLevel_);
 }
 
 void LoadSensorPort::setSensorValue(uint32_t val) {

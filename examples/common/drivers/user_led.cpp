@@ -33,7 +33,7 @@ UserLedDriver::UserLedDriver(const char *name) : FwObject(name),
                        GPIO_NO_PUSH_PULL);
 
     setBinEnabled();
-    state_.make_int32(1);
+    state_.make_int8(1);
     hz_.make_int32(1);
     cnt_ = 0;
 }
@@ -43,18 +43,19 @@ void UserLedDriver::Init() {
     RegisterInterface(static_cast<TimerListenerInterface *>(this));
 
     RegisterAttribute(&state_);
+    RegisterAttribute(&hz_);
 }
 
 void UserLedDriver::setBinEnabled() {
     // inversed
     gpio_pin_clear(&USER_LED0);
-    state_.make_uint32(1);
+    state_.make_int8(1);
 }
 
 void UserLedDriver::setBinDisabled() {
     // inversed
     gpio_pin_set(&USER_LED0);
-    state_.make_uint32(0);
+    state_.make_int8(0);
 }
 
 uint8_t UserLedDriver::getBinState() {
@@ -68,7 +69,7 @@ uint64_t UserLedDriver::getTimerInterval() {
 
 void UserLedDriver::callbackTimer(uint64_t tickcnt) {
     cnt_++;
-    switch (state_.to_int32()) {
+    switch (state_.to_int8()) {
     case 0:
         setBinDisabled();
         break;

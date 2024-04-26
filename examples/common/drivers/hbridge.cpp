@@ -108,8 +108,8 @@ HBridgeDriver::HBridgeDriver(const char *name, int idx) : FwObject(name),
     drvmode_(this, "drvmode"),
     dc0_(static_cast<FwObject *>(this), 0),
     dc1_(static_cast<FwObject *>(this), 1),
-    i0_(static_cast<FwObject *>(this), 0, CFG_HBRDIGE[idx_].dc[0].adcport),
-    i1_(static_cast<FwObject *>(this), 1, CFG_HBRDIGE[idx_].dc[1].adcport) {
+    i0_(static_cast<FwObject *>(this), "i0", CFG_HBRDIGE[idx_].dc[0].adcport),
+    i1_(static_cast<FwObject *>(this), "i1", CFG_HBRDIGE[idx_].dc[1].adcport) {
     // DC motor
     // mode = 0 (4-pins control)
     //    in[1]  in[0]     out[1] out[0]

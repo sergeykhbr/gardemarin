@@ -39,7 +39,22 @@ class KernelClass : public FwObject {
     virtual void PostInit() override;
 
  private:
+    class TargetConfigAttribute : public FwAttribute {
+     public:
+        TargetConfigAttribute(KernelClass *parent, const char *name)
+            : FwAttribute(name, "PnP info"), parent_(parent) {
+            make_string("");
+        }
+
+        virtual void pre_read() override;
+     protected:
+        void print_attribute(int idx, FwAttribute *attr);
+     private:
+        KernelClass *parent_;
+    };
+ private:
     /** @brief Kernel Version attribute */
+    TargetConfigAttribute targetConfig_;
     FwAttribute version_;
 
     UartDriver uart1_;

@@ -31,7 +31,7 @@ static const gpio_pin_type gpio_cfg[GARDEMARIN_RELAIS_TOTAL] = {
 RelaisDriver::RelaisDriver(const char *name, int instidx) : FwObject(name),
     idx_(instidx),
     state_(this, "State") {
-    state_.make_int16(0);
+    state_.make_int8(0);
 
     gpio_pin_as_output(&gpio_cfg[idx_],
                        GPIO_NO_OPEN_DRAIN,

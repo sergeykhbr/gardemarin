@@ -164,7 +164,7 @@ void CanDriver::SetBaudrated(uint32_t baud) {
     mcr.val = 0;
     write32(&dev_->MCR.val, mcr.val);
 
-    baudrate_.make_uint32(baud);
+    baudrate_.make_int32(baud);
 }
 
 uint32_t CanDriver::hwid2canid(uint32_t hwid) {

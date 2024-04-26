@@ -53,6 +53,8 @@ class RelaisDriver : public FwObject,
                 parent_->setBinDisabled();
             }
         }
+
+        virtual float getMaxValue() override { return 1.0f; }
      private:
         RelaisDriver *parent_;
     };

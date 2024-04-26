@@ -30,10 +30,10 @@ class AdcChannel : public FwAttribute,
     AdcChannel(FwObject *parent, const char *name, int idx, const char *descr);
 
     // FwAttribute
-    virtual void pre_read() override {
-        float V = 3.3f * getSensorValue() / 4095.0f;
-        u_.i32 = static_cast<int>(100.0f * V);
-    }
+    virtual void pre_read() override ;
+    virtual float getMaxValue() override { return 3.3f; }
+    virtual float getScaleRateValue() override { return 1000.0f; }
+
 
     // SensorInterface
     virtual int32_t getSensorValue() override;
@@ -54,12 +54,21 @@ class TemperatureAdcChannel : public AdcChannel {
 
     virtual void pre_read() override {
         AdcChannel::pre_read();
-        float V_SENSE = static_cast<float>(u_.i32 / 100.0f);
+        // "DS8626 Rev 9", page 138, table 69. Temperature sensor characterisitcs
+        float V_SENSE = static_cast<float>(u_.i32) / 
+            static_cast<float>(AdcChannel::getScaleRateValue());
         static const float V25 = 0.76f;            // Voltage at 25 C [V]
         static const float Avg_Slope = 0.0025f;    // 2.5 [mV/C]
 
-        u_.i32 = static_cast<int>(10.0f * (V_SENSE - V25) / Avg_Slope) + 250;
+        u_.i32 = static_cast<int>(
+            getScaleRateValue() * (V_SENSE - V25) / Avg_Slope) + 250;
     }
+
+    virtual float getMinValue() override { return -40.0f; }
+    virtual float getMaxValue() override { return 110.0f; }
+    virtual float getScaleRateValue() override { return 10.0f; }
+    virtual const char *getUnits() override { return "C"; }
+
 };
 
 class AdcDriver : public FwObject {

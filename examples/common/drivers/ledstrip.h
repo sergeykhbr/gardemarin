@@ -20,91 +20,41 @@
 #include <fwlist.h>
 #include <fwobject.h>
 #include <FwAttribute.h>
-#include <PwmInterface.h>
-#include <IrqInterface.h>
 #include <gpio_drv.h>
-
-
-class LedColorPort : public PwmInterface {
- public:
-    LedColorPort(FwObject *parent,
-                 const gpio_pin_type *pin,
-                 const char *portname,
-                 int idx);
-
-    // PwmInterface:
-    virtual void setPwmHz(int hz) override;
-    virtual void setPwmDutyCycle(int duty) override;
-    virtual void enablePwm() override;
-    virtual void disablePwm() override;
-
- protected:
-    FwObject *parent_;
-    const gpio_pin_type *pin_;
-    int idx_;
-};
 
 // Use one PWM generator TIM2_CH3 at high frequency (2..100 kHz) to form
 // LED channel PWM with the frequency 200 Hz (default)
-class LedStripDriver : public FwObject,
-                       public IrqHandlerInterface {
+class LedStripDriver : public FwObject {
  public:
     LedStripDriver(const char *name);
 
     // FwObject interface:
     virtual void Init() override;
 
-    // IrqHandler interface:
-    virtual void handleInterrupt(int *argv) override;
-
- public:
-    // Accessed from channels:
-    void setChannelPwmHz(int chidx, int hz) {}
-    void setChannelPwmDutyCycle(int chidx, int duty) {}
-
-    class PwmDutyAttribute : public FwAttribute {
+ protected:
+    class DutyAttribute : public FwAttribute {
      public:
-        explicit PwmDutyAttribute(const char *name, PwmInterface *ipwm) :
-            FwAttribute(name), ipwm_(ipwm) {
-            make_int8(0);
-        }
+        DutyAttribute(const char *name, int idx) : FwAttribute(name), idx_(idx) {}
 
-        virtual void post_write() override {
-            if (to_int8()) {
-                ipwm_->enablePwm();
-            } else {
-                ipwm_->disablePwm();
-            }
-        }
-     private:
-        PwmInterface *ipwm_;
+        virtual void pre_read() override;
+        virtual void post_write() override;
+     protected:
+        int idx_;
+    };
+
+    class HzAttribute : public FwAttribute {
+     public:
+        HzAttribute(const char *name) : FwAttribute(name) {}
+
+        virtual void post_write() override;
+        virtual float getMinValue() override { return 10.0f; }
+        virtual float getMaxValue() override { return 10000.0f; }
     };
 
  protected:
-    LedColorPort red_;
-    LedColorPort blue_;
-    LedColorPort white_;
-    LedColorPort mixed_;
-
-    FwAttribute tim_hz_;
-    FwAttribute red_hz_;
-    PwmDutyAttribute red_duty_;
-    FwAttribute blue_hz_;
-    PwmDutyAttribute blue_duty_;
-    FwAttribute white_hz_;
-    PwmDutyAttribute white_duty_;
-    FwAttribute mixed_hz_;
-    PwmDutyAttribute mixed_duty_;
-
-    uint32_t tim_cnt_;
-
-    // for the fast access initialize in constructor the following pointers
-    // instead of using new() operator
-    struct ColorChannelType {
-        FwAttribute *hz;
-        FwAttribute *duty;
-        LedColorPort *port;
-        uint32_t cnt_modulo;      // tim_cnt % cnt_module
-        uint32_t cnt_switch;      // cnt_switch < (tim_cnt % cnt_module) is "ON, otherwise "OFF"
-    } chn_[GARDEMARIN_LED_STRIP_TOTAL];
+    HzAttribute tim_hz_;
+    DutyAttribute duty0_;
+    DutyAttribute duty1_;
+    DutyAttribute duty2_;
+    DutyAttribute duty3_;
 };

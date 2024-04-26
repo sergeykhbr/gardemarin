@@ -40,7 +40,7 @@ void output_can_messages(can_frame_type *frame) {
     for (uint8_t n = 0; n < frame->dlc; n++) {
         uart_printf(" %02x", frame->data.u8[n]);
     }
-     uart_printf("%s", "\r\n");
+    uart_printf("%s", "\r\n");
 }
 
 void output_scales() {
@@ -90,9 +90,9 @@ void output_adc() {
 
     obj = reinterpret_cast<FwObject *>(fw_get_object("hbrg0"));
     FwAttribute *i0_value = reinterpret_cast<FwAttribute *>(
-            fw_get_obj_attr_by_name(obj, "i0_value"));
+            fw_get_obj_attr_by_name(obj, "i0"));
     FwAttribute *i1_value = reinterpret_cast<FwAttribute *>(
-            fw_get_obj_attr_by_name(obj, "i1_value"));
+            fw_get_obj_attr_by_name(obj, "i1"));
 
     uart_printf("hrg0 %d %d\r\n",
                 i0_value->to_int32(),
@@ -100,9 +100,9 @@ void output_adc() {
 
     obj = reinterpret_cast<FwObject *>(fw_get_object("hbrg1"));
     i0_value = reinterpret_cast<FwAttribute *>(
-            fw_get_obj_attr_by_name(obj, "i0_value"));
+            fw_get_obj_attr_by_name(obj, "i0"));
     i1_value = reinterpret_cast<FwAttribute *>(
-            fw_get_obj_attr_by_name(obj, "i1_value"));
+            fw_get_obj_attr_by_name(obj, "i1"));
 
     uart_printf("hrg1 %d %d\r\n",
                 i0_value->to_int32(),
@@ -121,84 +121,6 @@ void write_obj_attribute(const char *objname,
     } else {
         uart_printf("[%d] %s:%s not found\r\n",
             xTaskGetTickCount(), objname, atrname);
-    }
-}
-
-void relais_on(const char *name) {
-    CommonInterface *iface = reinterpret_cast<CommonInterface *>(
-                fw_get_object_interface(name, "BinInterface"));
-    if (iface) {
-        static_cast<BinInterface *>(iface)->setBinEnabled();
-        uart_printf("[%d] %s is on\r\n", xTaskGetTickCount(), name);
-    } else {
-        uart_printf("[%d] %s interface not found\r\n", xTaskGetTickCount(), name);
-    }
-}
-
-void relais_off(const char *name) {
-    CommonInterface *iface = reinterpret_cast<CommonInterface *>(
-                fw_get_object_interface(name, "BinInterface"));
-    if (iface) {
-        static_cast<BinInterface *>(iface)->setBinDisabled();
-        uart_printf("[%d] %s is off\r\n", xTaskGetTickCount(), name);
-    } else {
-        uart_printf("[%d] %s interface not found\r\n", xTaskGetTickCount(), name);
-    }
-}
-
-void led_strip_on(const char *name) {
-    CommonInterface *iface = reinterpret_cast<CommonInterface *>(
-          fw_get_object_port_interface("ledrbw", name, "PwmInterface"));
-    if (iface) {
-        static_cast<PwmInterface *>(iface)->enablePwm();
-        uart_printf("[%d] LED %s turn on, dim=100\r\n", xTaskGetTickCount(), name);
-    } else {
-        uart_printf("[%d] LED PWM %s not found\r\n", xTaskGetTickCount(), name);
-    }
-}
-
-void led_strip_off(const char *name) {
-    CommonInterface *iface = reinterpret_cast<CommonInterface *>(
-          fw_get_object_port_interface("ledrbw", name, "PwmInterface"));
-    if (iface) {
-        static_cast<PwmInterface *>(iface)->disablePwm();
-        uart_printf("[%d] LED %s turn off\r\n", xTaskGetTickCount(), name);
-    } else {
-        uart_printf("[%d] LED PWM %s not found\r\n", xTaskGetTickCount(), name);
-    }
-}
-
-void dc_motor_on(int idx) {
-    CommonInterface *iface;
-    char hbrg[8] = "hbrg0";
-    char dc[4] = "dc0";
-    hbrg[4] += (idx >> 1);
-    dc[2] += (idx & 1);
-
-    iface = reinterpret_cast<CommonInterface *>(
-           fw_get_object_port_interface(hbrg, dc, "PwmInterface"));
-    if (iface) {
-        static_cast<PwmInterface *>(iface)->enablePwm();
-        uart_printf("[%d] dc[%d] started\r\n", xTaskGetTickCount(), idx);
-    } else {
-        uart_printf("[%d] dc[%d] PwmInterface not found\r\n", xTaskGetTickCount(), idx);
-    }
-}
-
-void dc_motor_off(int idx) {
-    CommonInterface *iface;
-    char hbrg[8] = "hbrg0";
-    char dc[4] = "dc0";
-    hbrg[4] += (idx >> 1);
-    dc[2] += (idx & 1);
-
-    iface = reinterpret_cast<CommonInterface *>(
-           fw_get_object_port_interface(hbrg, dc, "PwmInterface"));
-    if (iface) {
-        static_cast<PwmInterface *>(iface)->disablePwm();
-        uart_printf("[%d] dc[%d] stopped\r\n", xTaskGetTickCount(), idx);
-    } else {
-        uart_printf("[%d] dc[%d] PwmInterface not found\r\n", xTaskGetTickCount(), idx);
     }
 }
 

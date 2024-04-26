@@ -45,6 +45,27 @@ typedef enum EKindType
     Attr_PyObject,
 } EKindType;
 
+static const char *KindTypeString[Attr_PyObject + 1] = {
+    "invalid",
+    "string",
+    "int8",
+    "uint8",
+    "int16",
+    "uint16",
+    "int32",
+    "uint32",
+    "int64",
+    "uint64",
+    "float",
+    "double",
+    // not supported:
+    "list",
+    "data",
+    "nil",
+    "dict",
+    "pyobject",
+};
+
 /**
  * @brief FwAttribute declaration. All FwAttribute instance should have
  *        string identificator and optional description in JSON-format
@@ -66,7 +87,7 @@ class FwAttribute : public CommonInterface {
      *    "{'Min':4, 'Max':25, 'Scale':0.2, 'enum':'1 Value1 0 Value0'}"
      */
     explicit FwAttribute(const char *name,
-                         const char *descr = 0);
+                         const char *descr = "");
 
     /** 
      * @brief Get attribtue name
@@ -86,6 +107,14 @@ class FwAttribute : public CommonInterface {
      *         in attribute constructor or zero otherwise
      */
     const char *description() { return jsonDescription_; }
+
+    /**
+        DBC format specific data
+     */
+    virtual float getMinValue() { return 0; }
+    virtual float getMaxValue() { return 100.0f; }
+    virtual float getScaleRateValue() { return 1.0f; }
+    virtual const char *getUnits() { return ""; }
 
     /**
      * @brief Reset attribute value into invalid value
