@@ -123,7 +123,6 @@ AdcDriver::AdcDriver(const char *name) : FwObject(name),
 
     init_dma();
 
-
     // common ADC_CR
     t1 = (1 << 23)    // TSVREFE: temperature sensor
        | (1 << 22)    // VBATE: VBAT enable
@@ -231,13 +230,12 @@ void AdcChannel::Init() {
 }
 
 int32_t AdcChannel::getSensorValue() {
-    return static_cast<int>(chanData_[idx_]);
+    return static_cast<int32_t>(chanData_[idx_]);
 }
 
 void AdcChannel::pre_read() {
     // scale factor 10000: 3.3V * 10000 = 33000
-    float V = getSensorValue() * 
-        static_cast<float>(getScaleRateValue()) * (3.3f / 4095.0f) + 0.5f;
-    make_int32(static_cast<int>(V));
+    float V = static_cast<float>(getSensorValue()) / (4095.0f / 3.3f);
+    make_int32(static_cast<int>(V * 10000.0f));
 }
 

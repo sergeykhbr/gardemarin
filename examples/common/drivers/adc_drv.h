@@ -32,7 +32,7 @@ class AdcChannel : public FwAttribute,
     // FwAttribute
     virtual void pre_read() override ;
     virtual float getMaxValue() override { return 3.3f; }
-    virtual float getScaleRateValue() override { return 1000.0f; }
+    virtual float getScaleRateValue() override { return 10000.0f; }
 
 
     // SensorInterface
