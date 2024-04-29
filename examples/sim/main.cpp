@@ -21,6 +21,8 @@ extern "C" void SystemInit();
 extern "C" int fwmain();
 extern "C" void SysTick_Handler();
 extern "C" void ADC1_irq_ovr_handler();
+extern "C" void TIM2_irq_handler();
+extern "C" void TIM3_irq_handler();
 
 uint32_t __stdcall fw_thread(void *) {
     fwmain();
@@ -37,6 +39,8 @@ int main(int argc, char *argv[]) {
 
     sim_register_isr(-1, SysTick_Handler);
     sim_register_isr(18, ADC1_irq_ovr_handler);
+    sim_register_isr(28, TIM2_irq_handler);
+    sim_register_isr(29, TIM3_irq_handler);
     sim_run_firmware(fw_thread);
 
     while (1) {

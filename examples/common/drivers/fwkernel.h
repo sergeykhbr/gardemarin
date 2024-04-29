@@ -28,6 +28,7 @@
 #include "user_btn.h"
 #include "adc_drv.h"
 #include "hbridge.h"
+#include "ds18b20_drv.h"
 #include "dbc.h"
 
 class KernelClass : public FwObject {
@@ -71,5 +72,6 @@ class KernelClass : public FwObject {
     HBridgeDriver hbrg1_;
     HBridgeDriver hbrg2_;
     HBridgeDriver hbrg3_;
+    Ds18b20Driver temp0_;
     DbcConverter dbc_;        // CAN database converter
 };

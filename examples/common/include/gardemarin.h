@@ -27,4 +27,12 @@
 
 #define GARDEMARIN_LOAD_SENSORS_TOTAL 4
 
+/**
+  Motor drivers current sensors plus chip temperature, V_INTREF and VBAT
+ */
 #define GARDEMARIN_ADC_CHANNEL_USED 11
+
+/**
+  Temperature sensor with 1-Wire interface
+ */
+#define GARDEMARIN_DS18B20_TOTAL 2
