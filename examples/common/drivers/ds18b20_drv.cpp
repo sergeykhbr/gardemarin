@@ -51,6 +51,7 @@ Ds18b20Driver::Ds18b20Driver(const char *name)
 
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     TIM_registers_type *TIM3 = (TIM_registers_type *)TIM3_BASE;
+    drivers_ = static_cast<IrqHandlerInterface *>(this);
 
     for (int i = 0; i < GARDEMARIN_DS18B20_TOTAL; i++) {
         gpio_pin_as_output(&GPIO_CFG[i],
@@ -83,12 +84,6 @@ void Ds18b20Driver::callbackTimer(uint64_t tickcnt) {
         estate_ = Master_Reset_Pulse;
         startCounter(10);
     }
-#ifdef _WIN32
-else {
-    int argv = 0;
-    handleInterrupt(&argv);
-}
-#endif
 }
 
 void Ds18b20Driver::handleInterrupt(int *argv) {
@@ -162,6 +157,7 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
                 // Error state
                 estate_ = Idle;
                 setInput(&GPIO_CFG[0]);
+                uart_printf("temp0 not found\r\n");
             }
         }
         break;
