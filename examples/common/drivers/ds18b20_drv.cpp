@@ -28,16 +28,33 @@ static const gpio_pin_type GPIO_CFG[GARDEMARIN_DS18B20_TOTAL] = {
 };
 
 IrqHandlerInterface *drivers_ = 0;
+int tcnt=0;
+
+extern "C" void startCounter(int usec) {
+    TIM_registers_type *TIM3 = (TIM_registers_type *)TIM3_BASE;
+    tim_cr1_reg_type cr1;
+
+    write32(&TIM3->ARR, static_cast<uint32_t>(usec));
+
+    cr1.val = 0;
+    cr1.bits.CEN = 1;
+    cr1.bits.OPM = 1;   // one pulse mode
+    cr1.bits.DIR = 1;   // downcount
+    write32(&TIM3->CR1.val, cr1.val);
+}
 
 // Configure TIM3 as a 15 us interval former
 extern "C" void TIM3_irq_handler() {
     TIM_registers_type *TIM3 = (TIM_registers_type *)TIM3_BASE;
 
-    int arg = 0;
-    drivers_->handleInterrupt(&arg);
+    int usec = 0;
+    drivers_->handleInterrupt(&usec);
 
     write16(&TIM3->SR, 0);  // clear all pending bits
     nvic_irq_clear(29);
+    if (usec) {
+        startCounter(usec);
+    }
 }
 
 // TIM3 is used as sample interval counter
@@ -47,7 +64,8 @@ Ds18b20Driver::Ds18b20Driver(const char *name)
     etxrx_(TxRx_None),
     wdog_(0),
     bitcnt_(0),
-    shft8_(0) {
+    shft8_(0),
+    chn_(0) {
 
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     TIM_registers_type *TIM3 = (TIM_registers_type *)TIM3_BASE;
@@ -57,7 +75,7 @@ Ds18b20Driver::Ds18b20Driver(const char *name)
         gpio_pin_as_output(&GPIO_CFG[i],
                            GPIO_OPEN_DRAIN,
                            GPIO_MEDIUM,
-                           GPIO_PULL_UP);
+                           GPIO_NO_PUSH_PULL);
         gpio_pin_set(&GPIO_CFG[i]); // set high
     }
 
@@ -67,7 +85,7 @@ Ds18b20Driver::Ds18b20Driver(const char *name)
     write32(&RCC->APB1ENR, t1);
 
     write32(&TIM3->CR1.val, 0);         // stop counter
-    write16(&TIM3->PSC, 0);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
+    write16(&TIM3->PSC, system_clock_hz() / 2 / 1000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
     write16(&TIM3->DIER, 1);            // [0] UIE - update interrupt enabled
 
     // prio: 0 highest; 7 is lowest
@@ -82,7 +100,9 @@ void Ds18b20Driver::Init() {
 void Ds18b20Driver::callbackTimer(uint64_t tickcnt) {
     if (estate_ == Idle) {
         estate_ = Master_Reset_Pulse;
-        startCounter(10);
+        startCounter(50);
+        chn_ = (chn_ + 1) & 1;
+        setOutput(&GPIO_CFG[chn_], 1);
     }
 }
 
@@ -90,38 +110,38 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
     // Receive and transmit bit data
     switch (etxrx_) {
     case TxRx_BitInit:
-        setOutput(&GPIO_CFG[0], 0);
-        startCounter(2);
+        setOutput(&GPIO_CFG[chn_], 0);
+        *argv = 2;
         etxrx_ = TxRx_Setup;
         wdog_ = 0;
         return;
     case TxRx_Setup:
         if (we_) {
-            setOutput(&GPIO_CFG[0], shft8_ & 1);
-            startCounter(45);
+            setOutput(&GPIO_CFG[chn_], shft8_ & 1);
+            *argv = 45;
             etxrx_ = TxRx_End;
         } else {
-            setInput(&GPIO_CFG[0]);
-            startCounter(30);
+            setInput(&GPIO_CFG[chn_]);
+            *argv = 30;
             etxrx_ = TxRx_Hold;
         }
         return;
     case TxRx_Hold:
         rxbuf_.u[bytecnt_] >>= 1;
-        rxbuf_.u[bytecnt_] |= static_cast<uint8_t>(gpio_pin_get(&GPIO_CFG[0])) << 7;
+        rxbuf_.u[bytecnt_] |= static_cast<uint8_t>(gpio_pin_get(&GPIO_CFG[chn_])) << 7;
         if (bitcnt_ == 0) {
             bytecnt_++;
         }
-        startCounter(30);
+        *argv = 30;
         etxrx_ = TxRx_End;
         return;
     case TxRx_End:
-        if (we_ == 0 && gpio_pin_get(&GPIO_CFG[0]) == 0 && (++wdog_ < 8)) {
+        if (we_ == 0 && gpio_pin_get(&GPIO_CFG[chn_]) == 0 && (++wdog_ < 8)) {
             // Wait a bit longer until line will be pulled to HIGH
-            startCounter(15);
+            *argv = 15;
         } else {
-            setInput(&GPIO_CFG[0]); // line will be pull-up to HIGH after transmission
-            startCounter(2);
+            setInput(&GPIO_CFG[chn_]); // line will be pull-up to HIGH after transmission
+            *argv = 2;
             if (bitcnt_) {
                 bitcnt_--;
                 etxrx_ = TxRx_BitInit;
@@ -135,29 +155,28 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
     // Command interface:
     switch (estate_) {
     case Master_Reset_Pulse:
-        setOutput(&GPIO_CFG[0], 0);
-        startCounter(500);
+        setOutput(&GPIO_CFG[chn_], 0);
+        *argv = 720;        // 480 - 960
         estate_ = Wait_Presence_Pulse;
         break;
     case Wait_Presence_Pulse:
-        setInput(&GPIO_CFG[0]);
-        startCounter(2);
+        setInput(&GPIO_CFG[chn_]);
+        *argv = 2;
         estate_ = Tx_Present_Pulse;
         wdog_ = 0;
         break;
     case Tx_Present_Pulse:
         // Expect DS18B20 TX PRESENCE pulse LOW duration 60-240 ms in a range 480 us (min).
-        if (gpio_pin_get(&GPIO_CFG[0]) == 0) {
+        if (gpio_pin_get(&GPIO_CFG[chn_]) == 0) {
             estate_ = Rom_Command_33h;
-            startCounter(480);
+            *argv = 480;
         } else {
-            if (++wdog_ < 8) {
-                startCounter(30);
+            if (++wdog_ < 12) {
+                *argv = 50;
             } else {
                 // Error state
                 estate_ = Idle;
-                setInput(&GPIO_CFG[0]);
-                uart_printf("temp0 not found\r\n");
+                uart_printf("temp%d not found\r\n", chn_);
             }
         }
         break;
@@ -169,7 +188,7 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
         bytecnt_ = 0;
         etxrx_ = TxRx_BitInit;
         estate_ = Rom_response;
-        startCounter(2);
+        *argv = 2;
         break;
     case Rom_response:
         if (bytecnt_ < sizeof(Rom33h_type)) {
@@ -188,7 +207,7 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
                 rxbuf_.rom33h.SerialNumber[5],
                 rxbuf_.rom33h.CRC);
         }
-        startCounter(2);
+        *argv = 2;
         break;
     case Func_Command_44h:
         we_ = 1;
@@ -197,7 +216,7 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
         bytecnt_ = 0;
         etxrx_ = TxRx_BitInit;
         estate_ = Tx_Wait_Ready;
-        startCounter(2);
+        *argv = 2;
         break;
     case Func_Command_BEh:
         we_ = 1;
@@ -206,14 +225,14 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
         bytecnt_ = 0;
         etxrx_ = TxRx_BitInit;
         estate_ = Tx_Read_Scratchpad;
-        startCounter(2);
+        *argv = 2;
         break;
     case Tx_Read_Scratchpad:
         if (bytecnt_ < sizeof(Ds18B20_memory_map)) {
             we_ = 0;
             bitcnt_ = 7;
             etxrx_ = TxRx_BitInit;
-            startCounter(2);
+            *argv = 2;
         } else {
             estate_ = Idle;
             uart_printf("!T=%02x %02x\r\n",
@@ -222,26 +241,13 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
         }
         break;
     case Tx_Wait_Ready:
-        if (gpio_pin_get(&GPIO_CFG[0]) == 0) {
-            startCounter(30);
+        if (gpio_pin_get(&GPIO_CFG[chn_]) == 0) {
+            *argv = 30;
         } else {
             estate_ = Idle;
         }
         break;
     }
-}
-
-void Ds18b20Driver::startCounter(int usec) {
-    TIM_registers_type *TIM3 = (TIM_registers_type *)TIM3_BASE;
-    tim_cr1_reg_type cr1;
-
-    write32(&TIM3->CNT, 0);
-    write32(&TIM3->ARR, usec * (system_clock_hz() / 4 / 1000000));    // APB1 clock = sysclk/4
-
-    cr1.val = 0;
-    cr1.bits.CEN = 1;
-    cr1.bits.OPM = 1;   // one pulse mode
-    write32(&TIM3->CR1.val, cr1.val);
 }
 
 void Ds18b20Driver::setOutput(const gpio_pin_type *gpio, uint32_t val) {

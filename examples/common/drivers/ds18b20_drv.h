@@ -41,7 +41,6 @@ class Ds18b20Driver : public FwObject,
     virtual void callbackTimer(uint64_t tickcnt) override;
 
  protected:
-    virtual void startCounter(int usec);
     virtual void setOutput(const gpio_pin_type *gpio, uint32_t val);
     virtual void setInput(const gpio_pin_type *gpio);
 
@@ -105,5 +104,6 @@ class Ds18b20Driver : public FwObject,
     int8_t bytecnt_;
     uint8_t shft8_;
     uint8_t we_;
+    int8_t chn_;
     rxbuf_type rxbuf_;
 };

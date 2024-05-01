@@ -218,7 +218,7 @@ void AdcDriver::Init() {
 AdcChannel::AdcChannel(FwObject *parent, const char *name, int idx,
     const char *descr) : FwAttribute(name, descr),
     parent_(parent), idx_(idx) {
-    make_int32(0);;
+    make_int32(0);
 }
 
 void AdcChannel::Init() {
