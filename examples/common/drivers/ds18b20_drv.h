@@ -97,6 +97,14 @@ class Ds18b20Driver : public FwObject,
     } ETxRx;
 
  protected:
+    FwAttribute SerialMsb0_;     // [47:32]
+    FwAttribute SerialLsb0_;     // [31:0]
+    FwAttribute T0_;
+
+    FwAttribute SerialMsb1_;     // [47:32]
+    FwAttribute SerialLsb1_;     // [31:0]
+    FwAttribute T1_;
+
     EState estate_;
     ETxRx etxrx_;
     int8_t wdog_;
@@ -105,5 +113,6 @@ class Ds18b20Driver : public FwObject,
     uint8_t shft8_;
     uint8_t we_;
     int8_t chn_;
+    bool requestConversion_;
     rxbuf_type rxbuf_;
 };

@@ -109,6 +109,17 @@ void output_adc() {
                 i1_value->to_int32());
 }
 
+void output_temperature() {
+    FwObject *obj = reinterpret_cast<FwObject *>(fw_get_object("temp0"));
+    FwAttribute *t0 = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "T0"));
+    FwAttribute *t1 = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "T1"));
+
+    uart_printf("[%d] %d %d\r\n",
+        xTaskGetTickCount(), t0->to_uint32(), t1->to_uint32());
+}
+
 
 void write_obj_attribute(const char *objname,
                          const char *atrname,
@@ -187,6 +198,12 @@ void update_service_state(app_data_type *data) {
             uart_printf("[%d] Scales RunInterface not found\r\n", xTaskGetTickCount());
         }
         data->service_state++;
+        break;
+    case SERVICE_TEMPERATURE:
+        output_temperature();
+        if (btnClick) {
+            data->service_state++;
+        }
         break;
     case SERVICE_ADC_CHECK:
         output_adc();
