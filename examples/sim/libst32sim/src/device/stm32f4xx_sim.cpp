@@ -45,7 +45,8 @@ ST32F4xxSim::ST32F4xxSim(const char *name) :
     devlist_.push_back(new GPIOSim("pe", GPIOE_BASE, sizeof(GPIO_registers_type)));
     devlist_.push_back(new GPIOSim("pf", GPIOF_BASE, sizeof(GPIO_registers_type)));
     devlist_.push_back(nvic_ = new NVICSim("nvic", NVIC_BASE, sizeof(NVIC_registers_type)));
-    devlist_.push_back(new UARTSim("uart1", USART1_BASE, sizeof(USART_registers_type)));
+    devlist_.push_back(new UARTSim("uart1", USART1_BASE, sizeof(USART_registers_type), 37));
+    devlist_.push_back(new UARTSim("uart2", USART2_BASE, sizeof(USART_registers_type), 38));
     devlist_.push_back(new TimSim("tim2", TIM2_BASE, sizeof(TIM_registers_type), 28));
     devlist_.push_back(new TimSim("tim3", TIM3_BASE, sizeof(TIM_registers_type), 29));
     devlist_.push_back(new SCBSim("scb", SCB_BASE, sizeof(SCB_registers_type)));
@@ -125,7 +126,9 @@ void ST32F4xxSim::handleInterrupts() {
         idx++;
     }
     while ((idx = nvic_->nextPendingIrq()) >= 0) {
-        vector_[idx + Nmi_Total]();
+        if (vector_[idx + Nmi_Total]) {
+            vector_[idx + Nmi_Total]();
+        }
     }
 }
 

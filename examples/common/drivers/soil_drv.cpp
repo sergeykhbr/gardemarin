@@ -52,6 +52,7 @@ extern "C" void USART2_irq_handler() {
         fw_fifo_get(ptxFifo_, &tbyte);
         write16(&dev->DR, static_cast<uint16_t>(tbyte));
     }
+    uart_printf("?\r\n");
 
     // ORE (overflow) bit is reset by a read to the USART_SR register followed by a USART_DR
     // register read operation.
@@ -98,7 +99,7 @@ SoilDriver::SoilDriver(const char *name)
     // [1] RWU: Receiver wake-up
     // [0] SBRK: send break
     t1 = (1 << 13)
-       | (1 << 6)
+//       | (1 << 6)
        | (1 << 5)
        | (1 << 3)
        | (1 << 2);
@@ -173,5 +174,7 @@ void SoilDriver::callbackTimer(uint64_t tickcnt) {
         fw_fifo_put(&txfifo_, *xbyte);
         xbyte++;
     }
+
+    USART2_irq_handler();
 }
 

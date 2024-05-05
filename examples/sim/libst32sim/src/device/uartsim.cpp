@@ -17,12 +17,22 @@
 #include "uartsim.h"
 #include <iostream>
 #include <simutils.h>
+#include <sim_api.h>
 
-UARTSim::UARTSim(const char *name, uint64_t addr, size_t sz) :
+UARTSim::UARTSim(const char *name, uint64_t addr, size_t sz, int irqidx) :
     DeviceGeneric(name, addr, sz),
     SR(static_cast<DeviceGeneric *>(this), "SR", addr + 0x00),
     DR(static_cast<DeviceGeneric *>(this), "DR", addr + 0x04) {
+    irqidx_ = irqidx;
 }
+
+void UARTSim::update(double dt) {
+    //if (CR1.isIrqEnabled()) 
+    {
+        sim_request_interrupt(irqidx_);
+    }
+}
+
 
 uint32_t UARTSim::SR_TYPE::read_action(uint32_t prev) {
     uint32_t ret = 0;

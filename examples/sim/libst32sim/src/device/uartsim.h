@@ -21,7 +21,10 @@
 
 class UARTSim : public DeviceGeneric {
  public:
-    UARTSim(const char *name, uint64_t addr, size_t sz);
+    UARTSim(const char *name, uint64_t addr, size_t sz, int irqidx);
+
+    // DeviceGeneric method
+    virtual void update(double dt) override;
 
  private:
 
@@ -49,4 +52,5 @@ class UARTSim : public DeviceGeneric {
  private:
     SR_TYPE SR;
     DR_TYPE DR;
+    int irqidx_;
 };
