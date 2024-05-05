@@ -73,6 +73,7 @@ SOURCES = isr_vector \
 	hbridge \
 	can_drv \
 	ds18b20_drv \
+	soil_drv \
 	fwmem \
 	fwapi \
 	fwattribute \

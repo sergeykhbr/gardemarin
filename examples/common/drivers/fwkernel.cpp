@@ -41,6 +41,7 @@ KernelClass::KernelClass(const char *name) : FwObject(name),
     hbrg2_("hbrg2", 2),
     hbrg3_("hbrg3", 3),
     temp0_("temp0"),
+    soil0_("soil0"),
     dbc_("dbc")
 {
     version_.make_uint32(0x20240804);
