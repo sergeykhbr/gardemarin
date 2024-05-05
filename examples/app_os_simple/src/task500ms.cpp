@@ -120,6 +120,37 @@ void output_temperature() {
         xTaskGetTickCount(), t0->to_uint32(), t1->to_uint32());
 }
 
+void output_soil() {
+    FwObject *obj = reinterpret_cast<FwObject *>(fw_get_object("soil0"));
+    FwAttribute *T = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "T"));
+    FwAttribute *moisture = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "moisture"));
+    FwAttribute *salnity = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "salnity"));
+    FwAttribute *EC = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "EC"));
+    FwAttribute *pH = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "pH"));
+    FwAttribute *N = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "N"));
+    FwAttribute *P = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "P"));
+    FwAttribute *K = reinterpret_cast<FwAttribute *>(
+            fw_get_obj_attr_by_name(obj, "K"));
+
+    uart_printf("[%d] %d %d %d EC=%d pH=%d N=%d P=%d K=%d\r\n",
+        xTaskGetTickCount(),
+        T->to_uint32(),
+        moisture->to_uint32(),
+        salnity->to_uint32(),
+        EC->to_uint32(),
+        pH->to_uint32(),
+        N->to_uint32(),
+        P->to_uint32(),
+        K->to_uint32());
+}
+
 
 void write_obj_attribute(const char *objname,
                          const char *atrname,
@@ -198,6 +229,12 @@ void update_service_state(app_data_type *data) {
             uart_printf("[%d] Scales RunInterface not found\r\n", xTaskGetTickCount());
         }
         data->service_state++;
+        break;
+    case SERVICE_SOIL:
+        output_soil();
+        if (btnClick) {
+            data->service_state++;
+        }
         break;
     case SERVICE_TEMPERATURE:
         output_temperature();

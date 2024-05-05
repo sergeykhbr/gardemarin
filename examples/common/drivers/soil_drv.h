@@ -69,6 +69,15 @@ class SoilDriver : public FwObject,
 #pragma pack()
 
  protected:
+    FwAttribute T_;
+    FwAttribute moisture_;
+    FwAttribute salnity_;
+    FwAttribute EC_;
+    FwAttribute pH_;
+    FwAttribute N_;
+    FwAttribute P_;
+    FwAttribute K_;
+
     FwFifo rxfifo_;
     FwFifo txfifo_;
     QueryDataType queryData_;

@@ -31,9 +31,10 @@
 #define SERVICE_STATE_CAN1_STOP    4
 #define SERVICE_STATE_SCALES_READ  5
 #define SERVICE_STATE_SCALES_SLEEP 6
-#define SERVICE_TEMPERATURE        7
-#define SERVICE_ADC_CHECK          8
-#define SERVICE_STATE_END          9
+#define SERVICE_SOIL               7
+#define SERVICE_TEMPERATURE        8
+#define SERVICE_ADC_CHECK          9
+#define SERVICE_STATE_END          10
 
 class KeyNotifierType : public KeyListenerInterface {
  public:

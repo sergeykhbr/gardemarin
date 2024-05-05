@@ -48,25 +48,52 @@ extern "C" void USART2_irq_handler() {
         }
     }
 
-    if (ptxFifo_ && !fw_fifo_is_empty(ptxFifo_)) {
-        fw_fifo_get(ptxFifo_, &tbyte);
-        write16(&dev->DR, static_cast<uint16_t>(tbyte));
-    }
-    uart_printf("?\r\n");
-
     // ORE (overflow) bit is reset by a read to the USART_SR register followed by a USART_DR
     // register read operation.
     read16(&dev->SR);
+
+    if (read16(&dev->SR) & (1 << 7)) {          // SR[7] TXE transmit data register empty
+        // SR[6] TC: transmission complete
+        // This bit is set by hardware if the transmission of a frame containing data is complete and if
+        // TXE is set. An interrupt is generated if TCIE=1 in the USART_CR1 register. It is cleared by
+        // a software sequence (a read from the USART_SR register followed by a write to the
+        // USART_DR register). 
+        if (ptxFifo_ && !fw_fifo_is_empty(ptxFifo_)) {
+            fw_fifo_get(ptxFifo_, &tbyte);
+            write16(&dev->DR, static_cast<uint16_t>(tbyte));
+        } else {
+            write16(&dev->SR, 0);
+        }
+    }
+    //uart_printf("?\r\n");
+
 
     nvic_irq_clear(38);
 }
 
 
 SoilDriver::SoilDriver(const char *name)
-    : FwObject(name) {
+    : FwObject(name),
+    T_("T"),
+    moisture_("moisture"),
+    salnity_("salnity"),
+    EC_("EC"),
+    pH_("pH"),
+    N_("N"),
+    P_("P"),
+    K_("K") {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     USART_registers_type *UART2  = (USART_registers_type *)USART2_BASE;
     uint32_t t1;
+
+    T_.make_uint16(0);
+    moisture_.make_uint16(0);
+    salnity_.make_uint16(0);
+    EC_.make_uint16(0);
+    pH_.make_uint16(0);
+    N_.make_uint16(0);
+    P_.make_uint16(0);
+    K_.make_uint16(0);
 
     t1 = read32(&RCC->APB1ENR);
     t1 |= 1 << 17;             // APB1[17] USART2
@@ -99,7 +126,7 @@ SoilDriver::SoilDriver(const char *name)
     // [1] RWU: Receiver wake-up
     // [0] SBRK: send break
     t1 = (1 << 13)
-//       | (1 << 6)
+       | (1 << 6)
        | (1 << 5)
        | (1 << 3)
        | (1 << 2);
@@ -112,9 +139,18 @@ SoilDriver::SoilDriver(const char *name)
 
     fw_fifo_init(&txfifo_, sizeof(queryData_));
     ptxFifo_ = &txfifo_;
+
 }
 
 void SoilDriver::Init() {
+    RegisterAttribute(&T_);
+    RegisterAttribute(&moisture_);
+    RegisterAttribute(&salnity_);
+    RegisterAttribute(&EC_);
+    RegisterAttribute(&pH_);
+    RegisterAttribute(&N_);
+    RegisterAttribute(&P_);
+    RegisterAttribute(&K_);
     RegisterInterface(static_cast<TimerListenerInterface *>(this));
 
     // prio: 0 highest; 7 is lowest
@@ -134,38 +170,35 @@ void SoilDriver::callbackTimer(uint64_t tickcnt) {
             rxcnt = 0;
             v = response_.temp[0];
             v |= (v << 8) | response_.temp[1];
-            uart_printf("soil: %02x %02x T=%d",
-                response_.address, response_.function, v);
+            T_.make_uint16(v);
 
             v = response_.moisture[0];
             v |= (v << 8) | response_.moisture[1];
-            uart_printf("moist=%d", v);
+            moisture_.make_uint16(v);
 
             v = response_.salinty[0];
             v |= (v << 8) | response_.salinty[1];
-            uart_printf("sal=%d", v);
+            salnity_.make_uint16(v);
 
             v = response_.EC[0];
             v |= (v << 8) | response_.EC[1];
-            uart_printf("EC=%d", v);
+            EC_.make_uint16(v);
 
             v = response_.pH[0];
             v |= (v << 8) | response_.pH[1];
-            uart_printf("pH=%d", v);
+            pH_.make_uint16(v);
 
             v = response_.N[0];
             v |= (v << 8) | response_.N[1];
-            uart_printf("N=%d", v);
+            N_.make_uint16(v);
 
             v = response_.P[0];
             v |= (v << 8) | response_.P[1];
-            uart_printf("P=%d", v);
+            P_.make_uint16(v);
 
             v = response_.K[0];
             v |= (v << 8) | response_.K[1];
-            uart_printf("K=%d", v);
-
-            uart_printf("\r\n");
+            K_.make_uint16(v);
         }
     }
 
