@@ -65,8 +65,6 @@ extern "C" void USART2_irq_handler() {
             write16(&dev->SR, 0);
         }
     }
-    //uart_printf("?\r\n");
-
 
     nvic_irq_clear(38);
 }
@@ -137,7 +135,7 @@ SoilDriver::SoilDriver(const char *name)
     fw_fifo_init(&rxfifo_, 2*sizeof(DataResponseType));
     prxFifo_ = &rxfifo_;
 
-    fw_fifo_init(&txfifo_, sizeof(queryData_));
+    fw_fifo_init(&txfifo_, 2*sizeof(queryData_));
     ptxFifo_ = &txfifo_;
 
 }
