@@ -46,6 +46,25 @@ static const gpio_pin_type SPI3_MOSI = {(GPIO_registers_type *)GPIOC_BASE, 12};
 static const gpio_pin_type SPI3_MISO = {(GPIO_registers_type *)GPIOC_BASE, 11};
 static const gpio_pin_type SPI3_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10};
 
+// callibration data:
+// 0 sewer
+//          0 00056200
+//      +124  00071420
+//     ++375  000c2d40
+//       2000 00208f00
+//     ++2000 00275280
+// 1 plant
+//          0 003c1480
+//      +124  003cd440
+//     ++375  003f2300
+//      2000  00487980
+//    ++2000  004b8900
+// 3 mix
+//          0 0011b400 (3.3 kg)
+//      +124  00127800
+//     ++375  0014b400
+//      2000  001e2200
+//    ++2000  00210c00
 LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
     for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
         chn_[i].port = new(fw_malloc(sizeof(LoadSensorPort)))
