@@ -47,19 +47,19 @@ static const gpio_pin_type SPI3_MISO = {(GPIO_registers_type *)GPIOC_BASE, 11};
 static const gpio_pin_type SPI3_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10};
 
 // callibration data:
-// 0 sewer
+// 0 sewer    y = 892.97*x + 344332 (R^2 = 0.9998)
 //          0 00056200
 //      +124  00071420
 //     ++375  000c2d40
 //       2000 00208f00
 //     ++2000 00275280
-// 1 plant
+// 1 plant    y = 406.01*x + 4E+06
 //          0 003c1480
 //      +124  003cd440
 //     ++375  003f2300
 //      2000  00487980
 //    ++2000  004b8900
-// 3 mix
+// 3 mix       y = 404.58*x + 1E+06
 //          0 0011b400 (3.3 kg)
 //      +124  00127800
 //     ++375  0014b400
