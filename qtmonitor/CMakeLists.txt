@@ -19,6 +19,10 @@ qt_add_executable(qtmonitor
     src/console.h
     src/ctrlpanel.cpp
     src/ctrlpanel.h
+    src/tab_test.h
+    src/tab_test.cpp
+    src/tabwindow.h
+    src/tabwindow.cpp
     src/mainwindow.cpp
     src/mainwindow.h
     src/main.cpp

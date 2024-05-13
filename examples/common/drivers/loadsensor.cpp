@@ -25,18 +25,18 @@
 struct LoadCellCfgType {
     const char *portname;        // all names should be placed into flash, do not use SRAM for that
     gpio_pin_type cs_gpio_cfg;
-    const char *attr_value_name;    
-    const char *attr_gram_name;    
-    const char *attr_offset_name;    
+    const char *attr_value_name;
     const char *attr_alpha_name;
-    const char *attr_zerolevel_name;
+    const char *attr_zero_name;
+    const char *attr_tara_name;    
+    const char *attr_gram_name;    
 };
 
 static const LoadCellCfgType CELL_CONFIG[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
-    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "gram0", "offset0", "alpha0", "zero0"},
-    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "gram1", "offset1", "alpha1", "zero0"},
-    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "gram2", "offset2", "alpha2", "zero0"},
-    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "gram3", "offset3", "alpha3", "zero0"}
+    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "alpha0", "zero0", "tara0", "gram0"},
+    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "alpha1", "zero1", "tara1", "gram1"},
+    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "alpha2", "zero2", "tara2", "gram2"},
+    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "alpha3", "zero3", "tara3", "gram3"}
 };
 
 // PC[12] = SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
@@ -65,6 +65,27 @@ static const gpio_pin_type SPI3_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10};
 //     ++375  0014b400
 //      2000  001e2200
 //    ++2000  00210c00
+static const float INIT_ALPHA[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
+    1.0f/892.97f,
+    1.0f/406.01f,
+    1.0f/404.58f,
+    1.0f
+};
+
+static const float INIT_ZERO[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
+    395.0f,
+    9697.81f,
+    535.0f,
+    0.0f
+};
+
+static const float INIT_TARA[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f
+};
+
 LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
     for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
         chn_[i].port = new(fw_malloc(sizeof(LoadSensorPort)))
@@ -155,10 +176,10 @@ void LoadSensorDriver::callbackTimer(uint64_t tickcnt) {
 LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) : 
     FwAttribute(CELL_CONFIG[idx].attr_value_name),
     parent_(parent),
-    gram_(CELL_CONFIG[idx].attr_gram_name),
-    offset_(CELL_CONFIG[idx].attr_offset_name),
     alpha_(CELL_CONFIG[idx].attr_alpha_name),
-    zeroLevel_(CELL_CONFIG[idx].attr_zerolevel_name),
+    zero_(CELL_CONFIG[idx].attr_zero_name),
+    tara_(CELL_CONFIG[idx].attr_tara_name),
+    gram_(CELL_CONFIG[idx].attr_gram_name),
     idx_(idx) {
 
     gpio_pin_as_output(&CELL_CONFIG[idx].cs_gpio_cfg,
@@ -168,10 +189,10 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     gpio_pin_set(&CELL_CONFIG[idx].cs_gpio_cfg);
 
     make_int32(0);
+    alpha_.make_float(INIT_ALPHA[idx]);
+    zero_.make_float(INIT_ZERO[idx]);
+    tara_.make_uint32(INIT_TARA[idx]);
     gram_.make_float(0);
-    offset_.make_uint32(0);
-    alpha_.make_float(1.0f / 420.0f);
-    zeroLevel_.make_float(535.0f);
 }
 
 void LoadSensorPort::Init() {
@@ -180,9 +201,9 @@ void LoadSensorPort::Init() {
 
     parent_->RegisterAttribute(static_cast<FwAttribute *>(this));
     parent_->RegisterAttribute(&gram_);
-    parent_->RegisterAttribute(&offset_);
     parent_->RegisterAttribute(&alpha_);
-    parent_->RegisterAttribute(&zeroLevel_);
+    parent_->RegisterAttribute(&zero_);
+    parent_->RegisterAttribute(&tara_);
 }
 
 void LoadSensorPort::setSensorValue(uint32_t val) {
@@ -192,7 +213,6 @@ void LoadSensorPort::setSensorValue(uint32_t val) {
     if (t1 & 0x04000000) {
         t1 |= 0xf8000000;
     }
-    float phys = static_cast<float>(
-        t1 - offset_.to_int32()) * alpha_.to_float();
-    gram_.make_float(phys + zeroLevel_.to_float());
+    float phys = static_cast<float>(t1) * alpha_.to_float();
+    gram_.make_float(phys + zero_.to_float() + tara_.to_float());
 }

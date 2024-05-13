@@ -40,10 +40,10 @@ class LoadSensorPort : public FwAttribute,
 
  protected:
     FwObject *parent_;
-    FwAttribute gram_;
-    FwAttribute offset_;
     FwAttribute alpha_;
-    FwAttribute zeroLevel_;
+    FwAttribute zero_;
+    FwAttribute tara_;
+    FwAttribute gram_;
     int idx_;
 };
 

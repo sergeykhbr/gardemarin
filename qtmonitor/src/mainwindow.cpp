@@ -15,9 +15,6 @@
  */
 
 #include "mainwindow.h"
-
-#include "mainwindow.h"
-
 #include <QLabel>
 #include <QMessageBox>
 #include <QTimer>
@@ -32,28 +29,17 @@ static constexpr std::chrono::seconds kWriteTimeout = std::chrono::seconds{5};
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     m_status(new QLabel),
-    m_console(new Console),
     m_settings(new ComPortSettings(this)),
     m_timer(new QTimer(this)),
-    m_serial(new QSerialPort(this))
+    m_serial(new QSerialPort(this)),
+    tabWindow_(new TabWindow(this))
 {
     setWindowIcon(QIcon(":/images/logo.png"));
     setWindowTitle(tr("qtmonitor"));
 
     resize(QSize(400, 300));
 
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setSpacing(6);
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    m_panel = new ControlPanel(this);
-
-    layout->addWidget(m_panel);
-    layout->addWidget(m_console);
-
-    QWidget *centralWidget = new QWidget(this);
-    centralWidget->setLayout(layout);
-    setCentralWidget(centralWidget);
+    setCentralWidget(tabWindow_);
 
 
     actionAbout_ = new QAction(QIcon(tr(":/images/logo.png")),
@@ -88,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent) :
                               tr("&Clear"), this);
     actionClear_->setToolTip(tr("Clear data"));
     actionClear_->setShortcut(QKeySequence(tr("Alt+L")));
-    connect(actionClear_, &QAction::triggered, m_console, &Console::clear);
+    connect(actionClear_, &QAction::triggered, tabWindow_, &TabWindow::slotClearSerialConsole);
 
 
     actionQuit_ = new QAction(QIcon(tr(":/images/appexit.png")),
@@ -121,8 +107,6 @@ MainWindow::MainWindow(QWidget *parent) :
     mainToolBar->addAction(actionClear_);
     addToolBar(mainToolBar);
 
-    m_console->setEnabled(false);
-
     actionConnect_->setEnabled(true);
     actionDisconnect_->setEnabled(false);
     actionQuit_->setEnabled(true);
@@ -138,10 +122,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_timer, &QTimer::timeout, this, &MainWindow::handleWriteTimeout);
     m_timer->setSingleShot(true);
 
-    connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readConsoleData);
+    connect(this, &MainWindow::signalSerialPortOpened,
+            tabWindow_, &TabWindow::slotSerialPortOpened);
+    connect(this, &MainWindow::signalSerialPortClosed,
+            tabWindow_, &TabWindow::slotSerialPortClosed);
+
+    connect(m_serial, &QSerialPort::readyRead, tabWindow_, &TabWindow::slotReadSerialConsoleData);
     connect(m_serial, &QSerialPort::bytesWritten, this, &MainWindow::handleBytesWritten);
-    connect(m_console, &Console::getData, this, &MainWindow::writeConsoleData);
-    connect(m_panel, &ControlPanel::signalGetData, this, &MainWindow::writeConsoleData);
 }
 
 MainWindow::~MainWindow() {
@@ -158,8 +145,7 @@ void MainWindow::openSerialPort() {
     m_serial->setStopBits(p.stopBits);
     m_serial->setFlowControl(p.flowControl);
     if (m_serial->open(QIODevice::ReadWrite)) {
-        m_console->setEnabled(true);
-        m_console->setLocalEchoEnabled(p.localEchoEnabled);
+        emit signalSerialPortOpened(p.localEchoEnabled);
         actionConnect_->setEnabled(false);
         actionDisconnect_->setEnabled(true);
         actionConfigure_->setEnabled(false);
@@ -174,9 +160,10 @@ void MainWindow::openSerialPort() {
 }
 
 void MainWindow::closeSerialPort() {
-    if (m_serial->isOpen())
+    if (m_serial->isOpen()) {
         m_serial->close();
-    m_console->setEnabled(false);
+    }
+    emit signalSerialPortClosed();
     actionConnect_->setEnabled(true);
     actionDisconnect_->setEnabled(false);
     actionConfigure_->setEnabled(true);
@@ -190,24 +177,6 @@ void MainWindow::about() {
                           "using Qt, with a menu bar, toolbars, and a status bar."));
 }
 
-void MainWindow::writeConsoleData(const QByteArray &data) {
-    const qint64 written = m_serial->write(data);
-    if (written == data.size()) {
-        m_bytesToWrite += written;
-        m_timer->start(kWriteTimeout);
-    } else {
-        const QString error = tr("Failed to write all data to port %1.\n"
-                                 "Error: %2").arg(m_serial->portName(),
-                                                  m_serial->errorString());
-        showWriteError(error);
-    }
-}
-
-void MainWindow::readConsoleData() {
-    const QByteArray data = m_serial->readAll();
-    m_console->putData(data);
-}
-
 void MainWindow::handleError(QSerialPort::SerialPortError error) {
     if (error == QSerialPort::ResourceError) {
         QMessageBox::critical(this, tr("Critical Error"), m_serial->errorString());
@@ -217,8 +186,9 @@ void MainWindow::handleError(QSerialPort::SerialPortError error) {
 
 void MainWindow::handleBytesWritten(qint64 bytes) {
     m_bytesToWrite -= bytes;
-    if (m_bytesToWrite == 0)
+    if (m_bytesToWrite == 0) {
         m_timer->stop();
+    }
 }
 
 void MainWindow::handleWriteTimeout() {
