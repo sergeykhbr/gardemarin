@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Sergey Khabarov, sergeykhbr@gmail.com
+ *  Copyright 2018 Sergey Khabarov, sergeykhbr@gmail.com
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,16 +14,22 @@
  *  limitations under the License.
  */
 
-#include "tabwindow.h"
+#pragma once
 
-TabWindow::TabWindow(QWidget *parent)
-    : QTabWidget(parent) {
-    tabScales_ = new TabScales(this);
-    tabTest_ = new TabTest(this);
+class IFace {
+ public:
+    explicit IFace(const char *name) : ifname_(name) {}
+    virtual ~IFace() {}
 
-    addTab(tabScales_, tr("Scales"));
-    addTab(tabTest_, tr("Test"));
+    /** Get brief information. */
+    virtual const char *getBrief() { return "Brief info not defined"; }
 
-    connect(tabTest_, &TabTest::signalSendData,
-            this, &TabWindow::slotSendData);
-}
+    /** Get detailed description. */
+    virtual const char *getDetail() { return "Detail info not defined"; }
+
+    /** Get interface name. */
+    const char *getFaceName() { return ifname_; }
+
+ protected:
+    const char *ifname_;
+};

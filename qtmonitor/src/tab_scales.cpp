@@ -14,16 +14,22 @@
  *  limitations under the License.
  */
 
-#include "tabwindow.h"
+#include "tab_scales.h"
+#include <QVBoxLayout>
 
-TabWindow::TabWindow(QWidget *parent)
-    : QTabWidget(parent) {
-    tabScales_ = new TabScales(this);
-    tabTest_ = new TabTest(this);
+TabScales::TabScales(QWidget *parent)
+    : QWidget(parent) {
 
-    addTab(tabScales_, tr("Scales"));
-    addTab(tabTest_, tr("Test"));
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->setSpacing(6);
+    layout->setContentsMargins(0, 0, 0, 0);
 
-    connect(tabTest_, &TabTest::signalSendData,
-            this, &TabWindow::slotSendData);
+    plotMix_ = new PlotWidget(this),
+    plotPlant_ = new PlotWidget(this);
+
+    layout->addWidget(plotMix_);
+    layout->addWidget(plotPlant_);
+    setLayout(layout);
+
 }
+

@@ -12,37 +12,24 @@ list(APPEND CMAKE_PREFIX_PATH $ENV{QT_PATH})
 find_package(Qt6 REQUIRED COMPONENTS Core Gui SerialPort Widgets)
 qt_standard_project_setup()
 
-qt_add_executable(qtmonitor
-    src/comsettings.cpp
-    src/comsettings.h
-    src/console.cpp
-    src/console.h
-    src/ctrlpanel.cpp
-    src/ctrlpanel.h
-    src/tab_test.h
-    src/tab_test.cpp
-    src/tabwindow.h
-    src/tabwindow.cpp
-    src/mainwindow.cpp
-    src/mainwindow.h
-    src/main.cpp
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common
 )
 
-set(qtmonitor_resources
-    "images/logo.png"
-    "images/splashscreen.png"
-    "images/1_37x32x4.png"
-    "images/2_37x32x4.png"
-    "images/motor_128x128x4.png"
-    "images/led_red_128x128x4.png"
-    "images/led_blue_128x128x4.png"
-    "images/led_white_128x128x4.png"
-    "images/led_mixed_128x128x4.png"
-    "images/appexit.png"
-    "images/connect.png"
-    "images/disconnect.png"
-    "images/clear.png"
-    "images/settings.png"
+file(GLOB_RECURSE _qtmonitor_src
+    LIST_DIRECTORIES false
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
+)
+
+qt_add_executable(qtmonitor
+    ${_qtmonitor_src}
+)
+
+file(GLOB_RECURSE qtmonitor_resources
+    LIST_DIRECTORIES false
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    "images/*.png"
 )
 
 qt_add_resources(qtmonitor imageresources
@@ -83,6 +70,17 @@ if(UNIX)
 	        )
 
 else()
+
+    foreach(_source IN ITEMS ${_qtmonitor_src})
+        get_filename_component(_source_path "${_source}" PATH)
+        # form proper filter name from the path to source file:
+        string(REPLACE "${CMAKE_SOURCE_DIR}" "" _group_path "${_source_path}")
+        string(REPLACE "/" "\\" _group_path "${_group_path}")
+        string(REPLACE "..\\" "" _group_path "${_group_path}")
+ 
+        source_group("${_group_path}" FILES "${_source}")
+    endforeach()
+
     add_custom_command(TARGET qtmonitor
 	        POST_BUILD
 	        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/qtdeploy.bat "${WINDEPLOYQT_EXECUTABLE}" "\"$(OutDir)$(TargetName)$(TargetExt)\""

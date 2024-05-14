@@ -17,43 +17,26 @@
 #pragma once
 
 #include <QTabWidget>
-#include "tab_scales.h"
-#include "tab_test.h"
+#include "chart/PlotWidget.h"
 
-class TabWindow : public QTabWidget {
+class TabScales : public QWidget {
     Q_OBJECT
 
  public:
-    explicit TabWindow(QWidget *parent = nullptr);
-
+    explicit TabScales(QWidget *parent = nullptr);
 
  signals:
     void signalSendData(const QByteArray &data);
 
  public slots:
-    void slotSerialPortOpened(bool localEchoEnabled) {
-        tabTest_->openSerialPort(localEchoEnabled);
-    }
-
-    void slotSerialPortClosed() {
-        tabTest_->closeSerialPort();
-    }
-
     void slotSendData(const QByteArray &data) {
         emit signalSendData(data);
     }
 
-    void slotRecvData(const QByteArray &data) {
-        tabTest_->writeData(data);
-    }
-
-    void slotClearSerialConsole() {
-        tabTest_->clearSerialConsole();
-    }
-
  private:
-    TabScales *tabScales_;
-    TabTest *tabTest_;
+    PlotWidget *plotMix_;
+    PlotWidget *plotPlant_;
+    PlotWidget *plotSewer_;
 };
 
 
