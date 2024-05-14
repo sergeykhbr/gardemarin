@@ -148,7 +148,7 @@ ControlPanel::ControlPanel(QWidget *parent)
 
 void ControlPanel::btnToggledGeneric(int idx, bool val) {
     QString text = QString(tr(commandArray_[2*idx + static_cast<int>(val)]));
-    emit signalGetData(text.toLocal8Bit());
+    emit signalSendData(text.toLocal8Bit());
 }
 
 void ControlPanel::slotBtn1Toggled(bool val) {

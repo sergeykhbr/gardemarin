@@ -48,7 +48,7 @@ void Console::keyPressEvent(QKeyEvent *e) {
     default:
         if (m_localEchoEnabled)
             QPlainTextEdit::keyPressEvent(e);
-        emit getData(e->text().toLocal8Bit());
+        emit signalSendData(e->text().toLocal8Bit());
     }
 }
 

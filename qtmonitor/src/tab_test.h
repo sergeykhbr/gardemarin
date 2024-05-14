@@ -26,22 +26,30 @@ class TabTest : public QWidget {
  public:
     explicit TabTest(QWidget *parent = nullptr);
 
-    void clearSerialConsole() {
-        m_console->clear();
-    }
-
- public slots:
-    void slotSerialPortOpened(bool localEchoEnabled) {
+    void openSerialPort(bool localEchoEnabled) {
         m_console->setEnabled(true);
         m_console->setLocalEchoEnabled(localEchoEnabled);
     }
 
-    void slotSerialPortClosed() {
+    void closeSerialPort() {
         m_console->setEnabled(false);
     }
 
-    void writeConsoleData(const QByteArray &data);
-    void readConsoleData();
+    void clearSerialConsole() {
+        m_console->clear();
+    }
+
+    void writeData(const QByteArray &data) {
+        m_console->putData(data);
+    }
+
+ signals:
+    void signalSendData(const QByteArray &data);
+
+ public slots:
+    void slotSendData(const QByteArray &data) {
+        emit signalSendData(data);
+    }
 
  private:
     Console *m_console;

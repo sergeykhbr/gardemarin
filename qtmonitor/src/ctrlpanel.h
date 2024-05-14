@@ -81,7 +81,7 @@ class ControlPanel : public QWidget {
     void signalBtnDc5Toggled(bool val);
     void signalBtnDc6Toggled(bool val);
     void signalBtnDc7Toggled(bool val);
-    void signalGetData(const QByteArray &data);
+    void signalSendData(const QByteArray &data);
 
  private:
     QPixmap pixmapBkg_;

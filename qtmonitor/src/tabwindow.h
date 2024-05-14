@@ -26,17 +26,24 @@ class TabWindow : public QTabWidget {
     explicit TabWindow(QWidget *parent = nullptr);
 
 
+ signals:
+    void signalSendData(const QByteArray &data);
+
  public slots:
     void slotSerialPortOpened(bool localEchoEnabled) {
-        tabTest_->slotSerialPortOpened(localEchoEnabled);
+        tabTest_->openSerialPort(localEchoEnabled);
     }
 
     void slotSerialPortClosed() {
-        tabTest_->slotSerialPortClosed();
+        tabTest_->closeSerialPort();
     }
 
-    void slotReadSerialConsoleData() {
-        tabTest_->readConsoleData();
+    void slotSendData(const QByteArray &data) {
+        emit signalSendData(data);
+    }
+
+    void slotRecvData(const QByteArray &data) {
+        tabTest_->writeData(data);
     }
 
     void slotClearSerialConsole() {

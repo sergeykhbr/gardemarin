@@ -33,24 +33,7 @@ TabTest::TabTest(QWidget *parent)
 
     m_console->setEnabled(false);
 
-    connect(m_console, &Console::getData, this, &TabTest::writeConsoleData);
-    connect(m_panel, &ControlPanel::signalGetData, this, &TabTest::writeConsoleData);
+    connect(m_console, &Console::signalSendData, this, &TabTest::slotSendData);
+    connect(m_panel, &ControlPanel::signalSendData, this, &TabTest::slotSendData);
 }
 
-void TabTest::writeConsoleData(const QByteArray &data) {
-    const qint64 written = m_serial->write(data);
-    if (written == data.size()) {
-        m_bytesToWrite += written;
-        m_timer->start(kWriteTimeout);
-    } else {
-        const QString error = tr("Failed to write all data to port %1.\n"
-                                 "Error: %2").arg(m_serial->portName(),
-                                                  m_serial->errorString());
-        showWriteError(error);
-    }
-}
-
-void TabTest::readConsoleData() {
-    const QByteArray data = m_serial->readAll();
-    m_console->putData(data);
-}

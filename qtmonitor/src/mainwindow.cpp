@@ -126,8 +126,12 @@ MainWindow::MainWindow(QWidget *parent) :
             tabWindow_, &TabWindow::slotSerialPortOpened);
     connect(this, &MainWindow::signalSerialPortClosed,
             tabWindow_, &TabWindow::slotSerialPortClosed);
+    connect(this, &MainWindow::signalRecvSerialPort,
+            tabWindow_, &TabWindow::slotRecvData);
+    connect(tabWindow_, &TabWindow::signalSendData,
+            this, &MainWindow::slotSendSerialPort);
 
-    connect(m_serial, &QSerialPort::readyRead, tabWindow_, &TabWindow::slotReadSerialConsoleData);
+    connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::slotRecvSerialPort);
     connect(m_serial, &QSerialPort::bytesWritten, this, &MainWindow::handleBytesWritten);
 }
 
@@ -206,3 +210,22 @@ void MainWindow::showStatusMessage(const QString &message) {
 void MainWindow::showWriteError(const QString &message) {
     QMessageBox::warning(this, tr("Warning"), message);
 }
+
+void MainWindow::slotSendSerialPort(const QByteArray &data) {
+    const qint64 written = m_serial->write(data);
+    if (written == data.size()) {
+        m_bytesToWrite += written;
+        m_timer->start(kWriteTimeout);
+    } else {
+        const QString error = tr("Failed to write all data to port %1.\n"
+                                 "Error: %2").arg(m_serial->portName(),
+                                                  m_serial->errorString());
+        showWriteError(error);
+    }
+}
+
+void MainWindow::slotRecvSerialPort() {
+    const QByteArray data = m_serial->readAll();
+    emit signalRecvSerialPort(data);
+}
+

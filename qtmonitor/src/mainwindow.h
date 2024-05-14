@@ -32,10 +32,13 @@ class MainWindow : public QMainWindow
  signals:
     void signalSerialPortOpened(bool echoEnabled);
     void signalSerialPortClosed();
+    void signalRecvSerialPort(const QByteArray &data);
 
  private slots:
     void openSerialPort();
     void closeSerialPort();
+    void slotSendSerialPort(const QByteArray &data);
+    void slotRecvSerialPort();
     void about();
 
     void handleError(QSerialPort::SerialPortError error);

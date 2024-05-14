@@ -21,4 +21,7 @@ TabWindow::TabWindow(QWidget *parent)
     tabTest_ = new TabTest(this);
 
     addTab(tabTest_, tr("Test"));
+
+    connect(tabTest_, &TabTest::signalSendData,
+            this, &TabWindow::slotSendData);
 }
