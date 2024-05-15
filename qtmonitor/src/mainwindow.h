@@ -16,9 +16,9 @@
 #pragma once
 
 #include <QMainWindow>
-#include <QSerialPort>
 #include <QLabel>
 #include "tabwindow.h"
+#include "serial.h"
 #include "comsettings.h"
 
 class MainWindow : public QMainWindow
@@ -32,22 +32,15 @@ class MainWindow : public QMainWindow
  signals:
     void signalSerialPortOpened(bool echoEnabled);
     void signalSerialPortClosed();
-    void signalRecvSerialPort(const QByteArray &data);
 
  private slots:
     void openSerialPort();
     void closeSerialPort();
-    void slotSendSerialPort(const QByteArray &data);
-    void slotRecvSerialPort();
+    void slotSerialError(const QString &message);
     void about();
-
-    void handleError(QSerialPort::SerialPortError error);
-    void handleBytesWritten(qint64 bytes);
-    void handleWriteTimeout();
 
  private:
     void showStatusMessage(const QString &message);
-    void showWriteError(const QString &message);
 
     QAction *actionConnect_;
     QAction *actionDisconnect_;
@@ -58,9 +51,7 @@ class MainWindow : public QMainWindow
 
     MainWindow *m_ui = nullptr;
     QLabel *m_status = nullptr;
-    ComPortSettings *m_settings = nullptr;
-    qint64 m_bytesToWrite = 0;
-    QTimer *m_timer = nullptr;
-    QSerialPort *m_serial = nullptr;
+    ComPortSettings *m_settings;
+    SerialWidget *serial_;
     TabWindow *tabWindow_;
 };

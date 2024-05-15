@@ -30,8 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     m_status(new QLabel),
     m_settings(new ComPortSettings(this)),
-    m_timer(new QTimer(this)),
-    m_serial(new QSerialPort(this)),
+    serial_(new SerialWidget(this)),
     tabWindow_(new TabWindow(this))
 {
     setWindowIcon(QIcon(":/images/logo.png"));
@@ -118,21 +117,19 @@ MainWindow::MainWindow(QWidget *parent) :
 //    m_ui->statusBar->addWidget(m_status);
 
 
-    connect(m_serial, &QSerialPort::errorOccurred, this, &MainWindow::handleError);
-    connect(m_timer, &QTimer::timeout, this, &MainWindow::handleWriteTimeout);
-    m_timer->setSingleShot(true);
-
     connect(this, &MainWindow::signalSerialPortOpened,
             tabWindow_, &TabWindow::slotSerialPortOpened);
     connect(this, &MainWindow::signalSerialPortClosed,
             tabWindow_, &TabWindow::slotSerialPortClosed);
-    connect(this, &MainWindow::signalRecvSerialPort,
+    connect(serial_, &SerialWidget::signalRecvSerialPort,
             tabWindow_, &TabWindow::slotRecvData);
-    connect(tabWindow_, &TabWindow::signalSendData,
-            this, &MainWindow::slotSendSerialPort);
+    connect(serial_, &SerialWidget::signalFailed,
+            this, &MainWindow::slotSerialError);
 
-    connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::slotRecvSerialPort);
-    connect(m_serial, &QSerialPort::bytesWritten, this, &MainWindow::handleBytesWritten);
+    connect(tabWindow_, &TabWindow::signalSendData,
+            serial_, &SerialWidget::slotSendSerialPort);
+
+    actionConfigure_->trigger();
 }
 
 MainWindow::~MainWindow() {
@@ -142,13 +139,13 @@ MainWindow::~MainWindow() {
 void MainWindow::openSerialPort() {
     const ComPortSettings::Settings p = m_settings->settings();
 
-    m_serial->setPortName(p.name);
-    m_serial->setBaudRate(p.baudRate);
-    m_serial->setDataBits(p.dataBits);
-    m_serial->setParity(p.parity);
-    m_serial->setStopBits(p.stopBits);
-    m_serial->setFlowControl(p.flowControl);
-    if (m_serial->open(QIODevice::ReadWrite)) {
+    serial_->setPortName(p.name);
+    serial_->setBaudRate(p.baudRate);
+    serial_->setDataBits(p.dataBits);
+    serial_->setParity(p.parity);
+    serial_->setStopBits(p.stopBits);
+    serial_->setFlowControl(p.flowControl);
+    if (serial_->open(QIODevice::ReadWrite)) {
         emit signalSerialPortOpened(p.localEchoEnabled);
         actionConnect_->setEnabled(false);
         actionDisconnect_->setEnabled(true);
@@ -157,15 +154,15 @@ void MainWindow::openSerialPort() {
                           .arg(p.name, p.stringBaudRate, p.stringDataBits,
                                p.stringParity, p.stringStopBits, p.stringFlowControl));
     } else {
-        QMessageBox::critical(this, tr("Error"), m_serial->errorString());
+        QMessageBox::critical(this, tr("Error"), serial_->errorString());
 
         showStatusMessage(tr("Open error"));
     }
 }
 
 void MainWindow::closeSerialPort() {
-    if (m_serial->isOpen()) {
-        m_serial->close();
+    if (serial_->isOpen()) {
+        serial_->close();
     }
     emit signalSerialPortClosed();
     actionConnect_->setEnabled(true);
@@ -181,51 +178,12 @@ void MainWindow::about() {
                           "using Qt, with a menu bar, toolbars, and a status bar."));
 }
 
-void MainWindow::handleError(QSerialPort::SerialPortError error) {
-    if (error == QSerialPort::ResourceError) {
-        QMessageBox::critical(this, tr("Critical Error"), m_serial->errorString());
-        closeSerialPort();
-    }
-}
-
-void MainWindow::handleBytesWritten(qint64 bytes) {
-    m_bytesToWrite -= bytes;
-    if (m_bytesToWrite == 0) {
-        m_timer->stop();
-    }
-}
-
-void MainWindow::handleWriteTimeout() {
-    const QString error = tr("Write operation timed out for port %1.\n"
-                             "Error: %2").arg(m_serial->portName(),
-                                              m_serial->errorString());
-    showWriteError(error);
-}
-
 
 void MainWindow::showStatusMessage(const QString &message) {
     m_status->setText(message);
 }
 
-void MainWindow::showWriteError(const QString &message) {
+void MainWindow::slotSerialError(const QString &message) {
     QMessageBox::warning(this, tr("Warning"), message);
-}
-
-void MainWindow::slotSendSerialPort(const QByteArray &data) {
-    const qint64 written = m_serial->write(data);
-    if (written == data.size()) {
-        m_bytesToWrite += written;
-        m_timer->start(kWriteTimeout);
-    } else {
-        const QString error = tr("Failed to write all data to port %1.\n"
-                                 "Error: %2").arg(m_serial->portName(),
-                                                  m_serial->errorString());
-        showWriteError(error);
-    }
-}
-
-void MainWindow::slotRecvSerialPort() {
-    const QByteArray data = m_serial->readAll();
-    emit signalRecvSerialPort(data);
 }
 

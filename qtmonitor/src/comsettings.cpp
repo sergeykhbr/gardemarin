@@ -62,6 +62,11 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     flowControlLabel->setText("Flow control:");
     flowControlBox = new QComboBox();
 
+    localEchoCheckBox = new QCheckBox();
+    localEchoCheckBox->setText("Local echo");
+    localEchoCheckBox->setChecked(true);
+
+
     gridLayout_2->addWidget(baudRateLabel, 0, 0);
     gridLayout_2->addWidget(baudRateBox, 0, 1);
     gridLayout_2->addWidget(dataBitsLabel, 1, 0);
@@ -72,6 +77,7 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     gridLayout_2->addWidget(stopBitsBox, 3, 1);
     gridLayout_2->addWidget(flowControlLabel, 4, 0);
     gridLayout_2->addWidget(flowControlBox, 4, 1);
+    gridLayout_2->addWidget(localEchoCheckBox, 5, 1);
 
     QGroupBox *selectBox = new QGroupBox();
     selectBox->setTitle("Select Serial Port");
@@ -119,7 +125,7 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     horizontalLayout->addStretch();
     applyButton->setMinimumSize(96, 20);
 
-    QGroupBox *additionalOptionsGroupBox = new QGroupBox();
+    /*QGroupBox *additionalOptionsGroupBox = new QGroupBox();
     additionalOptionsGroupBox->setTitle("Additional options");
     QVBoxLayout *verticalLayout = new QVBoxLayout();
     additionalOptionsGroupBox->setLayout(verticalLayout);
@@ -128,11 +134,11 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     localEchoCheckBox->setText("Local echo");
     localEchoCheckBox->setChecked(true);
 
-    verticalLayout->addWidget(localEchoCheckBox);
+    verticalLayout->addWidget(localEchoCheckBox);*/
 
     grigLayout_3->addWidget(parametersBox, 0, 1);
     grigLayout_3->addWidget(selectBox, 0, 0);
-    grigLayout_3->addWidget(additionalOptionsGroupBox, 1, 0, 1, 2);
+    //grigLayout_3->addWidget(additionalOptionsGroupBox, 1, 0, 1, 2);
     grigLayout_3->addWidget(horizontalSpacer, 2, 0, 1, 2);
 
 
