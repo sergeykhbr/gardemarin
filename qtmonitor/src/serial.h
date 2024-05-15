@@ -28,6 +28,7 @@ class SerialWidget : public QSerialPort {
  signals:
     void signalRecvSerialPort(const QByteArray &data);
     void signalFailed(const QString &msg);
+    void signalRxFrame(quint32 objid, quint32 attrid, quint64 payload);
 
  public slots:
     void slotSendSerialPort(const QByteArray &data);

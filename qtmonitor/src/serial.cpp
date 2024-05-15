@@ -33,6 +33,14 @@ SerialWidget::SerialWidget(QObject *parent) :
 void SerialWidget::slotRecvSerialPort() {
     const QByteArray data = readAll();
     emit signalRecvSerialPort(data);
+
+    // search CAN frames over Serial interface
+    for (auto &s : data) {
+        if (s == '<') {
+        }
+        if (s == '!') {
+        }
+    }
 }
 
 

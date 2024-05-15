@@ -27,3 +27,8 @@ TabWindow::TabWindow(QWidget *parent)
     connect(tabTest_, &TabTest::signalSendData,
             this, &TabWindow::slotSendData);
 }
+
+void TabWindow::slotRxFrame(quint32 objid, quint32 attrid, quint64 payload)
+{
+}
+

@@ -28,8 +28,9 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     QDialog(parent),
     m_intValidator(new QIntValidator(0, 4000000, this))
 {
-    setGeometry(QRect(0, 0, 281, 262));
+    //setGeometry(QRect(0, 0, 281, 262));
     setWindowTitle("Settings");
+    setWindowIcon(QIcon(":/images/settings.png"));
     QGridLayout *grigLayout_3 = new QGridLayout(this);
     grigLayout_3->setSpacing(4);
     grigLayout_3->setContentsMargins(4, 4, 4, 4);
@@ -125,20 +126,9 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     horizontalLayout->addStretch();
     applyButton->setMinimumSize(96, 20);
 
-    /*QGroupBox *additionalOptionsGroupBox = new QGroupBox();
-    additionalOptionsGroupBox->setTitle("Additional options");
-    QVBoxLayout *verticalLayout = new QVBoxLayout();
-    additionalOptionsGroupBox->setLayout(verticalLayout);
-
-    localEchoCheckBox = new QCheckBox();
-    localEchoCheckBox->setText("Local echo");
-    localEchoCheckBox->setChecked(true);
-
-    verticalLayout->addWidget(localEchoCheckBox);*/
 
     grigLayout_3->addWidget(parametersBox, 0, 1);
     grigLayout_3->addWidget(selectBox, 0, 0);
-    //grigLayout_3->addWidget(additionalOptionsGroupBox, 1, 0, 1, 2);
     grigLayout_3->addWidget(horizontalSpacer, 2, 0, 1, 2);
 
 

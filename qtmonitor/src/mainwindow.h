@@ -17,6 +17,7 @@
 
 #include <QMainWindow>
 #include <QLabel>
+#include <QStatusBar>
 #include "tabwindow.h"
 #include "serial.h"
 #include "comsettings.h"
@@ -29,6 +30,9 @@ class MainWindow : public QMainWindow
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+ protected:
+    virtual void closeEvent(QCloseEvent *event) override;
+
  signals:
     void signalSerialPortOpened(bool echoEnabled);
     void signalSerialPortClosed();
@@ -37,21 +41,12 @@ class MainWindow : public QMainWindow
     void openSerialPort();
     void closeSerialPort();
     void slotSerialError(const QString &message);
-    void about();
 
  private:
     void showStatusMessage(const QString &message);
 
-    QAction *actionConnect_;
-    QAction *actionDisconnect_;
-    QAction *actionClear_;
-    QAction *actionConfigure_;
-    QAction *actionAbout_;
-    QAction *actionQuit_;
-
-    MainWindow *m_ui = nullptr;
-    QLabel *m_status = nullptr;
-    ComPortSettings *m_settings;
+    QLabel *labelStatus_;
+    ComPortSettings *dialogSerialSettings_;
     SerialWidget *serial_;
     TabWindow *tabWindow_;
 };

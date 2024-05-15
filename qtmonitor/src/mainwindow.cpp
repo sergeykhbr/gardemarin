@@ -28,12 +28,11 @@ static constexpr std::chrono::seconds kWriteTimeout = std::chrono::seconds{5};
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    m_status(new QLabel),
-    m_settings(new ComPortSettings(this)),
+    labelStatus_(new QLabel),
     serial_(new SerialWidget(this)),
     tabWindow_(new TabWindow(this))
 {
-    setWindowIcon(QIcon(":/images/logo.png"));
+    setWindowIcon(QIcon(":/images/connect.png"));
     setWindowTitle(tr("qtmonitor"));
 
     resize(QSize(400, 300));
@@ -41,7 +40,9 @@ MainWindow::MainWindow(QWidget *parent) :
     setCentralWidget(tabWindow_);
 
 
-    actionAbout_ = new QAction(QIcon(tr(":/images/logo.png")),
+    dialogSerialSettings_ = new ComPortSettings(this);
+
+    /*actionAbout_ = new QAction(QIcon(tr(":/images/logo.png")),
                               tr("&About"), this);
     actionAbout_->setToolTip(tr("About program"));
     actionAbout_->setShortcut(QKeySequence(tr("Alt+A")));
@@ -66,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
                               tr("&Configure"), this);
     actionConfigure_->setToolTip(tr("Configure serial port"));
     actionConfigure_->setShortcut(QKeySequence(tr("Alt+C")));
-    connect(actionConfigure_, &QAction::triggered, m_settings, &ComPortSettings::show);
+    connect(actionConfigure_, &QAction::triggered, dialogSerialSettings_, &ComPortSettings::show);
 
 
     actionClear_ = new QAction(QIcon(tr(":/images/clear.png")),
@@ -110,11 +111,11 @@ MainWindow::MainWindow(QWidget *parent) :
     actionDisconnect_->setEnabled(false);
     actionQuit_->setEnabled(true);
     actionConfigure_->setEnabled(true);
+    */
 
-#if 0
-  <widget class="QStatusBar" name="statusBar"/>
-#endif
-//    m_ui->statusBar->addWidget(m_status);
+    QStatusBar *statusBar_ = new QStatusBar(this);
+    setStatusBar(statusBar_);
+    statusBar_->addWidget(labelStatus_);
 
 
     connect(this, &MainWindow::signalSerialPortOpened,
@@ -129,15 +130,22 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(tabWindow_, &TabWindow::signalSendData,
             serial_, &SerialWidget::slotSendSerialPort);
 
-    actionConfigure_->trigger();
+    openSerialPort();
 }
 
 MainWindow::~MainWindow() {
-    delete m_settings;
+    delete dialogSerialSettings_;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+    // TODO: save state
+    closeSerialPort();
+    event->accept();
 }
 
 void MainWindow::openSerialPort() {
-    const ComPortSettings::Settings p = m_settings->settings();
+    dialogSerialSettings_->exec();
+    const ComPortSettings::Settings p = dialogSerialSettings_->settings();
 
     serial_->setPortName(p.name);
     serial_->setBaudRate(p.baudRate);
@@ -147,12 +155,8 @@ void MainWindow::openSerialPort() {
     serial_->setFlowControl(p.flowControl);
     if (serial_->open(QIODevice::ReadWrite)) {
         emit signalSerialPortOpened(p.localEchoEnabled);
-        actionConnect_->setEnabled(false);
-        actionDisconnect_->setEnabled(true);
-        actionConfigure_->setEnabled(false);
-        showStatusMessage(tr("Connected to %1 : %2, %3, %4, %5, %6")
-                          .arg(p.name, p.stringBaudRate, p.stringDataBits,
-                               p.stringParity, p.stringStopBits, p.stringFlowControl));
+        showStatusMessage(tr("Connected to %1 : %2")
+                          .arg(p.name, p.stringBaudRate));
     } else {
         QMessageBox::critical(this, tr("Error"), serial_->errorString());
 
@@ -160,27 +164,17 @@ void MainWindow::openSerialPort() {
     }
 }
 
+
+
 void MainWindow::closeSerialPort() {
     if (serial_->isOpen()) {
         serial_->close();
     }
     emit signalSerialPortClosed();
-    actionConnect_->setEnabled(true);
-    actionDisconnect_->setEnabled(false);
-    actionConfigure_->setEnabled(true);
-    showStatusMessage(tr("Disconnected"));
 }
-
-void MainWindow::about() {
-    QMessageBox::about(this, tr("About Serial Terminal"),
-                       tr("The <b>Serial Terminal</b> example demonstrates how to "
-                          "use the Qt Serial Port module in modern GUI applications "
-                          "using Qt, with a menu bar, toolbars, and a status bar."));
-}
-
 
 void MainWindow::showStatusMessage(const QString &message) {
-    m_status->setText(message);
+    labelStatus_->setText(message);
 }
 
 void MainWindow::slotSerialError(const QString &message) {

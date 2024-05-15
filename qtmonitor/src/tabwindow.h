@@ -51,6 +51,8 @@ class TabWindow : public QTabWidget {
         tabTest_->clearSerialConsole();
     }
 
+    void slotRxFrame(quint32 objid, quint32 attrid, quint64 payload);
+    
  private:
     TabScales *tabScales_;
     TabTest *tabTest_;
