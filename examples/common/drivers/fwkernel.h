@@ -41,6 +41,10 @@ class KernelClass : public FwObject {
     virtual void PostInit() override;
 
  private:
+    void addToOutputList(FwAttribute *attr, uint32_t period);
+    void removeFromOutputList(FwAttribute *attr);
+
+ private:
     class TargetConfigAttribute : public FwAttribute {
      public:
         TargetConfigAttribute(KernelClass *parent, const char *name)
@@ -54,10 +58,37 @@ class KernelClass : public FwObject {
      private:
         KernelClass *parent_;
     };
+
+    /**
+        Enable or disable FwAttribute periodic output
+     */
+    class OutputControlAttribute : public FwAttribute {
+     public:
+        OutputControlAttribute(KernelClass *parent, const char *name)
+            : FwAttribute(name, "Ena/dis periodic value output"), parent_(parent) {
+        }
+
+        virtual void post_write() override;
+
+        union ValueType {
+            struct bits_type {
+                uint32_t objid : 8;
+                uint32_t attrid : 7;
+                uint32_t ena_dis : 1;   // 1=enable output; 0=disable output
+                uint32_t period : 16;
+            } b;
+            uint32_t u32;
+        };
+
+     private:
+        KernelClass *parent_;
+    };
+
  private:
     /** @brief Kernel Version attribute */
     TargetConfigAttribute targetConfig_;
     FwAttribute version_;
+    OutputControlAttribute output_;    // enable/disable specific attribute periodic output
 
     UartDriver uart1_;
     RelaisDriver relais0_;
@@ -76,4 +107,6 @@ class KernelClass : public FwObject {
     Ds18b20Driver temp0_;
     SoilDriver soil0_;
     DbcConverter dbc_;        // CAN database converter
+
+    FwList *listOutput_;
 };

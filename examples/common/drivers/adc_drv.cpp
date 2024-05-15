@@ -80,8 +80,6 @@ extern "C" void ADC1_irq_ovr_handler() {
     sr.bits.OVR = 0;
     write32(&adc1->SR.val, sr.val);
 
-    uart_printf("!!!%s\r\n", "ADC ovr");
-
     init_dma();
 
     cr2.val = 0;

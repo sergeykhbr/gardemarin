@@ -39,8 +39,6 @@ class DbcConverter : public FwObject,
  private:
     int GetCanMessageDlc();
 
-    uint32_t str2hex32(char *buf, int sz);
-
     void processRxCanFrame(can_frame_type *frame);
     void processTxCanFrame(can_frame_type *frame);
 

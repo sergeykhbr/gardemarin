@@ -26,6 +26,7 @@
 KernelClass::KernelClass(const char *name) : FwObject(name),
     targetConfig_(this, "TargetConfig"),
     version_("Version"),
+    output_(this, "Output"),
     uart1_("uart1"),
     relais0_("relais0", 0),
     relais1_("relais1", 1),
@@ -42,7 +43,8 @@ KernelClass::KernelClass(const char *name) : FwObject(name),
     hbrg3_("hbrg3", 3),
     temp0_("temp0"),
     soil0_("soil0"),
-    dbc_("dbc")
+    dbc_("dbc"),
+    listOutput_(0)
 {
     version_.make_uint32(0x20240804);
 }
@@ -53,6 +55,7 @@ KernelClass::KernelClass(const char *name) : FwObject(name),
 void KernelClass::Init() {
     RegisterAttribute(&targetConfig_);
     RegisterAttribute(&version_);
+    RegisterAttribute(&output_);
 }
 
 /**
@@ -62,6 +65,14 @@ void KernelClass::PostInit() {
     targetConfig_.to_string();
 }
 
+void KernelClass::addToOutputList(FwAttribute *attr, uint32_t period) {
+    
+}
+
+void KernelClass::removeFromOutputList(FwAttribute *attr) {
+}
+
+
 void KernelClass::TargetConfigAttribute::pre_read() {
 FwObject *obj;
     FwAttribute *attr;
@@ -70,20 +81,20 @@ FwObject *obj;
     int obj_idx;
     int atr_idx;
 
-    uart_printf("'TargetConfig':{\r\n"
+    uart_printk("'TargetConfig':{\r\n"
                 "    'ObjectsList':[\r\n");
     obj_idx = 0;
     while (p) {
         obj = static_cast<FwObject *>(fwlist_get_payload(p));
-        uart_printf("       {'Index':%d, 'Name':'%s',\r\n",
+        uart_printk("       {'Index':%d, 'Name':'%s',\r\n",
                     obj_idx, obj->ObjectName());
-        uart_printf("        'Attributes':[");
+        uart_printk("        'Attributes':[");
         alist = obj->GetAttributes();
         atr_idx = 0;
         if (alist) {
-            uart_printf("\r\n");
+            uart_printk("\r\n");
         } else {
-            uart_printf("]\r\n");
+            uart_printk("]\r\n");
         }
         while (alist) {
             attr = (FwAttribute *)fwlist_get_payload(alist);
@@ -91,72 +102,96 @@ FwObject *obj;
 
             alist = alist->next;
             if (alist) {
-                uart_printf(",\r\n");
+                uart_printk(",\r\n");
             } else {
-                uart_printf("]\r\n");
+                uart_printk("]\r\n");
             }
             atr_idx++;
         }
         p = p->next;
         if (p) {
-            uart_printf("       },\r\n");
+            uart_printk("       },\r\n");
         } else {
-            uart_printf("   }]\r\n");
+            uart_printk("   }]\r\n");
         }
         obj_idx++;
     }
-    uart_printf("}\r\n");
+    uart_printk("}\r\n");
 }
 
 void KernelClass::TargetConfigAttribute::print_attribute(int idx,
                                                 FwAttribute *attr) {
     int t1;
-    uart_printf("           {'Index':%d", idx);
-    uart_printf(", 'Name':'%s'", attr->name());
-    uart_printf(", 'Type':'%s'", KindTypeString[attr->kind()]);
-    uart_printf(", 'Value':", KindTypeString[attr->kind()]);
+    uart_printk("           {'Index':%d", idx);
+    uart_printk(", 'Name':'%s'", attr->name());
+    uart_printk(", 'Type':'%s'", KindTypeString[attr->kind()]);
+    uart_printk(", 'Value':", KindTypeString[attr->kind()]);
     switch (attr->kind()) {
     case Attr_String:
         if (strcmp(attr->name(), name()) == 0) {
             // exclude this attribute from the output list
-            uart_printf("''");
+            uart_printk("''");
         } else {
-            uart_printf("'%s'", attr->to_string());
+            uart_printk("'%s'", attr->to_string());
         }
         break;
     case Attr_Int8:
-        uart_printf("%d", attr->to_int8());
+        uart_printk("%d", attr->to_int8());
         break;
     case Attr_UInt8:
-        uart_printf("%02x", attr->to_uint8());
+        uart_printk("%02x", attr->to_uint8());
         break;
     case Attr_Int16:
-        uart_printf("%d", attr->to_int16());
+        uart_printk("%d", attr->to_int16());
         break;
     case Attr_UInt16:
-        uart_printf("0x%04x", attr->to_uint16());
+        uart_printk("0x%04x", attr->to_uint16());
         break;
     case Attr_Int32:
-        uart_printf("%ld", attr->to_int32());
+        uart_printk("%ld", attr->to_int32());
         break;
     case Attr_UInt32:
-        uart_printf("0x%08lx", attr->to_uint32());
+        uart_printk("0x%08lx", attr->to_uint32());
         break;
     case Attr_Int64:
-        uart_printf("%" RV_PRI64 "d", attr->to_int64());
+        uart_printk("%" RV_PRI64 "d", attr->to_int64());
         break;
     case Attr_UInt64:
-        uart_printf("%" RV_PRI64 "x", attr->to_uint64());
+        uart_printk("%" RV_PRI64 "x", attr->to_uint64());
         break;
     case Attr_Float:
         t1 = static_cast<int>(attr->to_float());
-        uart_printf("%d.%06d", t1,
+        uart_printk("%d.%06d", t1,
             static_cast<int>(1000000.0f * (attr->to_float() - t1)));
         break;
     case Attr_Double:
-        uart_printf("%.2f", attr->to_double());
+        uart_printk("%.2f", attr->to_double());
         break;
     default:;
     }
-    uart_printf(", 'Descr':'%s'}", attr->description());
+    uart_printk(", 'Descr':'%s'}", attr->description());
 }
+
+void KernelClass::OutputControlAttribute::post_write() {
+    FwObject *obj;
+    FwAttribute *attr;
+    ValueType ctrl;
+    ctrl.u32 = u_.u32;
+
+    obj = reinterpret_cast<FwObject *>(fw_get_obj_by_index(ctrl.b.objid));
+    if (obj == 0) {
+        return;
+    }
+    attr = reinterpret_cast<FwAttribute *>(fw_get_obj_attr_by_index(obj, ctrl.b.attrid));
+    if (attr == 0) {
+        return;
+    }
+
+    if (ctrl.b.ena_dis) {
+        parent_->addToOutputList(attr, ctrl.b.period);
+    } else {
+        parent_->removeFromOutputList(attr);
+    }
+
+}
+

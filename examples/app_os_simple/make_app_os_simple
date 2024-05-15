@@ -82,7 +82,7 @@ SOURCES = isr_vector \
 	fwfifo \
 	dbc \
 	task1ms \
-	task500ms \
+	task1sec \
 	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))

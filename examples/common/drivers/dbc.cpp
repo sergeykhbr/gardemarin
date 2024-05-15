@@ -172,11 +172,11 @@ void DbcConverter::RawCallback(const char *buf, int sz) {
                 erawstate_ = State_PRM1;
                 can_frame_type frame;
                 frame.busid = 0;
-                frame.id = str2hex32(rawid_, 8);
+                frame.id = FwAttribute::str2hex32(rawid_, 8);
                 frame.dlc = static_cast<uint8_t>(rawdlc_);
                 for (uint8_t n = 0; n < frame.dlc; n++) {
                     frame.data.u8[n] = 
-                        static_cast<uint8_t>(str2hex32(&rawpayload_[2*n], 2));
+                        static_cast<uint8_t>(FwAttribute::str2hex32(&rawpayload_[2*n], 2));
                 }
                 
                 processRxCanFrame(&frame);
@@ -275,21 +275,6 @@ void DbcConverter::ConvertDataToAttribute(const char *buf,
  */
 int DbcConverter::GetCanMessageDlc() {
     return 8;
-}
-
-uint32_t DbcConverter::str2hex32(char *buf, int sz) {
-    uint32_t ret = 0;
-    for (int i = 0; i < sz; i++) {
-        ret <<= 4;
-        if (buf[i] >= '0' && buf[i] <= '9') {
-            ret |= buf[i] - '0';
-        } else if (buf[i] >= 'a' && buf[i] <= 'f') {
-            ret |= buf[i] - 'a' + 10;
-        } else if (buf[i] >= 'A' && buf[i] <= 'F') {
-            ret |= buf[i] - 'A' + 10;
-        }
-    }
-    return ret;
 }
 
 void DbcConverter::processRxCanFrame(can_frame_type *frame) {

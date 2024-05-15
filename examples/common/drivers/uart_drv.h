@@ -44,6 +44,7 @@ class UartDriver : public FwObject,
     FwList *listener_;
 
     FwFifo rxfifo_;
+    FwFifo txfifo_;
     char rxbuf_[32];
     int rxcnt_;
 };

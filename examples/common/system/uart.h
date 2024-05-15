@@ -25,6 +25,10 @@ extern "C"
 {
 #endif
 
+// unbuffered output
+void uart_printk(const char *fmt, ...);
+
+// buffered output. Do not use it from interrupts.
 void uart_printf(const char *fmt, ...);
 
 #if defined(__cplusplus)

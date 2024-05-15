@@ -21,6 +21,7 @@
 #include <fwapi.h>
 #include <uart.h>
 #include <gpio_drv.h>
+#include <vprintfmt.h>
 #include "uart_drv.h"
 
 //    PA10 USART1_RX = AF7
@@ -34,11 +35,34 @@ static const gpio_pin_type tx_pin = {
 };
 
 static FwFifo *prxFifo_ = 0;
+static FwFifo *ptxFifo_ = 0;
+static void *iraw_ = 0;
+
+extern "C" int uartdrv_putchar(int ch, void *putdat) {
+    RawInterface *iraw = reinterpret_cast<RawInterface *>(putdat);
+    char tbuf[4] = {static_cast<char>(ch), 0};
+    if (iraw) {
+        iraw->WriteData(tbuf, 1);
+    }
+    return 0;
+}
+
+extern "C" void uart_printf(const char *fmt, ...) {
+    if (iraw_ == 0) {
+        iraw_ = fw_get_object_interface("uart1", "RawInterface");
+    }
+    va_list ap;
+    va_start(ap, fmt);
+    vprintfmt_lib((f_putch)uartdrv_putchar, iraw_, fmt, ap);
+    va_end(ap);
+}
+
 
 //
 extern "C" void USART1_irq_handler() {
     USART_registers_type *dev = (USART_registers_type *)USART1_BASE;
     uint16_t rbyte;
+    char tbyte;
     while ((read16(&dev->SR) & (1 << 5)) != 0) {    // [5] RXNE: read data register not empty
         rbyte = read16(&dev->DR);
         if (prxFifo_) {
@@ -49,7 +73,22 @@ extern "C" void USART1_irq_handler() {
 
     // ORE (overflow) bit is reset by a read to the USART_SR register followed by a USART_DR
     // register read operation.
-    read16(&dev->SR);
+    //read16(&dev->SR);
+
+    if (read16(&dev->SR) & (1 << 7)) {          // SR[7] TXE transmit data register empty
+        // SR[6] TC: {RC_W0} transmission complete
+        // This bit is set by hardware if the transmission of a frame containing data is complete and if
+        // SR[7] TXE: {RO} is set. An interrupt is generated if TCIE=1 in the USART_CR1 register. It is cleared by
+        // a software sequence (a read from the USART_SR register followed by a write to the
+        // USART_DR register). 
+        if (ptxFifo_ && !fw_fifo_is_empty(ptxFifo_)) {
+            fw_fifo_get(ptxFifo_, &tbyte);
+            write16(&dev->DR, static_cast<uint16_t>(tbyte));
+        } else {
+            // clear TC (bit 6) and others RC_W0
+            write16(&dev->SR, 0);
+        }
+    }
 
     nvic_irq_clear(37);
 }
@@ -93,6 +132,7 @@ UartDriver::UartDriver(const char *name)
     // [1] RWU: Receiver wake-up
     // [0] SBRK: send break
     t1 = (1 << 13)
+       | (1 << 6)   // transmission complete
        | (1 << 5)
        | (1 << 3)
        | (1 << 2);
@@ -100,8 +140,11 @@ UartDriver::UartDriver(const char *name)
     write16(&UART1->CR2, 0);
     write16(&UART1->CR3, 0);
 
-    fw_fifo_init(&rxfifo_, sizeof(rxbuf_) - 1);
+    fw_fifo_init(&rxfifo_, 256);
     prxFifo_ = &rxfifo_;
+
+    fw_fifo_init(&txfifo_, 256);
+    ptxFifo_ = &txfifo_;
 }
 
 void UartDriver::Init() {
@@ -163,6 +206,8 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
         fw_fifo_get(&rxfifo_, &rxbyte);
         if (rxcnt_ < sizeof(rxbuf_)) {
             rxbuf_[rxcnt_++] = rxbyte;
+        } else {
+            break;
         }
     }
 
@@ -176,10 +221,18 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
 
 void UartDriver::WriteData(const char *buf, int sz) {
     USART_registers_type *dev = (USART_registers_type *)USART1_BASE;
+    int was_empty = fw_fifo_is_empty(&txfifo_);
     for (int i = 0; i < sz; i++) {
-        while ((read16(&dev->SR) & (1 << 7)) == 0) {}  // [7] TXE, transmit data register empty
-        write16(&dev->DR, (uint8_t)buf[i]);
+        while (fw_fifo_is_full(&txfifo_)) {}
+        fw_fifo_put(&txfifo_, buf[i]);
     }
+
+    // [7] TXE, transmit data register empty
+    if (was_empty && (read16(&dev->SR) & (1 << 7))) {
+        char tbyte;
+        fw_fifo_get(&txfifo_, &tbyte);
+        write16(&dev->DR, static_cast<uint8_t>(tbyte));
+    }  
 }
 
 void UartDriver::RegisterRawListener(RawListenerInterface *iface) {

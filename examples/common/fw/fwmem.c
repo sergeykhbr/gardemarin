@@ -83,7 +83,7 @@ void fw_register_ram_data(const char *name, void *data) {
     p->name[7] = 0;
     p->pattern = data;
 //    if (pool->data_cnt >= RAM_ENTRIES_MAX) {
-//        uart_printf("mempool limit reached %d\n", RAM_ENTRIES_MAX);
+//        uart_printk("mempool limit reached %d\n", RAM_ENTRIES_MAX);
 //    }
 }
 

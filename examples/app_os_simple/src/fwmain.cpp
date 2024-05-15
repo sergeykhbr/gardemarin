@@ -31,7 +31,6 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     appdata = (app_data_type *)fw_get_ram_data(APP_TASK_NAME);
     if (appdata == 0) {
         appdata = (app_data_type *)fw_malloc(sizeof(app_data_type));
-        //appdata = pvPortMalloc(sizeof(app_data_type));
         memset(appdata, 0, sizeof(app_data_type));
         appdata->keyNotifier = 
                 new(fw_malloc(sizeof(KeyNotifierType))) KeyNotifierType();
@@ -49,15 +48,15 @@ extern "C" int fwmain(int argcnt, char *args[]) {
                  APP_TASK_NAME,
                  512,
                  appdata,
-                 tskIDLE_PRIORITY + 1UL,
+                 tskIDLE_PRIORITY + 2UL,
                  &appdata->handleTask1ms);
 
-    xTaskCreate(task500ms,
+    xTaskCreate(task1sec,
                  APP_TASK_NAME,
                  1024,
                  appdata,
                  tskIDLE_PRIORITY + 1UL,
-                 &appdata->handleTask500ms);
+                 &appdata->handleTask1sec);
 
     vTaskStartScheduler();
 

@@ -22,13 +22,17 @@
 UARTSim::UARTSim(const char *name, uint64_t addr, size_t sz, int irqidx) :
     DeviceGeneric(name, addr, sz),
     SR(static_cast<DeviceGeneric *>(this), "SR", addr + 0x00),
-    DR(static_cast<DeviceGeneric *>(this), "DR", addr + 0x04) {
+    DR(static_cast<DeviceGeneric *>(this), "DR", addr + 0x04),
+    CR1(static_cast<DeviceGeneric *>(this), "CR1", addr + 0x0C) {
     irqidx_ = irqidx;
+    txempty_ = true;
 }
 
 void UARTSim::update(double dt) {
-    //if (CR1.isIrqEnabled()) 
-    {
+    bool wasempty = txempty_;
+    txempty_ = true;
+    if (CR1.isTxEmptyIrqEna()
+        || (!wasempty && CR1.isTxCompleteIrqEna())) {
         sim_request_interrupt(irqidx_);
     }
 }
@@ -41,7 +45,10 @@ uint32_t UARTSim::SR_TYPE::read_action(uint32_t prev) {
 }
 
 uint32_t UARTSim::DR_TYPE::write_action(uint32_t nxt) {
+    static_cast<UARTSim *>(parent_)->clearTxEmpty();
     char tstr[2] = {static_cast<char>(nxt), 0};
-    printf_info("%s", tstr);
+    if ((memAddr_ & ~0xFFF) == 0x40011000) { //USART1_BASE)
+        printf_info("%s", tstr);
+    }
     return nxt;
 }

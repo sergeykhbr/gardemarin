@@ -50,7 +50,7 @@ extern "C" void USART2_irq_handler() {
 
     // ORE (overflow) bit is reset by a read to the USART_SR register followed by a USART_DR
     // register read operation.
-    read16(&dev->SR);
+    //read16(&dev->SR);
 
     if (read16(&dev->SR) & (1 << 7)) {          // SR[7] TXE transmit data register empty
         // SR[6] TC: transmission complete

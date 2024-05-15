@@ -283,6 +283,22 @@ class FwAttribute : public CommonInterface {
      */
     int BitSize();
 
+    static uint32_t str2hex32(char *buf, int sz) {
+        uint32_t ret = 0;
+        for (int i = 0; i < sz; i++) {
+            ret <<= 4;
+            if (buf[i] >= '0' && buf[i] <= '9') {
+                ret |= buf[i] - '0';
+            } else if (buf[i] >= 'a' && buf[i] <= 'f') {
+                ret |= buf[i] - 'a' + 10;
+            } else if (buf[i] >= 'A' && buf[i] <= 'F') {
+                ret |= buf[i] - 'A' + 10;
+            }
+        }
+        return ret;
+    }
+
+
 
  protected:
     /** Union to safly convert data buffer into specified value type */

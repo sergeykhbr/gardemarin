@@ -259,7 +259,7 @@ void update_service_state(app_data_type *data) {
 }
 
 void KeyNotifierType::keyPressed() {
-    xTaskNotify(reinterpret_cast<app_data_type *>(data)->handleTask500ms,
+    xTaskNotify(reinterpret_cast<app_data_type *>(data)->handleTask1sec,
                 0,
                 eNoAction);
     btnClick = true;
@@ -268,17 +268,17 @@ void KeyNotifierType::keyPressed() {
 void KeyNotifierType::waitKeyPressed() {
     uint32_t notifiedValue=0;
     xTaskNotifyStateClear(
-        reinterpret_cast<app_data_type *>(data)->handleTask500ms);
+        reinterpret_cast<app_data_type *>(data)->handleTask1sec);
     xTaskNotifyWait(0x00,   // don't clear any notification bits on entry
                     0xffffffffUL,  // Reset the notification value to 0 on exit
                     &notifiedValue,
                     portMAX_DELAY); // Block indefinetly
 }
 
-portTASK_FUNCTION(task500ms, args)
+portTASK_FUNCTION(task1sec, args)
 {
     app_data_type *task_data = (app_data_type *)args;
-    const TickType_t delay_ms = 500 / portTICK_PERIOD_MS;
+    const TickType_t delay_ms = 1000 / portTICK_PERIOD_MS;
 
     KeyInterface *iface = reinterpret_cast<KeyInterface *>(
             fw_get_object_interface("ubtn0", "KeyInterface"));

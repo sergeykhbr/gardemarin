@@ -191,7 +191,7 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     make_int32(0);
     alpha_.make_float(INIT_ALPHA[idx]);
     zero_.make_float(INIT_ZERO[idx]);
-    tara_.make_uint32(INIT_TARA[idx]);
+    tara_.make_float(INIT_TARA[idx]);
     gram_.make_float(0);
 }
 

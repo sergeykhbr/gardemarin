@@ -20,7 +20,7 @@
 #include "vprintfmt.h"
 #include "uart.h"
 
-void uart_putc(USART_registers_type *dev, char s, char ctx) {
+static void uart_putc(USART_registers_type *dev, char s, char ctx) {
     while ((read16(&dev->SR) & (1 << 7)) == 0) {}  // [7] TXE, transmit data register empty
     write16(&dev->DR, (uint8_t)s);
 }
@@ -31,7 +31,7 @@ int uart_putchar(int ch, void *putdat) {
     return 0;
 }
 
-void uart_printf(const char *fmt, ...) {
+void uart_printk(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprintfmt_lib((f_putch)uart_putchar, (void *)USART1_BASE, fmt, ap);

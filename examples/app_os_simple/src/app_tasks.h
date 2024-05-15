@@ -56,10 +56,10 @@ typedef struct app_data_type {
     int service_state;
 
     TaskHandle_t handleTask1ms;
-    TaskHandle_t handleTask500ms;
+    TaskHandle_t handleTask1sec;
     KeyNotifierType *keyNotifier;
 } app_data_type;
 
 
 portTASK_FUNCTION(task1ms, args);
-portTASK_FUNCTION(task500ms, args);
+portTASK_FUNCTION(task1sec, args);
