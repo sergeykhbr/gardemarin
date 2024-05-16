@@ -67,19 +67,19 @@ PlotWidget::PlotWidget(QWidget *parent)
     AttributeType cfgLine1 = defaultLineCfg;
     cfgLine1["Name"].make_string("gram1");
     cfgLine1["FixedMaxY"].make_boolean(true);
-    cfgLine1["FixedMaxYVal"].make_floating(20000.0);
+    cfgLine1["FixedMaxYVal"].make_floating(4000.0);
     cfgLine1["Color"].make_string("#FFFFFF");
 
     AttributeType cfgLine2 = defaultLineCfg;
     cfgLine2["Name"].make_string("gram2");
     cfgLine2["FixedMaxY"].make_boolean(true);
-    cfgLine2["FixedMaxYVal"].make_floating(20000.0);
+    cfgLine2["FixedMaxYVal"].make_floating(4000.0);
     cfgLine2["Color"].make_string("#40C977");
 
     AttributeType cfgLine3 = defaultLineCfg;
     cfgLine3["Name"].make_string("gram3");
     cfgLine3["FixedMaxY"].make_boolean(true);
-    cfgLine3["FixedMaxYVal"].make_floating(20000.0);
+    cfgLine3["FixedMaxYVal"].make_floating(4000.0);
     cfgLine3["Color"].make_string("#007ACC");
 
 
