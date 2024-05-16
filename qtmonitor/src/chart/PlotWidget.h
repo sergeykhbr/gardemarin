@@ -28,7 +28,7 @@ class PlotWidget : public QWidget {
     explicit PlotWidget(QWidget *parent = 0);
     virtual ~PlotWidget();
 
-    void writeData(int lineidx, int64_t val);
+    void writeData(int lineidx, float val);
 
  public slots:
     void slotRightClickMenu(const QPoint &p);

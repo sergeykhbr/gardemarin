@@ -14,13 +14,52 @@
  *  limitations under the License.
  */
 
+#include <attribute.h>
 #include "mainwindow.h"
 #include <QApplication>
 
+void printUsage() {
+    printf("Qt-monitor for the Gardemarin board:\n"
+           "\n"
+           "    --cfg    Gardemarin json-config file. \n"
+           "\n"
+           "Example:\n"
+           "    ./bin/qtmonitor --cfg ~/old/cfg.json"
+           );
+}
+
 int main(int argc, char *argv[])
 {
+    AttributeType ConfigFileData;
+    AttributeType JsonConfig;
+    
+    ConfigFileData.make_string("");
+    if (argc == 1) {
+        printUsage();
+        return 0;
+    }
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--cfg") == 0) {
+            const char *cfgname = argv[++i];
+            attr_read_json_file(cfgname, &ConfigFileData);
+            if (ConfigFileData.size() == 0) {
+                printf("Error: config file %s not found\n", cfgname);
+                return 1;
+            }
+        }
+    }
+
+    JsonConfig.from_config(ConfigFileData.to_string());
+    if (!JsonConfig.is_dict()) {
+        printf("error: wrong configuration file format\n");
+        printUsage();
+        return 1;
+    }
+    
+
     QApplication a(argc, argv);
-    MainWindow w;
+    MainWindow w(&JsonConfig);
     w.show();
     return a.exec();
 }

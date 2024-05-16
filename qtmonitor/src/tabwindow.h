@@ -17,6 +17,7 @@
 #pragma once
 
 #include <QTabWidget>
+#include "serial.h"
 #include "tab_scales.h"
 #include "tab_test.h"
 
@@ -24,8 +25,7 @@ class TabWindow : public QTabWidget {
     Q_OBJECT
 
  public:
-    explicit TabWindow(QWidget *parent = nullptr);
-
+    TabWindow(QWidget *parent, SerialWidget *serial);
 
  signals:
     void signalSendData(const QByteArray &data);
@@ -38,22 +38,9 @@ class TabWindow : public QTabWidget {
     void slotSerialPortClosed() {
         tabTest_->closeSerialPort();
     }
-
-    void slotSendData(const QByteArray &data) {
-        emit signalSendData(data);
-    }
-
-    void slotRecvData(const QByteArray &data) {
-        tabTest_->writeData(data);
-    }
-
-    void slotClearSerialConsole() {
-        tabTest_->clearSerialConsole();
-    }
-
-    void slotRxFrame(quint32 objid, quint32 attrid, quint64 payload);
-    
+   
  private:
+    SerialWidget *serial_;
     TabScales *tabScales_;
     TabTest *tabTest_;
 };

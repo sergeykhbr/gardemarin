@@ -107,6 +107,4 @@ class KernelClass : public FwObject {
     Ds18b20Driver temp0_;
     SoilDriver soil0_;
     DbcConverter dbc_;        // CAN database converter
-
-    FwList *listOutput_;
 };

@@ -16,10 +16,13 @@
 
 #include "serial.h"
 
-SerialWidget::SerialWidget(QObject *parent) :
+SerialWidget::SerialWidget(QObject *parent, AttributeType *cfg) :
     QSerialPort(parent),
     timer_(this) {
+
+    ObjectsList_ = (*cfg)["TargetConfig"]["ObjectsList"];
     bytesToWrite_ = 0;
+    eframestate_ = State_PRM1;
 
     timer_.setSingleShot(true);
 
@@ -30,19 +33,144 @@ SerialWidget::SerialWidget(QObject *parent) :
     connect(this, &QSerialPort::bytesWritten, this, &SerialWidget::slotBytesWritten);
 }
 
+quint32 SerialWidget::str2hex32(char *buf, int sz) {
+    quint32 ret = 0;
+    for (int i = 0; i < sz; i++) {
+        ret <<= 4;
+        if (buf[i] >= '0' && buf[i] <= '9') {
+            ret |= buf[i] - '0';
+        } else if (buf[i] >= 'a' && buf[i] <= 'f') {
+            ret |= buf[i] - 'a' + 10;
+        } else if (buf[i] >= 'A' && buf[i] <= 'F') {
+            ret |= buf[i] - 'A' + 10;
+        }
+    }
+    return ret;
+}
+
+void SerialWidget::idx2names(quint32 canid, QString &objname, quint32 atrid, QString &atrname) {
+    for (unsigned i = 0; i < ObjectsList_.size(); i++) {
+        const AttributeType &obj = ObjectsList_[i];
+        objname = QString(obj["Name"].to_string());
+        if (obj["Index"].to_int() != (canid & 0xFF)) {
+            continue;
+        }
+        for (unsigned n = 0; n < obj["Attributes"].size(); n++) {
+            const AttributeType &atr = obj["Attributes"][n];
+            if (atr["Index"].to_int() != atrid) {
+                continue;
+            }
+            atrname = QString(atr["Name"].to_string());
+            break;
+        }
+        break;
+    }
+}
+
+QString SerialWidget::names2request(const QString &objname, const QString &atrname) {
+    QString ret = "";
+    for (unsigned i = 0; i < ObjectsList_.size(); i++) {
+        const AttributeType &obj = ObjectsList_[i];
+        if (objname != QString(obj["Name"].to_string())) {
+            continue;
+        }
+        for (unsigned n = 0; n < obj["Attributes"].size(); n++) {
+            const AttributeType &atr = obj["Attributes"][n];
+            if (atrname != QString(atr["Name"].to_string())) {
+                continue;
+            }
+            char buf[32];
+            sprintf(buf, ">!%08x,1,%02x\r\n",
+                        obj["Index"].to_uint32(),
+                        atr["Index"].to_uint32());
+    
+            return QString(buf);
+        }
+        break;
+    }
+    return ret;
+}
+
 void SerialWidget::slotRecvSerialPort() {
     const QByteArray data = readAll();
     emit signalRecvSerialPort(data);
 
     // search CAN frames over Serial interface
     for (auto &s : data) {
-        if (s == '<') {
-        }
-        if (s == '!') {
+        switch (eframestate_) {
+        case State_PRM1:
+            if (s == '<') {
+                eframestate_ = State_PRM2;
+            }
+            break;
+        case State_PRM2:
+            if (s == '!') {
+                eframestate_ = State_CanId;
+                rawcnt_ = 0;
+            } else {
+                eframestate_ = State_PRM1;
+            }
+            break;
+        case State_CanId:
+            rawid_[rawcnt_++] = s;
+            if (rawcnt_ == 8) {
+                eframestate_ = State_Comma1;
+            }
+            break;
+        case State_Comma1:
+            if (s == ',') {
+                eframestate_ = State_DLC;
+            } else {
+                eframestate_ = State_PRM1;
+            }
+            break;
+        case State_DLC:
+            if (s >= '1' && s <= '8') {
+                eframestate_ = State_Comma2;
+                rawcnt_ = 0;
+                rawdlc_ = s - '0';
+            } else {
+                eframestate_ = State_PRM1;
+            }
+            break;
+        case State_Comma2:
+            if (s == ',') {
+                eframestate_ = State_Payload;
+            } else {
+                eframestate_ = State_PRM1;
+            }
+            break;
+        case State_Payload:
+            rawpayload_[rawcnt_] = s;
+            rawpayload_[rawcnt_ + 1] = '\0';
+            if (++rawcnt_ == 2*rawdlc_) {
+                eframestate_ = State_PRM1;
+                can_frame_type frame;
+                frame.busid = 0;
+                frame.id = str2hex32(rawid_, 8);
+                frame.dlc = static_cast<quint8>(rawdlc_);
+                for (quint8 n = 0; n < frame.dlc; n++) {
+                    frame.data.u8[n] = 
+                        static_cast<quint8>(str2hex32(&rawpayload_[2*n], 2));
+                }
+                
+                processRxCanFrame(&frame);
+            }
+            break;
+        default:;
         }
     }
 }
 
+void SerialWidget::processRxCanFrame(can_frame_type *frame) {
+    QString objname = tr("none");
+    QString atrname = tr("none");
+    quint32 data = static_cast<quint32>(frame->data.u64 >> 8);
+
+    idx2names(frame->id, objname, frame->data.u8[0] & 0x7F, atrname);
+
+    emit signalResponseReadAttribute(objname, atrname, data);
+}
 
 void SerialWidget::slotBytesWritten(qint64 bytes) {
     bytesToWrite_ -= bytes;
@@ -64,10 +192,18 @@ void SerialWidget::slotSendSerialPort(const QByteArray &data) {
     }
 }
 
+void SerialWidget::slotRequestReadAttribute(const QString &objname,
+                                            const QString &atrname) {
+    if (!isOpen()) {
+        return;
+    }
+
+    QString request = names2request(objname, atrname);
+    slotSendSerialPort(request.toUtf8());
+}
+
 void SerialWidget::handleError(QSerialPort::SerialPortError error) {
     if (error == QSerialPort::ResourceError) {
-        //QMessageBox::critical(this, tr("Critical Error"), errorString());
-        //closeSerialPort();
         emit signalFailed(errorString());
     }
 }

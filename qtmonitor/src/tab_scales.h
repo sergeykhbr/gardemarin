@@ -17,6 +17,7 @@
 #pragma once
 
 #include <QTabWidget>
+#include <QTimer>
 #include "chart/PlotWidget.h"
 
 class TabScales : public QWidget {
@@ -27,16 +28,22 @@ class TabScales : public QWidget {
 
  signals:
     void signalSendData(const QByteArray &data);
+    void signalRequestScaleAttribute(const QString &objname, const QString &atrname);
 
  public slots:
     void slotSendData(const QByteArray &data) {
         emit signalSendData(data);
     }
+    void slotResponseScaleAttribute(const QString &objname, const QString &atrname, uint32_t data);
+
+ private slots:
+    void slotTimeToRequest();
 
  private:
     PlotWidget *plotMix_;
     PlotWidget *plotPlant_;
     PlotWidget *plotSewer_;
+    QTimer timer_;
 };
 
 

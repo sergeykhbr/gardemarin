@@ -23,15 +23,14 @@
 #include <QToolBar>
 #include <chrono>
 
-static constexpr std::chrono::seconds kWriteTimeout = std::chrono::seconds{5};
-
-
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    labelStatus_(new QLabel),
-    serial_(new SerialWidget(this)),
-    tabWindow_(new TabWindow(this))
+MainWindow::MainWindow(AttributeType *cfg) :
+    QMainWindow(nullptr),
+    serial_(new SerialWidget(this, cfg)),
+    tabWindow_(new TabWindow(this, serial_)),
+    labelStatus_(new QLabel)
 {
+    Config_.clone(cfg);
+
     setWindowIcon(QIcon(":/images/connect.png"));
     setWindowTitle(tr("qtmonitor"));
 
@@ -122,13 +121,9 @@ MainWindow::MainWindow(QWidget *parent) :
             tabWindow_, &TabWindow::slotSerialPortOpened);
     connect(this, &MainWindow::signalSerialPortClosed,
             tabWindow_, &TabWindow::slotSerialPortClosed);
-    connect(serial_, &SerialWidget::signalRecvSerialPort,
-            tabWindow_, &TabWindow::slotRecvData);
     connect(serial_, &SerialWidget::signalFailed,
             this, &MainWindow::slotSerialError);
 
-    connect(tabWindow_, &TabWindow::signalSendData,
-            serial_, &SerialWidget::slotSendSerialPort);
 
     openSerialPort();
 }

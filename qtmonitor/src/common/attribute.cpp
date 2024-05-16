@@ -771,3 +771,101 @@ int string_to_attribute(const char *cfg, int &off,
     }
     return 0;
 }
+
+int json_file_readline(FILE *f, char *buf, int &sz) {
+    int c = getc(f);
+    int ret = sz;
+    while (c != EOF) {
+        if (ret == sz && (c == L'\n' || c == L'\r')) {
+            // empty line
+            c = getc(f);
+            continue;
+        } else if ((c & 0xE0) == 0xC0) {
+            // 2-bytes unicode sequence
+            c = c & 0x1F;
+            c = (c << 6) | (getc(f) & 0x3F);
+
+        }
+        buf[ret++] = static_cast<char>(c);
+        buf[ret] = L'\0';
+        if (c == L'\n') {
+            break;
+        }
+        c = getc(f);
+    }
+    sz = ret;
+    return c;
+}
+
+int json_file_readall(const char *filename, char **pout) {
+    FILE *f = fopen(filename, "rb");
+    char *incdata;
+    int textcnt;
+    int incsz;
+    int fsz;
+    int ret = 0;
+    if (!f) {
+        return 0;
+    }
+    fseek(f, 0, SEEK_END);
+    fsz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    (*pout) = new char[fsz + 1];
+    memset((*pout), 0, (fsz + 1) * sizeof(char));
+
+    textcnt = 0;
+    while (json_file_readline(f, (*pout), textcnt) != EOF) {
+        char *psub1 = strstr(&(*pout)[ret], "#include");
+        if (psub1 != 0) {
+            char fname[4096];
+            char *pf = fname;
+            psub1 += 8;     // skip #include
+            while (*psub1 == L' ') {
+                psub1++;
+            }
+            if (*psub1 == L'"' || *psub1 == L'\'') {
+                psub1++;
+            }
+            while (*psub1 && *psub1 != L'"' && *psub1 != L'\'') {
+                *pf++ = *psub1++;
+                *pf = L'\0';
+            }
+            // todo:  read file
+            incsz = json_file_readall(fname, &incdata);
+            if (incsz) {
+                // realloc buffer:
+                char *t1 = new char [(fsz + incsz) / sizeof(char) + 1];
+                memset(t1, 0, fsz + incsz + sizeof(char));
+                memcpy(t1, (*pout), ret);
+                memcpy(&t1[ret], incdata, incsz);
+                delete [] incdata;
+                delete [] (*pout);
+                (*pout) = t1;
+                fsz += incsz;
+                textcnt = ret + incsz;
+            }
+        }
+        ret = textcnt;
+    }
+    fclose(f);
+    return ret;
+}
+
+int attr_read_json_file(const char *filename, AttributeType *outattr) {
+    FILE *f = fopen(filename, "r");
+    char *tbuf;
+    if (f == 0) {
+        printf("File '%' does not exist\n", filename);
+        return 0;
+    }
+    fclose(f);
+
+    int sz = json_file_readall(filename, &tbuf);
+    if (sz) {
+        outattr->make_data((sz + 1) * sizeof(char), tbuf);
+        delete [] tbuf;
+    }
+    return sz;
+}
+

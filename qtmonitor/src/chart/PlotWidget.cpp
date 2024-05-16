@@ -63,6 +63,29 @@ PlotWidget::PlotWidget(QWidget *parent)
         "'FixedMinYVal':0.0,"
         "'FixedMaxY':false,"
         "'FixedMaxYVal':0.0}");
+
+    AttributeType cfgLine1 = defaultLineCfg;
+    cfgLine1["Name"].make_string("gram1");
+    cfgLine1["FixedMaxY"].make_boolean(true);
+    cfgLine1["FixedMaxYVal"].make_floating(20000.0);
+    cfgLine1["Color"].make_string("#FFFFFF");
+
+    AttributeType cfgLine2 = defaultLineCfg;
+    cfgLine2["Name"].make_string("gram2");
+    cfgLine2["FixedMaxY"].make_boolean(true);
+    cfgLine2["FixedMaxYVal"].make_floating(20000.0);
+    cfgLine2["Color"].make_string("#40C977");
+
+    AttributeType cfgLine3 = defaultLineCfg;
+    cfgLine3["Name"].make_string("gram3");
+    cfgLine3["FixedMaxY"].make_boolean(true);
+    cfgLine3["FixedMaxYVal"].make_floating(20000.0);
+    cfgLine3["Color"].make_string("#007ACC");
+
+
+    line_[lineTotal_++] = new LineCommon(cfgLine1);
+    line_[lineTotal_++] = new LineCommon(cfgLine2);
+    line_[lineTotal_++] = new LineCommon(cfgLine3);
 }
 
 
@@ -72,14 +95,13 @@ PlotWidget::~PlotWidget() {
     }
 }
 
-void PlotWidget::writeData(int lineidx, int64_t val) {
+void PlotWidget::writeData(int lineidx, float val) {
     if (lineidx >= lineTotal_) {
         return;
     }
     line_[lineidx]->append(val);
     epochTotal = line_[lineidx]->size();
     update();
-    
 }
 
 /*void BusUtilPlot::slotCmdResponse() {

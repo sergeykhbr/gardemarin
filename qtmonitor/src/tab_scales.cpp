@@ -18,7 +18,8 @@
 #include <QVBoxLayout>
 
 TabScales::TabScales(QWidget *parent)
-    : QWidget(parent) {
+    : QWidget(parent),
+    timer_(this) {
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setSpacing(6);
@@ -31,5 +32,35 @@ TabScales::TabScales(QWidget *parent)
     layout->addWidget(plotPlant_);
     setLayout(layout);
 
+    timer_.setSingleShot(false);
+
+    connect(&timer_, &QTimer::timeout, this, &TabScales::slotTimeToRequest);
+    timer_.start(std::chrono::seconds{1});
+
+}
+
+void TabScales::slotTimeToRequest() {
+    emit signalRequestScaleAttribute(tr("scales"), tr("gram0"));
+    emit signalRequestScaleAttribute(tr("scales"), tr("gram1"));
+    emit signalRequestScaleAttribute(tr("scales"), tr("gram2"));
+}
+
+void TabScales::slotResponseScaleAttribute(const QString &objname, const QString &atrname, quint32 data) {
+    if (objname != "scales") {
+        return;
+    }
+    if (atrname == "gram0") {
+        float t1;
+        *reinterpret_cast<quint32 *>(&t1) = data;
+        plotPlant_->writeData(0, t1);
+    } else if (atrname == "gram1") {
+        float t1;
+        *reinterpret_cast<quint32 *>(&t1) = data;
+        plotPlant_->writeData(1, t1);
+    } else if (atrname == "gram2") {
+        float t1;
+        *reinterpret_cast<quint32 *>(&t1) = data;
+        plotPlant_->writeData(2, t1);
+    }
 }
 

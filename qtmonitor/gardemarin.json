@@ -1,0 +1,158 @@
+{
+'TargetConfig':{
+    'ObjectsList':[
+       {'Index':0, 'Name':'kernel',
+        'Attributes':[
+           {'Index':0, 'Name':'TargetConfig', 'Type':'string', 'Value':'', 'Descr':'PnP info'},
+           {'Index':1, 'Name':'Version', 'Type':'uint32', 'Value':0x20240804, 'Descr':''},
+           {'Index':2, 'Name':'Output', 'Type':'int32', 'Value':0, 'Descr':'Ena/dis periodic value output'}]
+       },
+       {'Index':1, 'Name':'uart1',
+        'Attributes':[]
+       },
+       {'Index':2, 'Name':'relais0',
+        'Attributes':[
+           {'Index':0, 'Name':'State', 'Type':'int8', 'Value':0, 'Descr':'0=ena, 1=dis'}]
+       },
+       {'Index':3, 'Name':'relais1',
+        'Attributes':[
+           {'Index':0, 'Name':'State', 'Type':'int8', 'Value':0, 'Descr':'0=ena, 1=dis'}]
+       },
+       {'Index':4, 'Name':'ledrbw',
+        'Attributes':[
+           {'Index':0, 'Name':'tim_hz', 'Type':'int32', 'Value':200, 'Descr':''},
+           {'Index':1, 'Name':'duty0', 'Type':'int8', 'Value':0, 'Descr':''},
+           {'Index':2, 'Name':'duty1', 'Type':'int8', 'Value':0, 'Descr':''},
+           {'Index':3, 'Name':'duty2', 'Type':'int8', 'Value':0, 'Descr':''},
+           {'Index':4, 'Name':'duty3', 'Type':'int8', 'Value':0, 'Descr':''}]
+       },
+       {'Index':5, 'Name':'can1',
+        'Attributes':[
+           {'Index':0, 'Name':'baudrate', 'Type':'int32', 'Value':500000, 'Descr':''},
+           {'Index':1, 'Name':'mode', 'Type':'int8', 'Value':2, 'Descr':''},
+           {'Index':2, 'Name':'test1', 'Type':'uint32', 'Value':0xcafef00d, 'Descr':''}]
+       },
+       {'Index':6, 'Name':'can2',
+        'Attributes':[
+           {'Index':0, 'Name':'baudrate', 'Type':'int32', 'Value':500000, 'Descr':''},
+           {'Index':1, 'Name':'mode', 'Type':'int8', 'Value':2, 'Descr':''},
+           {'Index':2, 'Name':'test1', 'Type':'uint32', 'Value':0xcafef00d, 'Descr':''}]
+       },
+       {'Index':7, 'Name':'scales',
+        'Attributes':[
+           {'Index':0, 'Name':'value0', 'Type':'int32', 'Value':0, 'Descr':''},
+           {'Index':1, 'Name':'gram0', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':2, 'Name':'alpha0', 'Type':'float', 'Value':0.001119, 'Descr':''},
+           {'Index':3, 'Name':'zero0', 'Type':'float', 'Value':395.000000, 'Descr':''},
+           {'Index':4, 'Name':'tara0', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':5, 'Name':'value1', 'Type':'int32', 'Value':0, 'Descr':''},
+           {'Index':6, 'Name':'gram1', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':7, 'Name':'alpha1', 'Type':'float', 'Value':0.002462, 'Descr':''},
+           {'Index':8, 'Name':'zero1', 'Type':'float', 'Value':9697.809570, 'Descr':''},
+           {'Index':9, 'Name':'tara1', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':10, 'Name':'value2', 'Type':'int32', 'Value':0, 'Descr':''},
+           {'Index':11, 'Name':'gram2', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':12, 'Name':'alpha2', 'Type':'float', 'Value':0.002471, 'Descr':''},
+           {'Index':13, 'Name':'zero2', 'Type':'float', 'Value':535.000000, 'Descr':''},
+           {'Index':14, 'Name':'tara2', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':15, 'Name':'value3', 'Type':'int32', 'Value':0, 'Descr':''},
+           {'Index':16, 'Name':'gram3', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':17, 'Name':'alpha3', 'Type':'float', 'Value':1.000000, 'Descr':''},
+           {'Index':18, 'Name':'zero3', 'Type':'float', 'Value':0.000000, 'Descr':''},
+           {'Index':19, 'Name':'tara3', 'Type':'float', 'Value':0.000000, 'Descr':''}]
+       },
+       {'Index':8, 'Name':'uled0',
+        'Attributes':[
+           {'Index':0, 'Name':'state', 'Type':'int8', 'Value':1, 'Descr':'0=Off, 1=On, 2=Blink'},
+           {'Index':1, 'Name':'hz', 'Type':'int32', 'Value':1, 'Descr':'Blink frequency: 1 Hz default'}]
+       },
+       {'Index':9, 'Name':'ubtn0',
+        'Attributes':[]
+       },
+       {'Index':10, 'Name':'adc1',
+        'Attributes':[
+           {'Index':0, 'Name':'in0', 'Type':'int32', 'Value':7373, 'Descr':''},
+           {'Index':1, 'Name':'in3', 'Type':'int32', 'Value':7276, 'Descr':''},
+           {'Index':2, 'Name':'in4', 'Type':'int32', 'Value':7712, 'Descr':''},
+           {'Index':3, 'Name':'in5', 'Type':'int32', 'Value':7671, 'Descr':''},
+           {'Index':4, 'Name':'in6', 'Type':'int32', 'Value':8018, 'Descr':''},
+           {'Index':5, 'Name':'in8', 'Type':'int32', 'Value':8292, 'Descr':''},
+           {'Index':6, 'Name':'in9', 'Type':'int32', 'Value':8171, 'Descr':''},
+           {'Index':7, 'Name':'in10', 'Type':'int32', 'Value':8389, 'Descr':''},
+           {'Index':8, 'Name':'temperature', 'Type':'int32', 'Value':244, 'Descr':'CPU temperature'},
+           {'Index':9, 'Name':'Vref', 'Type':'int32', 'Value':11999, 'Descr':'V_REFINT: 1.21 V typical'},
+           {'Index':10, 'Name':'Vbat', 'Type':'int32', 'Value':2433, 'Descr':'Battery Voltage'}]
+       },
+       {'Index':11, 'Name':'hbrg0',
+        'Attributes':[
+           {'Index':0, 'Name':'drvmode', 'Type':'int8', 'Value':0, 'Descr':'Drive mode pin: 0=4-pins control; 1=2-pins control'},
+           {'Index':1, 'Name':'dc0_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':2, 'Name':'dc0_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':3, 'Name':'dc0_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':4, 'Name':'dc1_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':5, 'Name':'dc1_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':6, 'Name':'dc1_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':7, 'Name':'i0', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'},
+           {'Index':8, 'Name':'i1', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'}]
+       },
+       {'Index':12, 'Name':'hbrg1',
+        'Attributes':[
+           {'Index':0, 'Name':'drvmode', 'Type':'int8', 'Value':0, 'Descr':'Drive mode pin: 0=4-pins control; 1=2-pins control'},
+           {'Index':1, 'Name':'dc0_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':2, 'Name':'dc0_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':3, 'Name':'dc0_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':4, 'Name':'dc1_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':5, 'Name':'dc1_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':6, 'Name':'dc1_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':7, 'Name':'i0', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'},
+           {'Index':8, 'Name':'i1', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'}]
+       },
+       {'Index':13, 'Name':'hbrg2',
+        'Attributes':[
+           {'Index':0, 'Name':'drvmode', 'Type':'int8', 'Value':0, 'Descr':'Drive mode pin: 0=4-pins control; 1=2-pins control'},
+           {'Index':1, 'Name':'dc0_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':2, 'Name':'dc0_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':3, 'Name':'dc0_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':4, 'Name':'dc1_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':5, 'Name':'dc1_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':6, 'Name':'dc1_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':7, 'Name':'i0', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'},
+           {'Index':8, 'Name':'i1', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'}]
+       },
+       {'Index':14, 'Name':'hbrg3',
+        'Attributes':[
+           {'Index':0, 'Name':'drvmode', 'Type':'int8', 'Value':0, 'Descr':'Drive mode pin: 0=4-pins control; 1=2-pins control'},
+           {'Index':1, 'Name':'dc0_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':2, 'Name':'dc0_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':3, 'Name':'dc0_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':4, 'Name':'dc1_direction', 'Type':'int8', 'Value':0, 'Descr':'0=forward;1=backward'},
+           {'Index':5, 'Name':'dc1_hz', 'Type':'int32', 'Value':20000, 'Descr':'Typical: 100kHz brushed motor; 18-24kHz brushless motor'},
+           {'Index':6, 'Name':'dc1_duty', 'Type':'int8', 'Value':0, 'Descr':'duty cycle in percentage: 0=dis, 100=fully ena'},
+           {'Index':7, 'Name':'i0', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'},
+           {'Index':8, 'Name':'i1', 'Type':'int32', 'Value':0, 'Descr':'I-sensor mA'}]
+       },
+       {'Index':15, 'Name':'temp0',
+        'Attributes':[
+           {'Index':0, 'Name':'T0', 'Type':'uint32', 'Value':0x00000000, 'Descr':''},
+           {'Index':1, 'Name':'T1', 'Type':'uint32', 'Value':0x00000000, 'Descr':''},
+           {'Index':2, 'Name':'SerialLsb0', 'Type':'uint32', 'Value':0x00000000, 'Descr':''},
+           {'Index':3, 'Name':'SerialMsb0', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':4, 'Name':'SerialLsb1', 'Type':'uint32', 'Value':0x00000000, 'Descr':''},
+           {'Index':5, 'Name':'SerialMsb1', 'Type':'uint16', 'Value':0x0000, 'Descr':''}]
+       },
+       {'Index':16, 'Name':'soil0',
+        'Attributes':[
+           {'Index':0, 'Name':'T', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':1, 'Name':'moisture', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':2, 'Name':'salnity', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':3, 'Name':'EC', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':4, 'Name':'pH', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':5, 'Name':'N', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':6, 'Name':'P', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
+           {'Index':7, 'Name':'K', 'Type':'uint16', 'Value':0x0000, 'Descr':''}]
+       },
+       {'Index':17, 'Name':'dbc',
+        'Attributes':[]
+   }]
+}
+}

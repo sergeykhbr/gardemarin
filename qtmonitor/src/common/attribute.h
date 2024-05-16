@@ -377,3 +377,5 @@ class AttributePairType {
     AttributeType key_;
     AttributeType value_;
 };
+
+int attr_read_json_file(const char *filename, AttributeType *outattr);

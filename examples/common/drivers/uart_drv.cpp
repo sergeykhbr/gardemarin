@@ -68,7 +68,6 @@ extern "C" void USART1_irq_handler() {
         if (prxFifo_) {
             fw_fifo_put(prxFifo_, static_cast<char>(rbyte));
         }
-        write16(&dev->DR, rbyte);
     }
 
     // ORE (overflow) bit is reset by a read to the USART_SR register followed by a USART_DR

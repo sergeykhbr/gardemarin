@@ -35,20 +35,16 @@ class TabTest : public QWidget {
         m_console->setEnabled(false);
     }
 
-    void clearSerialConsole() {
-        m_console->clear();
-    }
-
-    void writeData(const QByteArray &data) {
-        m_console->putData(data);
-    }
-
  signals:
     void signalSendData(const QByteArray &data);
 
  public slots:
     void slotSendData(const QByteArray &data) {
         emit signalSendData(data);
+    }
+
+    void slotRecvData(const QByteArray &data) {
+        m_console->putData(data);
     }
 
  private:

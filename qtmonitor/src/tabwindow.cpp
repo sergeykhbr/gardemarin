@@ -16,19 +16,28 @@
 
 #include "tabwindow.h"
 
-TabWindow::TabWindow(QWidget *parent)
-    : QTabWidget(parent) {
+TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
+    : QTabWidget(parent), serial_(serial) {
     tabScales_ = new TabScales(this);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));
     addTab(tabTest_, tr("Test"));
 
+    // connect TabScales:
+    connect(tabScales_, &TabScales::signalRequestScaleAttribute,
+            serial_, &SerialWidget::slotRequestReadAttribute);
+
+    connect(serial_, &SerialWidget::signalResponseReadAttribute,
+            tabScales_, &TabScales::slotResponseScaleAttribute);
+
+    // connect TabTest:
     connect(tabTest_, &TabTest::signalSendData,
-            this, &TabWindow::slotSendData);
+            serial_, &SerialWidget::slotSendSerialPort);
+
+    connect(serial_, &SerialWidget::signalRecvSerialPort,
+            tabTest_, &TabTest::slotRecvData);
+
 }
 
-void TabWindow::slotRxFrame(quint32 objid, quint32 attrid, quint64 payload)
-{
-}
 

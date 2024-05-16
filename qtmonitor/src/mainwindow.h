@@ -27,8 +27,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
  public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MainWindow(AttributeType *cfg);
+    virtual ~MainWindow();
 
  protected:
     virtual void closeEvent(QCloseEvent *event) override;
@@ -45,8 +45,10 @@ class MainWindow : public QMainWindow
  private:
     void showStatusMessage(const QString &message);
 
-    QLabel *labelStatus_;
-    ComPortSettings *dialogSerialSettings_;
     SerialWidget *serial_;
     TabWindow *tabWindow_;
+    QLabel *labelStatus_;
+    ComPortSettings *dialogSerialSettings_;
+
+    AttributeType Config_;
 };

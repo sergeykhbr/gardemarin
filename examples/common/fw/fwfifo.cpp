@@ -47,17 +47,22 @@ void fw_fifo_put(FwFifo *ff, char v) {
         return;
     }
     ff->arr[ff->wcnt] = v;
-    if (++ff->wcnt >= ff->size) {
-        ff->wcnt = 0;
+
+    int tcnt = ff->wcnt + 1;
+    if (tcnt >= ff->size) {
+        tcnt = 0;
     }
+    ff->wcnt = tcnt;
 }
 
 void fw_fifo_get(FwFifo *ff, char *v) {
     if (fw_fifo_is_empty(ff)) {
         return;
     }
-    if (++ff->rcnt >= ff->size) {
-        ff->rcnt = 0;
+    int tcnt = ff->rcnt + 1;
+    if (tcnt >= ff->size) {
+        tcnt = 0;
     }
-    *v = ff->arr[ff->rcnt];
+    *v = ff->arr[tcnt];
+    ff->rcnt = tcnt;
 }

@@ -66,6 +66,11 @@ LedStripDriver::LedStripDriver(const char *name) : FwObject(name),
     TIM_registers_type *TIM2 = (TIM_registers_type *)TIM2_BASE;
     tim_cr1_reg_type cr1;
 
+    duty0_.make_int8(0);
+    duty1_.make_int8(0);
+    duty2_.make_int8(0);
+    duty3_.make_int8(0);
+
     tim_cnt_ = 0;
 
     for (int i = 0; i < GARDEMARIN_LED_STRIP_TOTAL; i++) {
