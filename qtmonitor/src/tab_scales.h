@@ -40,9 +40,8 @@ class TabScales : public QWidget {
     void slotTimeToRequest();
 
  private:
-    PlotWidget *plotMix_;
-    PlotWidget *plotPlant_;
-    PlotWidget *plotSewer_;
+    PlotWidget *plotMoisture_;
+    PlotWidget *plotScales_;
     QTimer timer_;
 };
 

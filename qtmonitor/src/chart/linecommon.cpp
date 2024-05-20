@@ -199,20 +199,20 @@ bool LineCommon::getAxisValue(int axis, int idx, double &outval) {
     return false;
 }
 
-bool LineCommon::getAxisValue(int axis, int idx, char *outbuf, size_t bufsz) {
+bool LineCommon::getAxisValue(int axis, int idx, QString &outstr) {
     if (idx >= 0 && idx < cnt_) {
         int n = (start_ + idx) % len_;
         double outval = axis_[axis].data[n];
-        sprintf_s(outbuf, bufsz, format_, outval);
+        outstr = QString::asprintf(format_, outval);
         return true;
     }
     return false;
 }
 
-void LineCommon::getAxisMin(int axis, char *outbuf, size_t bufsz) {
-    sprintf_s(outbuf, bufsz, format_, axis_[axis].minVal);
+void LineCommon::getAxisMin(int axis, QString &outstr) {
+    outstr = QString::asprintf(format_, axis_[axis].minVal);
 }
 
-void LineCommon::getAxisMax(int axis, char *outbuf, size_t bufsz) {
-    sprintf_s(outbuf, bufsz, format_, axis_[axis].maxVal);
+void LineCommon::getAxisMax(int axis, QString &outstr) {
+    outstr = QString::asprintf(format_, axis_[axis].maxVal);
 }

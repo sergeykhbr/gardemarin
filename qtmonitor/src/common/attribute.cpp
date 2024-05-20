@@ -656,10 +656,6 @@ int string_to_attribute(const char *cfg, int &off,
             return -1;
         }
         off = skip_special_symbols(cfg, off + 1);
-
-        if (out->has_key("Type")) {
-            printf("%s", "Not implemented string to dict. attribute\n");
-        }
     } else if (cfg[off] == '(') {
         AutoBuffer buf;
         char byte_value;

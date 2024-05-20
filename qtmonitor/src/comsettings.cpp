@@ -39,7 +39,7 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     QGroupBox *parametersBox = new QGroupBox();
     parametersBox->setTitle("Select Parameters");
 
-    QGridLayout *gridLayout_2 = new QGridLayout(this);
+    QGridLayout *gridLayout_2 = new QGridLayout(parametersBox);
     parametersBox->setLayout(gridLayout_2);
 
     QLabel *baudRateLabel = new QLabel();
@@ -83,7 +83,7 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     QGroupBox *selectBox = new QGroupBox();
     selectBox->setTitle("Select Serial Port");
 
-    QGridLayout *gridLayout_1 = new QGridLayout(this);
+    QGridLayout *gridLayout_1 = new QGridLayout(selectBox);
     selectBox->setLayout(gridLayout_1);
 
     serialPortInfoListBox = new QComboBox();

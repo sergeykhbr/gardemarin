@@ -31,7 +31,7 @@ static const char *PLOTS_COLORS[LINES_PER_PLOT_MAX] = {
     "#FFFFFF"       // white color
 };
 
-PlotWidget::PlotWidget(QWidget *parent)
+PlotWidget::PlotWidget(QWidget *parent, AttributeType *cfg)
     : QWidget(parent) {
     selectedEpoch = 0;
     epochStart = 0;
@@ -52,40 +52,12 @@ PlotWidget::PlotWidget(QWidget *parent)
 
 
     bkg1 = QColor(Qt::black);
-    groupName = QString("NoGroupName");
-    groupUnits = QString("clocks");
-    defaultLineCfg.from_config("{"
-        "'Name':'NoName',"
-        "'Format':'%.1f',"
-        "'RingLength':256,"
-        "'Color':'#FFFFFF',"
-        "'FixedMinY':true,"
-        "'FixedMinYVal':0.0,"
-        "'FixedMaxY':false,"
-        "'FixedMaxYVal':0.0}");
-
-    AttributeType cfgLine1 = defaultLineCfg;
-    cfgLine1["Name"].make_string("gram1");
-    cfgLine1["FixedMaxY"].make_boolean(true);
-    cfgLine1["FixedMaxYVal"].make_floating(4000.0);
-    cfgLine1["Color"].make_string("#FFFFFF");
-
-    AttributeType cfgLine2 = defaultLineCfg;
-    cfgLine2["Name"].make_string("gram2");
-    cfgLine2["FixedMaxY"].make_boolean(true);
-    cfgLine2["FixedMaxYVal"].make_floating(4000.0);
-    cfgLine2["Color"].make_string("#40C977");
-
-    AttributeType cfgLine3 = defaultLineCfg;
-    cfgLine3["Name"].make_string("gram3");
-    cfgLine3["FixedMaxY"].make_boolean(true);
-    cfgLine3["FixedMaxYVal"].make_floating(4000.0);
-    cfgLine3["Color"].make_string("#007ACC");
-
-
-    line_[lineTotal_++] = new LineCommon(cfgLine1);
-    line_[lineTotal_++] = new LineCommon(cfgLine2);
-    line_[lineTotal_++] = new LineCommon(cfgLine3);
+    groupName = QString((*cfg)["GroupName"].to_string());
+    groupUnits = QString((*cfg)["GroupUnits"].to_string());
+    for (unsigned i = 0; i < (*cfg)["Lines"].size(); i++) {
+        AttributeType &lineCfg = (*cfg)["Lines"][i];
+        line_[lineTotal_++] = new LineCommon(lineCfg);
+    }
 }
 
 
@@ -239,7 +211,6 @@ void PlotWidget::renderSelection(QPainter &p) {
 }
 
 void PlotWidget::renderInfoPanel(QPainter &p) {
-    char bufName[256];
     QFont fontPos;
     // Save previous values:
     QBrush oldBrush = p.brush();
@@ -249,6 +220,7 @@ void PlotWidget::renderInfoPanel(QPainter &p) {
     fontPos.setPixelSize(10);
     p.setFont(fontPos);
 
+    QSize singleLineSize;
     QSize infoNameSize;
     QString name;
     QString fullString = QString::asprintf("idx: %d\n", selectedEpoch);
@@ -257,12 +229,15 @@ void PlotWidget::renderInfoPanel(QPainter &p) {
     int NAME_WIDTH_MAX = rectPlot.width() / 2;
     for (int i = 0; i < lineTotal_; i++) {
         LineCommon *pLine = line_[i];
-        if (!pLine->getAxisValue(1, selectedEpoch, bufName, sizeof(bufName))) {
-            continue;
-        }
-        name = QString::asprintf("%s: %s\n", pLine->getName(), bufName);
+        pLine->getAxisValue(1, selectedEpoch, name);
+        name = QString(tr(pLine->getName())) + ": " + name;
         fullString += name;
+        if (i < lineTotal_ - 1) {
+            fullString += tr("\n");
+        }
+        name = "";
     }
+    singleLineSize = p.fontMetrics().size(Qt::TextDontClip, tr("None"));
     infoNameSize = p.fontMetrics().size(Qt::TextDontClip, fullString);
     /** Guard: to avoid wrong formatted string value */
     if (infoNameSize.width() > NAME_WIDTH_MAX) {
@@ -274,12 +249,31 @@ void PlotWidget::renderInfoPanel(QPainter &p) {
     p.setPen(QPen(QColor("#450020")));
     p.setBrush(QBrush(QColor(0xff, 0xef, 0xd5, 0x80)));
 
+    const int MARKER_WIDTH = 18;
+
     QRect rectPanel(posPanel, infoNameSize);
     QRect textPanel = rectPanel;
     rectPanel.setWidth(rectPanel.width() + 4);
-    rectPanel.setLeft(rectPanel.left() - 2);
+    rectPanel.setLeft(rectPanel.left() - 2 - MARKER_WIDTH);
     p.drawRoundedRect(rectPanel, 2, 2);
     p.drawText(textPanel, Qt::AlignLeft, fullString);
+
+    // draw line marker:
+    for (int i = 0; i < lineTotal_; i++) {
+        LineCommon *pLine = line_[i];
+        p.setPen(QPen(QColor(pLine->getColor())));
+        p.setBrush(QBrush(QColor(pLine->getColor())));
+        rectPanel = QRect(posPanel, infoNameSize);
+
+        rectPanel.setWidth(10);
+        rectPanel.setHeight(10);
+        rectPanel.setLeft(posPanel.x() - 2);
+        // line 0 is an 'Idx:0' string so make additional offset +1 line
+        p.drawLine(posPanel.x() + 4 - MARKER_WIDTH,
+                   posPanel.y() + singleLineSize.height()/2 + singleLineSize.height()*(i + 1),
+                   posPanel.x() + 4 - MARKER_WIDTH + 10,
+                   posPanel.y() + singleLineSize.height()/2 + singleLineSize.height()*(i + 1));
+    }
 
     // Restore:
     p.setBrush(oldBrush);

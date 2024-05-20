@@ -34,7 +34,9 @@ MainWindow::MainWindow(AttributeType *cfg) :
     setWindowIcon(QIcon(":/images/connect.png"));
     setWindowTitle(tr("qtmonitor"));
 
-    resize(QSize(400, 300));
+    setMaximumWidth(1200);
+    setMaximumHeight(600);
+    //resize(QSize(400, 300));
 
     setCentralWidget(tabWindow_);
 

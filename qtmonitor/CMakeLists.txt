@@ -45,7 +45,7 @@ target_link_libraries(qtmonitor PRIVATE
 )
 
 set_target_properties(qtmonitor PROPERTIES
-    WIN32_EXECUTABLE ON
+    WIN32_EXECUTABLE OFF
 )
 
 #install(TARGETS qtmonitor

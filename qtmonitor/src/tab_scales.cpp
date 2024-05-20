@@ -25,11 +25,67 @@ TabScales::TabScales(QWidget *parent)
     layout->setSpacing(6);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    plotMix_ = new PlotWidget(this),
-    plotPlant_ = new PlotWidget(this);
+    AttributeType scalesCfg;
+    AttributeType moistureCfg;
+    moistureCfg.from_config("{"
+        "'GroupName':'Moisture',"
+        "'GroupUnits':'%',"
+        "'Lines':["
+          "{"
+            "'Name':'moisture',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#007ACC',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':100.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':0.0"
+          "}"
+        "]"
+        "}");
 
-    layout->addWidget(plotMix_);
-    layout->addWidget(plotPlant_);
+    scalesCfg.from_config("{"
+        "'GroupName':'Scales',"
+        "'GroupUnits':'gram',"
+        "'Lines':["
+          "{"
+            "'Name':'gram1',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#FFFFFF',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':0.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':4000.0"
+          "},"
+          "{"
+            "'Name':'gram2',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#40C977',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':0.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':4000.0"
+          "},"
+          "{"
+            "'Name':'gram3',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#007ACC',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':0.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':4000.0"
+          "}"
+        "]"
+        "}");
+
+    plotMoisture_ = new PlotWidget(this, &moistureCfg),
+    plotScales_ = new PlotWidget(this, &scalesCfg);
+
+    layout->addWidget(plotMoisture_, 1);
+    layout->addWidget(plotScales_, 2);
     setLayout(layout);
 
     timer_.setSingleShot(false);
@@ -43,24 +99,31 @@ void TabScales::slotTimeToRequest() {
     emit signalRequestScaleAttribute(tr("scales"), tr("gram0"));
     emit signalRequestScaleAttribute(tr("scales"), tr("gram1"));
     emit signalRequestScaleAttribute(tr("scales"), tr("gram2"));
+    emit signalRequestScaleAttribute(tr("soil0"), tr("moisture"));
 }
 
 void TabScales::slotResponseScaleAttribute(const QString &objname, const QString &atrname, quint32 data) {
-    if (objname != "scales") {
-        return;
-    }
-    if (atrname == "gram0") {
-        float t1;
-        *reinterpret_cast<quint32 *>(&t1) = data;
-        plotPlant_->writeData(0, t1);
-    } else if (atrname == "gram1") {
-        float t1;
-        *reinterpret_cast<quint32 *>(&t1) = data;
-        plotPlant_->writeData(1, t1);
-    } else if (atrname == "gram2") {
-        float t1;
-        *reinterpret_cast<quint32 *>(&t1) = data;
-        plotPlant_->writeData(2, t1);
+    if (objname == "scales") {
+        if (atrname == "gram0") {
+            float t1;
+            *reinterpret_cast<quint32 *>(&t1) = data;
+            plotScales_->writeData(0, t1);
+        } else if (atrname == "gram1") {
+            float t1;
+            *reinterpret_cast<quint32 *>(&t1) = data;
+            plotScales_->writeData(1, t1);
+        } else if (atrname == "gram2") {
+            float t1;
+            *reinterpret_cast<quint32 *>(&t1) = data;
+            plotScales_->writeData(2, t1);
+        }
+    } else if (objname == "soil0") {
+        if (atrname == "moisture") {
+            uint32_t t1 = data >> 24;
+            t1 |= (data >> 8) & 0xFF00;
+
+            plotMoisture_->writeData(0, static_cast<double>(t1) / 100.0);
+        }
     }
 }
 

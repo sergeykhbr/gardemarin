@@ -25,7 +25,7 @@ class PlotWidget : public QWidget {
     Q_OBJECT
 
  public:
-    explicit PlotWidget(QWidget *parent = 0);
+    explicit PlotWidget(QWidget *parent, AttributeType *cfg);
     virtual ~PlotWidget();
 
     void writeData(int lineidx, float val);

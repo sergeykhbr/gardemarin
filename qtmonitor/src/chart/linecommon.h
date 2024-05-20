@@ -16,6 +16,7 @@
 #pragma once
 
 #include <attribute.h>
+#include <QString>
 
 #pragma once
 
@@ -35,9 +36,9 @@ public:
     bool getNext(int &x, int &y);
     bool getXY(int idx, int &x, int &y);
     bool getAxisValue(int axis, int idx, double &outval);
-    bool getAxisValue(int axis, int idx, char *outbuf, size_t bufsz);
-    void getAxisMin(int axis, char *outbuf, size_t bufsz);
-    void getAxisMax(int axis, char *outbuf, size_t bufsz);
+    bool getAxisValue(int axis, int idx, QString &outstr);
+    void getAxisMin(int axis, QString &outstr);
+    void getAxisMax(int axis, QString &outstr);
     int getNearestByX(int x);
 
 private:
