@@ -17,36 +17,31 @@
 #pragma once
 
 #include <QTabWidget>
-#include "serial.h"
-#include "tab_scales.h"
-#include "tab_npk.h"
-#include "tab_tmpr.h"
-#include "tab_test.h"
+#include <QTimer>
+#include "chart/PlotWidget.h"
 
-class TabWindow : public QTabWidget {
+class TabTemperature : public QWidget {
     Q_OBJECT
 
  public:
-    TabWindow(QWidget *parent, SerialWidget *serial);
+    explicit TabTemperature(QWidget *parent = nullptr);
 
  signals:
     void signalSendData(const QByteArray &data);
+    void signalRequestScaleAttribute(const QString &objname, const QString &atrname);
 
  public slots:
-    void slotSerialPortOpened(bool localEchoEnabled) {
-        tabTest_->openSerialPort(localEchoEnabled);
+    void slotSendData(const QByteArray &data) {
+        emit signalSendData(data);
     }
+    void slotResponseScaleAttribute(const QString &objname, const QString &atrname, uint32_t data);
 
-    void slotSerialPortClosed() {
-        tabTest_->closeSerialPort();
-    }
-   
+ private slots:
+    void slotTimeToRequest();
+
  private:
-    SerialWidget *serial_;
-    TabScales *tabScales_;
-    TabNPK *tabNPK_;
-    TabTemperature *tabTemperature_;
-    TabTest *tabTest_;
+    PlotWidget *plotTemperature_;
+    QTimer timer_;
 };
 
 

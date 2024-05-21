@@ -19,9 +19,13 @@
 TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
     : QTabWidget(parent), serial_(serial) {
     tabScales_ = new TabScales(this);
+    tabNPK_ = new TabNPK(this);
+    tabTemperature_ = new TabTemperature(this);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));
+    addTab(tabNPK_, tr("NPK"));
+    addTab(tabTemperature_, tr("T"));
     addTab(tabTest_, tr("Test"));
 
     // connect TabScales:
@@ -30,6 +34,20 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
 
     connect(serial_, &SerialWidget::signalResponseReadAttribute,
             tabScales_, &TabScales::slotResponseScaleAttribute);
+
+    // connect TabNPK:
+    connect(tabNPK_, &TabNPK::signalRequestScaleAttribute,
+            serial_, &SerialWidget::slotRequestReadAttribute);
+
+    connect(serial_, &SerialWidget::signalResponseReadAttribute,
+            tabNPK_, &TabNPK::slotResponseScaleAttribute);
+
+    // connect TabTemperature:
+    connect(tabTemperature_, &TabTemperature::signalRequestScaleAttribute,
+            serial_, &SerialWidget::slotRequestReadAttribute);
+
+    connect(serial_, &SerialWidget::signalResponseReadAttribute,
+            tabTemperature_, &TabTemperature::slotResponseScaleAttribute);
 
     // connect TabTest:
     connect(tabTest_, &TabTest::signalSendData,

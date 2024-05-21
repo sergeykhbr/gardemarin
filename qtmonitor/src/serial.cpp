@@ -177,19 +177,19 @@ void SerialWidget::processRxCanFrame(can_frame_type *frame) {
     } else if (type == "int8") {
         data = frame->data.s8[1];
     } else if (type == "uint16") {
-        data = frame->data.u8[1];
-        data = (data << 8) | frame->data.u8[2];
+        data = frame->data.u8[2];
+        data = (data << 8) | frame->data.u8[1];
     } else if (type == "int16") {
-        data = frame->data.u8[1];
-        data = (data << 8) | frame->data.u8[2];
+        data = frame->data.u8[2];
+        data = (data << 8) | frame->data.u8[1];
         if (data & 0x8000) {
             data |= 0xFFFF0000;
         }
     } else if (type == "uint32" || type == "int32") {
-        data = frame->data.u8[1];
-        data = (data << 8) | frame->data.u8[2];
+        data = frame->data.u8[4];
         data = (data << 8) | frame->data.u8[3];
-        data = (data << 8) | frame->data.u8[4];
+        data = (data << 8) | frame->data.u8[2];
+        data = (data << 8) | frame->data.u8[1];
     }
 
     emit signalResponseReadAttribute(objname, atrname, data);

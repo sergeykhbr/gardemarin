@@ -293,14 +293,14 @@ void DbcConverter::processRxCanFrame(can_frame_type *frame) {
         attr = reinterpret_cast<FwAttribute *>(fw_get_obj_attr_by_index(obj, atr_idx));
         if (attr) {
             if (we) {
-                uart_printf("DBC write to %s::%s\r\n",
-                            obj->ObjectName(),
-                            attr->name());
+//                uart_printf("DBC write to %s::%s\r\n",
+//                            obj->ObjectName(),
+//                            attr->name());
                 attr->write(&frame->data.s8[1], frame->dlc - 1);
             } else {
-                uart_printf("DBC read from %s::%s\r\n",
-                            obj->ObjectName(),
-                            attr->name());
+//                uart_printf("DBC read from %s::%s\r\n",
+//                            obj->ObjectName(),
+//                            attr->name());
 
                 attr->read(&frame->data.s8[1], attr->BitSize() / 8);
                 frame->dlc = 1 + attr->BitSize() / 8;
