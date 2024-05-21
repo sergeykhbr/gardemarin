@@ -48,7 +48,9 @@ quint32 SerialWidget::str2hex32(char *buf, int sz) {
     return ret;
 }
 
-void SerialWidget::idx2names(quint32 canid, QString &objname, quint32 atrid, QString &atrname) {
+void SerialWidget::idx2names(quint32 canid, QString &objname,
+                             quint32 atrid, QString &atrname,
+                             QString &type) {
     for (unsigned i = 0; i < ObjectsList_.size(); i++) {
         const AttributeType &obj = ObjectsList_[i];
         objname = QString(obj["Name"].to_string());
@@ -61,6 +63,7 @@ void SerialWidget::idx2names(quint32 canid, QString &objname, quint32 atrid, QSt
                 continue;
             }
             atrname = QString(atr["Name"].to_string());
+            type = QString(atr["Type"].to_string());
             break;
         }
         break;
@@ -165,9 +168,29 @@ void SerialWidget::slotRecvSerialPort() {
 void SerialWidget::processRxCanFrame(can_frame_type *frame) {
     QString objname = tr("none");
     QString atrname = tr("none");
+    QString type = tr("");
     quint32 data = static_cast<quint32>(frame->data.u64 >> 8);
 
-    idx2names(frame->id, objname, frame->data.u8[0] & 0x7F, atrname);
+    idx2names(frame->id, objname, frame->data.u8[0] & 0x7F, atrname, type);
+    if (type == "uint8") {
+        data = frame->data.u8[1];
+    } else if (type == "int8") {
+        data = frame->data.s8[1];
+    } else if (type == "uint16") {
+        data = frame->data.u8[1];
+        data = (data << 8) | frame->data.u8[2];
+    } else if (type == "int16") {
+        data = frame->data.u8[1];
+        data = (data << 8) | frame->data.u8[2];
+        if (data & 0x8000) {
+            data |= 0xFFFF0000;
+        }
+    } else if (type == "uint32" || type == "int32") {
+        data = frame->data.u8[1];
+        data = (data << 8) | frame->data.u8[2];
+        data = (data << 8) | frame->data.u8[3];
+        data = (data << 8) | frame->data.u8[4];
+    }
 
     emit signalResponseReadAttribute(objname, atrname, data);
 }

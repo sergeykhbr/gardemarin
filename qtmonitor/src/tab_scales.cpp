@@ -19,7 +19,10 @@
 
 TabScales::TabScales(QWidget *parent)
     : QWidget(parent),
-    timer_(this) {
+    timer_(this),
+    gram0_(0),
+    gram1_(0),
+    gram2_(0) {
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setSpacing(6);
@@ -37,9 +40,13 @@ TabScales::TabScales(QWidget *parent)
             "'RingLength':256,"
             "'Color':'#007ACC',"
             "'FixedMinY':true,"
-            "'FixedMinYVal':100.0,"
+            "'FixedMinYVal':0.0,"
             "'FixedMaxY':true,"
-            "'FixedMaxYVal':0.0"
+            "'FixedMaxYVal':100.0,"
+            "'NormalMaxY':true,"
+            "'NormalMaxYVal':100.0,"
+            "'NormalMinY':true,"
+            "'NormalMinYVal':80.0"
           "}"
         "]"
         "}");
@@ -49,34 +56,60 @@ TabScales::TabScales(QWidget *parent)
         "'GroupUnits':'gram',"
         "'Lines':["
           "{"
-            "'Name':'gram1',"
+            "'Name':'sewer',"
             "'Format':'%.1f',"
             "'RingLength':256,"
-            "'Color':'#FFFFFF',"
+            "'Color':'#BD63C5',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
             "'FixedMaxY':true,"
-            "'FixedMaxYVal':4000.0"
+            "'FixedMaxYVal':6000.0,"
+            "'NormalMaxY':false,"
+            "'NormalMaxYVal':0.0,"
+            "'NormalMinY':false,"
+            "'NormalMinYVal':0.0"
           "},"
           "{"
-            "'Name':'gram2',"
+            "'Name':'plant',"
             "'Format':'%.1f',"
             "'RingLength':256,"
             "'Color':'#40C977',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
             "'FixedMaxY':true,"
-            "'FixedMaxYVal':4000.0"
+            "'FixedMaxYVal':6000.0,"
+            "'NormalMaxY':false,"
+            "'NormalMaxYVal':0.0,"
+            "'NormalMinY':false,"
+            "'NormalMinYVal':0.0"
           "},"
           "{"
-            "'Name':'gram3',"
+            "'Name':'mix',"
             "'Format':'%.1f',"
             "'RingLength':256,"
             "'Color':'#007ACC',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
             "'FixedMaxY':true,"
-            "'FixedMaxYVal':4000.0"
+            "'FixedMaxYVal':6000.0,"
+            "'NormalMaxY':false,"
+            "'NormalMaxYVal':0.0,"
+            "'NormalMinY':false,"
+            "'NormalMinYVal':0.0"
+          "},"
+          "{"
+            "'Name':'total',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#FFFFFF',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':0.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':6000.0,"
+            "'NormalMaxY':true,"
+            "'NormalMaxYVal':6000.0,"
+            "'NormalMinY':true,"
+            "'NormalMinYVal':4000.0"
           "}"
         "]"
         "}");
@@ -105,24 +138,19 @@ void TabScales::slotTimeToRequest() {
 void TabScales::slotResponseScaleAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "scales") {
         if (atrname == "gram0") {
-            float t1;
-            *reinterpret_cast<quint32 *>(&t1) = data;
-            plotScales_->writeData(0, t1);
+            *reinterpret_cast<quint32 *>(&gram0_) = data;
+            plotScales_->writeData(0, gram0_);
         } else if (atrname == "gram1") {
-            float t1;
-            *reinterpret_cast<quint32 *>(&t1) = data;
-            plotScales_->writeData(1, t1);
+            *reinterpret_cast<quint32 *>(&gram1_) = data;
+            plotScales_->writeData(1, gram1_);
         } else if (atrname == "gram2") {
-            float t1;
-            *reinterpret_cast<quint32 *>(&t1) = data;
-            plotScales_->writeData(2, t1);
+            *reinterpret_cast<quint32 *>(&gram2_) = data;
+            plotScales_->writeData(2, gram2_);
+            plotScales_->writeData(3, gram0_ + gram1_ + gram2_);
         }
     } else if (objname == "soil0") {
         if (atrname == "moisture") {
-            uint32_t t1 = data >> 24;
-            t1 |= (data >> 8) & 0xFF00;
-
-            plotMoisture_->writeData(0, static_cast<double>(t1) / 100.0);
+            plotMoisture_->writeData(0, static_cast<double>(data) / 100.0);
         }
     }
 }

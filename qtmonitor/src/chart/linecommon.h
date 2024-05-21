@@ -34,19 +34,29 @@ public:
     void setPlotSize(int w, int h);
     void selectData(int start_idx, int total);
     bool getNext(int &x, int &y);
+    bool getMaxMarker(int &x1, int &y1, int &x2, int &y2);
+    bool getMinMarker(int &x1, int &y1, int &x2, int &y2);
     bool getXY(int idx, int &x, int &y);
     bool getAxisValue(int axis, int idx, double &outval);
     bool getAxisValue(int axis, int idx, QString &outstr);
     void getAxisMin(int axis, QString &outstr);
     void getAxisMax(int axis, QString &outstr);
     int getNearestByX(int x);
+    bool isMarkerMaxEnabled() { return normalMaxEna_; }
+    bool isMarkerMinEnabled() { return normalMinEna_; }
 
 private:
     AttributeType descr_;
+    bool normalMaxEna_;
+    double normalMaxVal_;
+    bool normalMinEna_;
+    double normalMinVal_;
     struct AxisType {
         double *data;
         double accum;
+        bool fixedMinVal;
         double minVal;
+        bool fixedMaxVal;
         double maxVal;
     } axis_[2];
     bool is_ring_;

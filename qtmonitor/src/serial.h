@@ -59,7 +59,7 @@ class SerialWidget : public QSerialPort {
 
  private:
     quint32 str2hex32(char *buf, int sz);
-    void idx2names(quint32 id, QString &objname, quint32 atrid, QString &atrname);
+    void idx2names(quint32 id, QString &objname, quint32 atrid, QString &atrname, QString &type);
     QString names2request(const QString &objname, const QString &atrname);
 
     void processRxCanFrame(can_frame_type *frame);

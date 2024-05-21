@@ -53,9 +53,15 @@ LineCommon::LineCommon(AttributeType &descr) {
     for (int i = 0; i < 2; i++) {
         axis_[i].data = new double[len_];
         axis_[i].accum = 0;
-        axis_[i].minVal = 0;
-        axis_[i].maxVal = 0;
+        axis_[i].fixedMinVal = descr_["FixedMinY"].to_bool();
+        axis_[i].minVal = descr_["FixedMinYVal"].to_float();
+        axis_[i].fixedMaxVal = descr_["FixedMaxY"].to_bool();
+        axis_[i].maxVal = descr_["FixedMaxYVal"].to_float();
     }
+    normalMaxEna_ = descr_["NormalMaxY"].to_bool();
+    normalMaxVal_ = descr_["NormalMaxYVal"].to_float();
+    normalMinEna_ = descr_["NormalMinY"].to_bool();
+    normalMinVal_ = descr_["NormalMinYVal"].to_float();
 }
 
 const AttributeType &LineCommon::getDescription() {
@@ -73,13 +79,11 @@ void LineCommon::append(double x, double y) {
     if (cnt_ == 0) {
         axis_[0].minVal = x;
         axis_[0].maxVal = x;
-        axis_[1].minVal = y;
-        if (descr_["FixedMinY"].to_bool()) {
-            axis_[1].minVal = descr_["FixedMinYVal"].to_float();
+        if (!axis_[1].fixedMinVal) {
+            axis_[1].minVal = y;
         }
-        axis_[1].maxVal = y;
-        if (descr_["FixedMaxY"].to_bool()) {
-            axis_[1].maxVal = descr_["FixedMaxYVal"].to_float();
+        if (!axis_[1].fixedMaxVal) {
+            axis_[1].maxVal = y;
         }
     }
 
@@ -126,10 +130,10 @@ void LineCommon::append(double x, double y) {
 
     // Y-axis
     axis_[1].accum += y;
-    if (y < axis_[1].minVal && !descr_["FixedMinY"].to_bool()) {
+    if (!axis_[1].fixedMinVal && y < axis_[1].minVal) {
         axis_[1].minVal = y;
     }
-    if (y > axis_[1].maxVal && !descr_["FixedMaxY"].to_bool()) {
+    if (!axis_[1].fixedMaxVal && y > axis_[1].maxVal) {
         axis_[1].maxVal = y;
     }
 }
@@ -167,10 +171,37 @@ bool LineCommon::getNext(int &x, int &y) {
         return false;
     }
     x = static_cast<int>((sel_cnt - sel_start_idx) * dx + 0.5);
-    y = static_cast<int>((axis_[1].maxVal - val) * dy + 0.5);
+    if (axis_[1].fixedMaxVal && val > axis_[1].maxVal) {
+        y = 0;
+    } else if (axis_[1].fixedMinVal && val < axis_[1].minVal) {
+        y = static_cast<int>(axis_[1].minVal * dy + 0.5);
+    } else {
+        y = static_cast<int>((axis_[1].maxVal - val) * dy + 0.5);
+    }
     sel_cnt++;
     return true;
 }
+
+bool LineCommon::getMaxMarker(int &x1, int &y1, int &x2, int &y2) {
+    if (normalMaxEna_) {
+        x1 = 0;
+        y1 = static_cast<int>((axis_[1].maxVal - normalMaxVal_) * dy + 0.5);
+        x2 = plot_w;
+        y2 = y1;
+    }
+    return normalMaxEna_;
+}
+
+bool LineCommon::getMinMarker(int &x1, int &y1, int &x2, int &y2) {
+    if (normalMinEna_) {
+        x1 = 0;
+        y1 = static_cast<int>((axis_[1].maxVal - normalMinVal_) * dy + 0.5);
+        x2 = plot_w;
+        y2 = y1;
+    }
+    return normalMinEna_;
+}
+
 
 bool LineCommon::getXY(int idx, int &x, int &y) {
     double val;

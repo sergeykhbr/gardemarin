@@ -54,6 +54,7 @@ PlotWidget::PlotWidget(QWidget *parent, AttributeType *cfg)
     bkg1 = QColor(Qt::black);
     groupName = QString((*cfg)["GroupName"].to_string());
     groupUnits = QString((*cfg)["GroupUnits"].to_string());
+
     for (unsigned i = 0; i < (*cfg)["Lines"].size(); i++) {
         AttributeType &lineCfg = (*cfg)["Lines"][i];
         line_[lineTotal_++] = new LineCommon(lineCfg);
@@ -75,36 +76,6 @@ void PlotWidget::writeData(int lineidx, float val) {
     epochTotal = line_[lineidx]->size();
     update();
 }
-
-/*void BusUtilPlot::slotCmdResponse() {
-    if (!response_.is_list()) {
-        return;
-    }
-    int mst_total = static_cast<int>(response_.size());
-    if (lineTotal < mst_total) {
-        char tstr[64];
-        for (int i = lineTotal; i < mst_total; i++) {
-            RISCV_sprintf(tstr, sizeof(tstr), "mst[%d]", i);
-            defaultLineCfg["Name"].make_string(tstr);
-            defaultLineCfg["Color"].make_string(PLOTS_COLORS[i]);
-            line_[i] = new LineCommon(defaultLineCfg);
-            line_[i]->setPlotSize(rectPlot.width(), rectPlot.height());
-        }
-        lineTotal = mst_total;
-    }
-    double wr, rd;
-    for (int i = 0; i < mst_total; i++) {
-        const AttributeType &mst = response_[i];
-        if (!mst.is_list() || mst.size() != 2) {
-            continue;
-        }
-        wr = mst[0u].to_float();
-        rd = mst[1].to_float();
-        line_[i]->append(wr + rd);
-    }
-    epochTotal = line_[0]->size();
-    update();
-}*/
 
 void PlotWidget::renderAll() {
     pixmap.fill(bkg1);
@@ -172,6 +143,29 @@ void PlotWidget::renderLine(QPainter &p, LineCommon *pline) {
             p.drawLine(ptA, ptB);
             ptA = ptB;
         }
+    }
+
+    if (pline->isMarkerMaxEnabled()) {
+        QPen stashPen = p.pen();
+        QPen drawPen = stashPen;
+        drawPen.setStyle(Qt::DotLine);
+        p.setPen(drawPen);
+        int x1, y1, x2, y2;
+
+        pline->getMaxMarker(x1, y1, x2, y2);
+        p.drawLine(x1, y1, x2, y2);
+        p.setPen(stashPen);
+    }
+    if (pline->isMarkerMinEnabled()) {
+        QPen stashPen = p.pen();
+        QPen drawPen = stashPen;
+        drawPen.setStyle(Qt::DotLine);
+        p.setPen(drawPen);
+        int x1, y1, x2, y2;
+
+        pline->getMinMarker(x1, y1, x2, y2);
+        p.drawLine(x1, y1, x2, y2);
+        p.setPen(stashPen);
     }
 }
 

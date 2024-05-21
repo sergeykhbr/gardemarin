@@ -64,11 +64,6 @@ set_target_properties(qtmonitor PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMA
 
 
 if(UNIX)
-    add_custom_command(TARGET qtmonitor
-	        POST_BUILD
-	        COMMAND /bin/bash ${CMAKE_CURRENT_SOURCE_DIR}/post_build_event.sh "${CMAKE_BINARY_DIR}"
-	        )
-
 else()
 
     foreach(_source IN ITEMS ${_qtmonitor_src})
