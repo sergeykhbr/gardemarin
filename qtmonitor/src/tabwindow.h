@@ -22,6 +22,7 @@
 #include "tab_npk.h"
 #include "tab_tmpr.h"
 #include "tab_test.h"
+#include "tab_camera.h"
 
 class TabWindow : public QTabWidget {
     Q_OBJECT
@@ -46,6 +47,7 @@ class TabWindow : public QTabWidget {
     TabScales *tabScales_;
     TabNPK *tabNPK_;
     TabTemperature *tabTemperature_;
+    TabCamera *tabCamera_;
     TabTest *tabTest_;
 };
 

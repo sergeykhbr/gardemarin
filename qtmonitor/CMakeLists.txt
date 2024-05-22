@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 list(APPEND CMAKE_PREFIX_PATH $ENV{QT_PATH})
 #set(INSTALL_QTMONITORDIR "bin")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui SerialPort Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui SerialPort Widgets Multimedia MultimediaWidgets)
 qt_standard_project_setup()
 
 include_directories(
@@ -42,6 +42,8 @@ target_link_libraries(qtmonitor PRIVATE
     Qt::Gui
     Qt::SerialPort
     Qt::Widgets
+    Qt::Multimedia
+    Qt::MultimediaWidgets
 )
 
 set_target_properties(qtmonitor PROPERTIES

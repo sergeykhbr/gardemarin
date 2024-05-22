@@ -21,11 +21,13 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
     tabScales_ = new TabScales(this);
     tabNPK_ = new TabNPK(this);
     tabTemperature_ = new TabTemperature(this);
+    tabCamera_ = new TabCamera(this);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));
     addTab(tabNPK_, tr("NPK"));
     addTab(tabTemperature_, tr("T"));
+    addTab(tabCamera_, tr("Camera"));
     addTab(tabTest_, tr("Test"));
 
     // connect TabScales:
