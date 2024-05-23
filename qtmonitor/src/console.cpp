@@ -33,10 +33,6 @@ void Console::putData(const QByteArray &data) {
     bar->setValue(bar->maximum());
 }
 
-void Console::setLocalEchoEnabled(bool set) {
-    m_localEchoEnabled = set;
-}
-
 void Console::keyPressEvent(QKeyEvent *e) {
     switch (e->key()) {
     case Qt::Key_Backspace:
@@ -46,8 +42,6 @@ void Console::keyPressEvent(QKeyEvent *e) {
     case Qt::Key_Down:
         break;
     default:
-        if (m_localEchoEnabled)
-            QPlainTextEdit::keyPressEvent(e);
         emit signalSendData(e->text().toLocal8Bit());
     }
 }

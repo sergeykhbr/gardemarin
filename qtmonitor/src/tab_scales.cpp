@@ -129,20 +129,25 @@ TabScales::TabScales(QWidget *parent)
 }
 
 void TabScales::slotTimeToRequest() {
-    emit signalRequestScaleAttribute(tr("scales"), tr("gram0"));
-    emit signalRequestScaleAttribute(tr("scales"), tr("gram1"));
-    emit signalRequestScaleAttribute(tr("scales"), tr("gram2"));
-    emit signalRequestScaleAttribute(tr("soil0"), tr("moisture"));
+    emit signalRequestReadAttribute(tr("scales"), tr("gram0"));
+    emit signalRequestReadAttribute(tr("scales"), tr("gram1"));
+    emit signalRequestReadAttribute(tr("scales"), tr("gram2"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("moisture"));
 }
 
-void TabScales::slotResponseScaleAttribute(const QString &objname, const QString &atrname, quint32 data) {
+void TabScales::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "scales") {
         if (atrname == "gram0") {
             *reinterpret_cast<quint32 *>(&gram0_) = data;
             plotScales_->writeData(0, gram0_);
         } else if (atrname == "gram1") {
+            float prev = gram1_;
             *reinterpret_cast<quint32 *>(&gram1_) = data;
             plotScales_->writeData(1, gram1_);
+
+            // Show delta mix grams in the status bar
+            QString text = QString::asprintf("%.1f", gram1_ - prev);
+            emit signalTextToStatusBar(1, text);
         } else if (atrname == "gram2") {
             *reinterpret_cast<quint32 *>(&gram2_) = data;
             plotScales_->writeData(2, gram2_);

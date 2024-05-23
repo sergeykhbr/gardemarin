@@ -33,6 +33,36 @@ SerialWidget::SerialWidget(QObject *parent, AttributeType *cfg) :
     connect(this, &QSerialPort::bytesWritten, this, &SerialWidget::slotBytesWritten);
 }
 
+bool SerialWidget::open(OpenMode mode) {
+    setPortName(settings_.name);
+    setBaudRate(settings_.baudRate);
+    setDataBits(settings_.dataBits);
+    setParity(settings_.parity);
+    setStopBits(settings_.stopBits);
+    setFlowControl(settings_.flowControl);
+
+    bool ret = QSerialPort::open(mode);
+    if (ret) {
+        const QString text = QString::asprintf("Connected to %s : %d",
+                settings_.name.toUtf8().constBegin(), settings_.baudRate);
+        emit signalSerialPortOpened();
+        emit signalTextToStatusBar(0, text);
+    } else {
+        const QString error = QString::asprintf("Open error %s",
+                settings_.name.toUtf8().constBegin());
+        emit signalFailed(error);
+        emit signalTextToStatusBar(0, error);
+    }
+    return ret;
+}
+
+void SerialWidget::close() {
+    if (isOpen()) {
+        emit signalSerialPortClosed();
+    }
+    QSerialPort::close();
+}
+
 quint32 SerialWidget::str2hex32(char *buf, int sz) {
     quint32 ret = 0;
     for (int i = 0; i < sz; i++) {
@@ -86,6 +116,44 @@ QString SerialWidget::names2request(const QString &objname, const QString &atrna
             sprintf(buf, ">!%08x,1,%02x\r\n",
                         obj["Index"].to_uint32(),
                         atr["Index"].to_uint32());
+    
+            return QString(buf);
+        }
+        break;
+    }
+    return ret;
+}
+
+QString SerialWidget::names2request(const QString &objname, const QString &atrname, quint32 data) {
+    QString ret = "";
+    for (unsigned i = 0; i < ObjectsList_.size(); i++) {
+        AttributeType &obj = ObjectsList_[i];
+        if (objname != QString(obj["Name"].to_string())) {
+            continue;
+        }
+        for (unsigned n = 0; n < obj["Attributes"].size(); n++) {
+            AttributeType &atr = obj["Attributes"][n];
+            if (atrname != QString(atr["Name"].to_string())) {
+                continue;
+            }
+            char buf[32];
+            AttributeType &type = atr["Type"];
+            if (type.is_equal("uint8") || type.is_equal("int8")) {
+                sprintf(buf, ">!%08x,2,%02x%02x\r\n",
+                            obj["Index"].to_uint32(),
+                            0x80 | atr["Index"].to_uint32(),
+                            data & 0xFF);
+            } else if (type.is_equal("uint16") || type.is_equal("int16")) {
+                sprintf(buf, ">!%08x,3,%02x%04x\r\n",
+                            obj["Index"].to_uint32(),
+                            0x80 | atr["Index"].to_uint32(),
+                            data & 0xFFFF);
+            } else {
+                sprintf(buf, ">!%08x,5,%02x%08x\r\n",
+                            obj["Index"].to_uint32(),
+                            0x80 | atr["Index"].to_uint32(),
+                            data);
+            }
     
             return QString(buf);
         }
@@ -222,6 +290,17 @@ void SerialWidget::slotRequestReadAttribute(const QString &objname,
     }
 
     QString request = names2request(objname, atrname);
+    slotSendSerialPort(request.toUtf8());
+}
+
+void SerialWidget::slotRequestWriteAttribute(const QString &objname,
+                                             const QString &atrname,
+                                             quint32 data) {
+    if (!isOpen()) {
+        return;
+    }
+
+    QString request = names2request(objname, atrname, data);
     slotSendSerialPort(request.toUtf8());
 }
 

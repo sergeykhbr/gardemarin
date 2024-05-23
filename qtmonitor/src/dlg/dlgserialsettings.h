@@ -24,28 +24,27 @@
 #include <QIntValidator>
 #include <QComboBox>
 
-class ComPortSettings : public QDialog {
+struct SerialPortSettings {
+    QString name;
+    qint32 baudRate;
+    QString stringBaudRate;
+    QSerialPort::DataBits dataBits;
+    QString stringDataBits;
+    QSerialPort::Parity parity;
+    QString stringParity;
+    QSerialPort::StopBits stopBits;
+    QString stringStopBits;
+    QSerialPort::FlowControl flowControl;
+    QString stringFlowControl;
+    bool localEchoEnabled;
+};
+
+
+class DialogSerialSettings : public QDialog {
     Q_OBJECT
 
  public:
-    struct Settings {
-        QString name;
-        qint32 baudRate;
-        QString stringBaudRate;
-        QSerialPort::DataBits dataBits;
-        QString stringDataBits;
-        QSerialPort::Parity parity;
-        QString stringParity;
-        QSerialPort::StopBits stopBits;
-        QString stringStopBits;
-        QSerialPort::FlowControl flowControl;
-        QString stringFlowControl;
-        bool localEchoEnabled;
-    };
-
-    explicit ComPortSettings(QWidget *parent = nullptr);
-
-    ComPortSettings::Settings settings() const;
+    explicit DialogSerialSettings(QWidget *parent, SerialPortSettings *settings);
 
  private slots:
     void showPortInfo(int idx);
@@ -59,7 +58,7 @@ class ComPortSettings : public QDialog {
     void updateSettings();
 
  private:
-    ComPortSettings::Settings m_currentSettings;
+    SerialPortSettings *settings_;
     QIntValidator *m_intValidator = nullptr;
 
     QComboBox *serialPortInfoListBox;

@@ -22,12 +22,12 @@
 #include <QMenuBar>
 #include <QToolBar>
 #include <chrono>
+#include <QApplication>
 
 MainWindow::MainWindow(AttributeType *cfg) :
     QMainWindow(nullptr),
     serial_(new SerialWidget(this, cfg)),
-    tabWindow_(new TabWindow(this, serial_)),
-    labelStatus_(new QLabel)
+    tabWindow_(new TabWindow(this, serial_))   
 {
     Config_.clone(cfg);
 
@@ -37,7 +37,7 @@ MainWindow::MainWindow(AttributeType *cfg) :
     } else {
         appsz.setWidth(1200);
         appsz.setHeight(600);
-        resize(appsz);
+        setFixedSize(appsz);
     }
     setWindowIcon(QIcon(":/images/connect.png"));
     setWindowTitle(tr("qtmonitor"));
@@ -45,20 +45,30 @@ MainWindow::MainWindow(AttributeType *cfg) :
     setCentralWidget(tabWindow_);
 
 
-    dialogSerialSettings_ = new ComPortSettings(this);
+    dialogSerialSettings_ = new DialogSerialSettings(this, serial_->getpPortSettings());
 
     QStatusBar *statusBar_ = new QStatusBar(this);
+    labelStatus_[0] = new QLabel();
+    labelStatus_[1] = new QLabel();
+    labelStatus_[0]->setFixedWidth(appsz.width() - 100);
+    labelStatus_[1]->setFixedWidth(50);
     setStatusBar(statusBar_);
-    statusBar_->addWidget(labelStatus_);
+    statusBar_->addWidget(labelStatus_[0]);
+    statusBar_->addWidget(labelStatus_[1]);
 
 
-    connect(this, &MainWindow::signalSerialPortOpened,
+    connect(serial_, &SerialWidget::signalSerialPortOpened,
             tabWindow_, &TabWindow::slotSerialPortOpened);
-    connect(this, &MainWindow::signalSerialPortClosed,
+    connect(serial_, &SerialWidget::signalSerialPortClosed,
             tabWindow_, &TabWindow::slotSerialPortClosed);
     connect(serial_, &SerialWidget::signalFailed,
             this, &MainWindow::slotSerialError);
 
+    // Output to status bar
+    connect(serial_, &SerialWidget::signalTextToStatusBar,
+            this, &MainWindow::slotTextToStatusBar);
+    connect(tabWindow_, &TabWindow::signalTextToStatusBar,
+            this, &MainWindow::slotTextToStatusBar);
 
     openSerialPort();
 }
@@ -75,36 +85,17 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 void MainWindow::openSerialPort() {
     dialogSerialSettings_->exec();
-    const ComPortSettings::Settings p = dialogSerialSettings_->settings();
-
-    serial_->setPortName(p.name);
-    serial_->setBaudRate(p.baudRate);
-    serial_->setDataBits(p.dataBits);
-    serial_->setParity(p.parity);
-    serial_->setStopBits(p.stopBits);
-    serial_->setFlowControl(p.flowControl);
-    if (serial_->open(QIODevice::ReadWrite)) {
-        emit signalSerialPortOpened(p.localEchoEnabled);
-        showStatusMessage(tr("Connected to %1 : %2")
-                          .arg(p.name, p.stringBaudRate));
-    } else {
-        QMessageBox::critical(this, tr("Error"), serial_->errorString());
-
-        showStatusMessage(tr("Open error"));
-    }
+    serial_->open(QIODevice::ReadWrite);
 }
 
 
 
 void MainWindow::closeSerialPort() {
-    if (serial_->isOpen()) {
-        serial_->close();
-    }
-    emit signalSerialPortClosed();
+    serial_->close();
 }
 
-void MainWindow::showStatusMessage(const QString &message) {
-    labelStatus_->setText(message);
+void MainWindow::slotTextToStatusBar(qint32 idx, const QString &message) {
+    labelStatus_[idx]->setText(message);
 }
 
 void MainWindow::slotSerialError(const QString &message) {

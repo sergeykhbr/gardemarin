@@ -38,6 +38,9 @@ class TabCamera : public QWidget {
  public:
     explicit TabCamera(QWidget *parent = nullptr);
 
+ signals:
+    void signalTextToStatusBar(qint32 idx, const QString &text);
+
  public slots:
     void saveMetaData();
 

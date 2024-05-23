@@ -23,6 +23,7 @@
 #include "tab_tmpr.h"
 #include "tab_test.h"
 #include "tab_camera.h"
+#include "tab_lights.h"
 
 class TabWindow : public QTabWidget {
     Q_OBJECT
@@ -32,14 +33,21 @@ class TabWindow : public QTabWidget {
 
  signals:
     void signalSendData(const QByteArray &data);
+    void signalTextToStatusBar(qint32 idx, const QString &text);
 
  public slots:
-    void slotSerialPortOpened(bool localEchoEnabled) {
-        tabTest_->openSerialPort(localEchoEnabled);
+    void slotSerialPortOpened() {
+        tabTest_->openSerialPort();
     }
 
     void slotSerialPortClosed() {
         tabTest_->closeSerialPort();
+    }
+
+ private slots:
+    // signal from tabs:
+    void slotTextToStatusBar(qint32 idx, const QString &text) {
+        emit signalTextToStatusBar(idx, text);
     }
    
  private:
@@ -48,6 +56,7 @@ class TabWindow : public QTabWidget {
     TabNPK *tabNPK_;
     TabTemperature *tabTemperature_;
     TabCamera *tabCamera_;
+    TabLights *tabLights_;
     TabTest *tabTest_;
 };
 

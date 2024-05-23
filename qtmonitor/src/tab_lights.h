@@ -17,29 +17,29 @@
 #pragma once
 
 #include <QTabWidget>
-#include <QTimer>
-#include "chart/PlotWidget.h"
+#include <QSlider>
 
-class TabNPK : public QWidget {
+class TabLights : public QWidget {
     Q_OBJECT
 
  public:
-    explicit TabNPK(QWidget *parent = nullptr);
+    explicit TabLights(QWidget *parent = nullptr);
 
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);
+    void signalRequestWriteAttribute(const QString &objname, const QString &atrname, quint32 data);
 
  public slots:
-    void slotResponseAttribute(const QString &objname, const QString &atrname, uint32_t data);
+    void slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data);
 
  private slots:
-    void slotTimeToRequest();
+    void slotChangeDim0(int idx);
+    void slotChangeDim1(int idx);
+    void slotChangeDim2(int idx);
+    void slotChangeDim3(int idx);
 
  private:
-    PlotWidget *plotEC_;
-    PlotWidget *plotPH_;
-    PlotWidget *plotNPK_;
-    QTimer timer_;
+    QSlider *slider_[4];
 };
 
 

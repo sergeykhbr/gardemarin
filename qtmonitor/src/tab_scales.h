@@ -27,14 +27,11 @@ class TabScales : public QWidget {
     explicit TabScales(QWidget *parent = nullptr);
 
  signals:
-    void signalSendData(const QByteArray &data);
-    void signalRequestScaleAttribute(const QString &objname, const QString &atrname);
+    void signalRequestReadAttribute(const QString &objname, const QString &atrname);
+    void signalTextToStatusBar(qint32 idx, const QString &text);
 
  public slots:
-    void slotSendData(const QByteArray &data) {
-        emit signalSendData(data);
-    }
-    void slotResponseScaleAttribute(const QString &objname, const QString &atrname, uint32_t data);
+    void slotResponseAttribute(const QString &objname, const QString &atrname, uint32_t data);
 
  private slots:
     void slotTimeToRequest();

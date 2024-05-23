@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include "comsettings.h"
+#include "dlgserialsettings.h"
 #include <QIntValidator>
 #include <QLineEdit>
 #include <QSerialPortInfo>
@@ -24,8 +24,9 @@
 
 static const char blankString[] = QT_TRANSLATE_NOOP("SettingsDialog", "N/A");
 
-ComPortSettings::ComPortSettings(QWidget *parent) :
+DialogSerialSettings::DialogSerialSettings(QWidget *parent, SerialPortSettings *settings) :
     QDialog(parent),
+    settings_(settings),
     m_intValidator(new QIntValidator(0, 4000000, this))
 {
     //setGeometry(QRect(0, 0, 281, 262));
@@ -133,13 +134,13 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
 
 
     connect(applyButton, &QPushButton::clicked,
-            this, &ComPortSettings::apply);
+            this, &DialogSerialSettings::apply);
     connect(serialPortInfoListBox, &QComboBox::currentIndexChanged,
-            this, &ComPortSettings::showPortInfo);
+            this, &DialogSerialSettings::showPortInfo);
     connect(baudRateBox,  &QComboBox::currentIndexChanged,
-            this, &ComPortSettings::checkCustomBaudRatePolicy);
+            this, &DialogSerialSettings::checkCustomBaudRatePolicy);
     connect(serialPortInfoListBox, &QComboBox::currentIndexChanged,
-            this, &ComPortSettings::checkCustomDevicePathPolicy);
+            this, &DialogSerialSettings::checkCustomDevicePathPolicy);
 
     fillPortsParameters();
     fillPortsInfo();
@@ -147,12 +148,7 @@ ComPortSettings::ComPortSettings(QWidget *parent) :
     updateSettings();
 }
 
-ComPortSettings::Settings ComPortSettings::settings() const
-{
-    return m_currentSettings;
-}
-
-void ComPortSettings::showPortInfo(int idx)
+void DialogSerialSettings::showPortInfo(int idx)
 {
     if (idx == -1) {
         return;
@@ -169,13 +165,13 @@ void ComPortSettings::showPortInfo(int idx)
     pidLabel->setText(tr("Product Identifier: %1").arg(list.value(6, blankString)));
 }
 
-void ComPortSettings::apply()
+void DialogSerialSettings::apply()
 {
     updateSettings();
     hide();
 }
 
-void ComPortSettings::checkCustomBaudRatePolicy(int idx)
+void DialogSerialSettings::checkCustomBaudRatePolicy(int idx)
 {
     const bool isCustomBaudRate = !baudRateBox->itemData(idx).isValid();
     baudRateBox->setEditable(isCustomBaudRate);
@@ -186,7 +182,7 @@ void ComPortSettings::checkCustomBaudRatePolicy(int idx)
     }
 }
 
-void ComPortSettings::checkCustomDevicePathPolicy(int idx)
+void DialogSerialSettings::checkCustomDevicePathPolicy(int idx)
 {
     const bool isCustomPath = !serialPortInfoListBox->itemData(idx).isValid();
     serialPortInfoListBox->setEditable(isCustomPath);
@@ -195,7 +191,7 @@ void ComPortSettings::checkCustomDevicePathPolicy(int idx)
     }
 }
 
-void ComPortSettings::fillPortsParameters()
+void DialogSerialSettings::fillPortsParameters()
 {
     baudRateBox->addItem(QStringLiteral("9600"), QSerialPort::Baud9600);
     baudRateBox->addItem(QStringLiteral("19200"), QSerialPort::Baud19200);
@@ -227,7 +223,7 @@ void ComPortSettings::fillPortsParameters()
     flowControlBox->addItem(tr("XON/XOFF"), QSerialPort::SoftwareControl);
 }
 
-void ComPortSettings::fillPortsInfo()
+void DialogSerialSettings::fillPortsInfo()
 {
     serialPortInfoListBox->clear();
     const QString blankString = tr(::blankString);
@@ -260,33 +256,33 @@ void ComPortSettings::fillPortsInfo()
     serialPortInfoListBox->addItem(tr("Custom"));
 }
 
-void ComPortSettings::updateSettings()
+void DialogSerialSettings::updateSettings()
 {
-    m_currentSettings.name = serialPortInfoListBox->currentText();
+    settings_->name = serialPortInfoListBox->currentText();
 
     if (baudRateBox->currentIndex() == 4) {
-        m_currentSettings.baudRate = baudRateBox->currentText().toInt();
+        settings_->baudRate = baudRateBox->currentText().toInt();
     } else {
         const auto baudRateData = baudRateBox->currentData();
-        m_currentSettings.baudRate = baudRateData.value<QSerialPort::BaudRate>();
+        settings_->baudRate = baudRateData.value<QSerialPort::BaudRate>();
     }
-    m_currentSettings.stringBaudRate = QString::number(m_currentSettings.baudRate);
+    settings_->stringBaudRate = QString::number(settings_->baudRate);
 
     const auto dataBitsData = dataBitsBox->currentData();
-    m_currentSettings.dataBits = dataBitsData.value<QSerialPort::DataBits>();
-    m_currentSettings.stringDataBits = dataBitsBox->currentText();
+    settings_->dataBits = dataBitsData.value<QSerialPort::DataBits>();
+    settings_->stringDataBits = dataBitsBox->currentText();
 
     const auto parityData = parityBox->currentData();
-    m_currentSettings.parity = parityData.value<QSerialPort::Parity>();
-    m_currentSettings.stringParity = parityBox->currentText();
+    settings_->parity = parityData.value<QSerialPort::Parity>();
+    settings_->stringParity = parityBox->currentText();
 
     const auto stopBitsData = stopBitsBox->currentData();
-    m_currentSettings.stopBits = stopBitsData.value<QSerialPort::StopBits>();
-    m_currentSettings.stringStopBits = stopBitsBox->currentText();
+    settings_->stopBits = stopBitsData.value<QSerialPort::StopBits>();
+    settings_->stringStopBits = stopBitsBox->currentText();
 
     const auto flowControlData = flowControlBox->currentData();
-    m_currentSettings.flowControl = flowControlData.value<QSerialPort::FlowControl>();
-    m_currentSettings.stringFlowControl = flowControlBox->currentText();
+    settings_->flowControl = flowControlData.value<QSerialPort::FlowControl>();
+    settings_->stringFlowControl = flowControlBox->currentText();
 
-    m_currentSettings.localEchoEnabled = localEchoCheckBox->isChecked();
+    settings_->localEchoEnabled = localEchoCheckBox->isChecked();
 }

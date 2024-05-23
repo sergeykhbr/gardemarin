@@ -15,6 +15,7 @@
  */
 
 #include "tab_camera.h"
+#include "dlg/dlgvideosettings.h"
 
 #include <QAudioDevice>
 #include <QAudioInput>
@@ -267,7 +268,7 @@ void TabCamera::keyPressEvent(QKeyEvent *event) {
 
 void TabCamera::updateRecordTime() {
     QString str = tr("Recorded %1 sec").arg(m_mediaRecorder->duration() / 1000);
-    //ui->statusbar->showMessage(str);
+    emit signalTextToStatusBar(0, str);
 }
 
 void TabCamera::processCapturedImage(int requestId, const QImage &img) {
@@ -283,19 +284,19 @@ void TabCamera::processCapturedImage(int requestId, const QImage &img) {
 }
 
 void TabCamera::configureCaptureSettings() {
-    if (m_doImageCapture)
+    if (m_doImageCapture) {
         configureImageSettings();
-    else
+    } else {
         configureVideoSettings();
+    }
 }
 
 void TabCamera::configureVideoSettings() {
-#if 0
-    VideoSettings settingsDialog(m_mediaRecorder.data());
+    DialogVideoSettings settingsDialog(m_mediaRecorder.data());
 
-    if (settingsDialog.exec())
+    if (settingsDialog.exec()) {
         settingsDialog.applySettings();
-#endif
+    }
 }
 
 void TabCamera::configureImageSettings() {
@@ -419,11 +420,14 @@ void TabCamera::readyForCapture(bool ready) {
 
 void TabCamera::imageSaved(int id, const QString &fileName) {
     Q_UNUSED(id);
-//    ui->statusbar->showMessage(tr("Captured \"%1\"").arg(QDir::toNativeSeparators(fileName)));
+
+    QString text = tr("Captured \"%1\"").arg(QDir::toNativeSeparators(fileName));
+    emit signalTextToStatusBar(0, text);
 
     m_isCapturingImage = false;
-    if (m_applicationExiting)
+    if (m_applicationExiting) {
         close();
+    }
 }
 
 void TabCamera::closeEvent(QCloseEvent *event) {

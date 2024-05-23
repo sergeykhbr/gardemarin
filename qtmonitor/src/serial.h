@@ -19,6 +19,7 @@
 #include <attribute.h>
 #include <QSerialPort>
 #include <QTimer>
+#include "dlg/dlgserialsettings.h"
 
 typedef union can_payload_type {
     quint64 u64;
@@ -41,15 +42,25 @@ class SerialWidget : public QSerialPort {
  public:
     SerialWidget(QObject *parent, AttributeType *cfg);
 
+    SerialPortSettings *getpPortSettings() { return &settings_; }
+    bool open(OpenMode mode) override;
+    void close() override;
+
  signals:
+    void signalSerialPortOpened();
+    void signalSerialPortClosed();
+    void signalFailed(const QString &msg);
+
     void signalRecvSerialPort(const QByteArray &data);
     void signalResponseReadAttribute(const QString &objname, const QString &atrname, quint32 val);
-    void signalFailed(const QString &msg);
     void signalRxFrame(quint32 objid, quint32 attrid, quint64 payload);
+
+    void signalTextToStatusBar(qint32 idx, const QString &text);
 
  public slots:
     void slotSendSerialPort(const QByteArray &data);
     void slotRequestReadAttribute(const QString &objname, const QString &atrname);
+    void slotRequestWriteAttribute(const QString &objname, const QString &atrname, quint32 data);
 
  protected slots:
     void slotRecvSerialPort();
@@ -61,6 +72,7 @@ class SerialWidget : public QSerialPort {
     quint32 str2hex32(char *buf, int sz);
     void idx2names(quint32 id, QString &objname, quint32 atrid, QString &atrname, QString &type);
     QString names2request(const QString &objname, const QString &atrname);
+    QString names2request(const QString &objname, const QString &atrname, quint32 data);
 
     void processRxCanFrame(can_frame_type *frame);
 
@@ -68,6 +80,7 @@ class SerialWidget : public QSerialPort {
     AttributeType ObjectsList_;
     QTimer timer_;
     qint64 bytesToWrite_;
+    SerialPortSettings settings_;
 
     enum EFrameDecoderState {
         State_PRM1,     // 1 B = ">"

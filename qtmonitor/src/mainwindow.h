@@ -20,7 +20,7 @@
 #include <QStatusBar>
 #include "tabwindow.h"
 #include "serial.h"
-#include "comsettings.h"
+#include "dlg/dlgserialsettings.h"
 
 class MainWindow : public QMainWindow
 {
@@ -33,22 +33,18 @@ class MainWindow : public QMainWindow
  protected:
     virtual void closeEvent(QCloseEvent *event) override;
 
- signals:
-    void signalSerialPortOpened(bool echoEnabled);
-    void signalSerialPortClosed();
-
  private slots:
     void openSerialPort();
     void closeSerialPort();
     void slotSerialError(const QString &message);
+    void slotTextToStatusBar(qint32 idx, const QString &text);
 
  private:
-    void showStatusMessage(const QString &message);
 
     SerialWidget *serial_;
     TabWindow *tabWindow_;
-    QLabel *labelStatus_;
-    ComPortSettings *dialogSerialSettings_;
+    QLabel *labelStatus_[2];
+    DialogSerialSettings *dialogSerialSettings_;
 
     AttributeType Config_;
 };

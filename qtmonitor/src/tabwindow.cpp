@@ -21,35 +21,54 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
     tabScales_ = new TabScales(this);
     tabNPK_ = new TabNPK(this);
     tabTemperature_ = new TabTemperature(this);
+    tabLights_ = new TabLights(this);
     tabCamera_ = new TabCamera(this);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));
     addTab(tabNPK_, tr("NPK"));
     addTab(tabTemperature_, tr("T"));
+    addTab(tabLights_, tr("Lights"));
     addTab(tabCamera_, tr("Camera"));
     addTab(tabTest_, tr("Test"));
 
     // connect TabScales:
-    connect(tabScales_, &TabScales::signalRequestScaleAttribute,
+    connect(tabScales_, &TabScales::signalRequestReadAttribute,
             serial_, &SerialWidget::slotRequestReadAttribute);
 
     connect(serial_, &SerialWidget::signalResponseReadAttribute,
-            tabScales_, &TabScales::slotResponseScaleAttribute);
+            tabScales_, &TabScales::slotResponseAttribute);
+
+    connect(tabScales_, &TabScales::signalTextToStatusBar,
+            this, &TabWindow::slotTextToStatusBar);
 
     // connect TabNPK:
-    connect(tabNPK_, &TabNPK::signalRequestScaleAttribute,
+    connect(tabNPK_, &TabNPK::signalRequestReadAttribute,
             serial_, &SerialWidget::slotRequestReadAttribute);
 
     connect(serial_, &SerialWidget::signalResponseReadAttribute,
-            tabNPK_, &TabNPK::slotResponseScaleAttribute);
+            tabNPK_, &TabNPK::slotResponseAttribute);
 
     // connect TabTemperature:
-    connect(tabTemperature_, &TabTemperature::signalRequestScaleAttribute,
+    connect(tabTemperature_, &TabTemperature::signalRequestReadAttribute,
             serial_, &SerialWidget::slotRequestReadAttribute);
 
     connect(serial_, &SerialWidget::signalResponseReadAttribute,
-            tabTemperature_, &TabTemperature::slotResponseScaleAttribute);
+            tabTemperature_, &TabTemperature::slotResponseAttribute);
+
+    // connect TabLights:
+    connect(tabLights_, &TabLights::signalRequestReadAttribute,
+            serial_, &SerialWidget::slotRequestReadAttribute);
+
+    connect(tabLights_, &TabLights::signalRequestWriteAttribute,
+            serial_, &SerialWidget::slotRequestWriteAttribute);
+
+    connect(serial_, &SerialWidget::signalResponseReadAttribute,
+            tabLights_, &TabLights::slotResponseAttribute);
+
+    // connect TabCamera:
+    connect(tabCamera_, &TabCamera::signalTextToStatusBar,
+            this, &TabWindow::slotTextToStatusBar);
 
     // connect TabTest:
     connect(tabTest_, &TabTest::signalSendData,

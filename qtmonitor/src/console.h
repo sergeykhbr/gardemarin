@@ -28,7 +28,6 @@ class Console : public QPlainTextEdit {
     explicit Console(QWidget *parent = nullptr);
 
     void putData(const QByteArray &data);
-    void setLocalEchoEnabled(bool set);
 
  protected:
     void keyPressEvent(QKeyEvent *e) override;
@@ -37,5 +36,4 @@ class Console : public QPlainTextEdit {
     void contextMenuEvent(QContextMenuEvent *e) override;
 
  private:
-    bool m_localEchoEnabled = false;
 };

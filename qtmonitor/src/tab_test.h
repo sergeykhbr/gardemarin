@@ -26,9 +26,8 @@ class TabTest : public QWidget {
  public:
     explicit TabTest(QWidget *parent = nullptr);
 
-    void openSerialPort(bool localEchoEnabled) {
+    void openSerialPort() {
         m_console->setEnabled(true);
-        m_console->setLocalEchoEnabled(localEchoEnabled);
     }
 
     void closeSerialPort() {

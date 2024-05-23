@@ -135,14 +135,14 @@ TabNPK::TabNPK(QWidget *parent)
 }
 
 void TabNPK::slotTimeToRequest() {
-    emit signalRequestScaleAttribute(tr("soil0"), tr("EC"));
-    emit signalRequestScaleAttribute(tr("soil0"), tr("pH"));
-    emit signalRequestScaleAttribute(tr("soil0"), tr("N"));
-    emit signalRequestScaleAttribute(tr("soil0"), tr("P"));
-    emit signalRequestScaleAttribute(tr("soil0"), tr("K"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("EC"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("pH"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("N"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("P"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("K"));
 }
 
-void TabNPK::slotResponseScaleAttribute(const QString &objname, const QString &atrname, quint32 data) {
+void TabNPK::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "soil0") {
         if (atrname == "EC") {
             plotEC_->writeData(0, static_cast<double>(data) / 100.0);

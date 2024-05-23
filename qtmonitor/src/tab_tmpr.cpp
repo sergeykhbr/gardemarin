@@ -73,11 +73,11 @@ TabTemperature::TabTemperature(QWidget *parent)
 }
 
 void TabTemperature::slotTimeToRequest() {
-    emit signalRequestScaleAttribute(tr("soil0"), tr("T"));
-    emit signalRequestScaleAttribute(tr("adc1"), tr("temperature"));
+    emit signalRequestReadAttribute(tr("soil0"), tr("T"));
+    emit signalRequestReadAttribute(tr("adc1"), tr("temperature"));
 }
 
-void TabTemperature::slotResponseScaleAttribute(const QString &objname, const QString &atrname, quint32 data) {
+void TabTemperature::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "soil0") {
         if (atrname == "T") {
             plotTemperature_->writeData(0, static_cast<double>(data) / 100.0);
