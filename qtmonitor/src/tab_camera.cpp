@@ -16,6 +16,7 @@
 
 #include "tab_camera.h"
 #include "dlg/dlgvideosettings.h"
+#include "dlg/dlgimagesettings.h"
 
 #include <QAudioDevice>
 #include <QAudioInput>
@@ -36,13 +37,11 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QStackedWidget>
+#include <QIcon>
 
 #include <QDir>
 #include <QTimer>
 
-#if QT_CONFIG(permissions)
-  #include <QPermission>
-#endif
 TabCamera::TabCamera(QWidget *parent)
     : QWidget(parent) {
 
@@ -54,6 +53,8 @@ TabCamera::TabCamera(QWidget *parent)
     QGridLayout *gridLayout = new QGridLayout();
     tab_2->setLayout(gridLayout);
 
+    QSpacerItem *verticalSpacer_2 = new QSpacerItem(20, 161, QSizePolicy::Fixed, QSizePolicy::Expanding);
+    
    
     takeImageButton = new QPushButton("Capture Photo", this);
     takeImageButton->setEnabled(false);
@@ -68,8 +69,9 @@ TabCamera::TabCamera(QWidget *parent)
     QLabel *label = new QLabel(tr("Exposure Compensation:"));
 
     gridLayout->addWidget(takeImageButton, 0, 0);
-    gridLayout->addWidget(exposureCompensation, 5, 0);
+    gridLayout->addItem(verticalSpacer_2, 3, 0);
     gridLayout->addWidget(label, 4, 0);
+    gridLayout->addWidget(exposureCompensation, 5, 0);
 
     QWidget *tab = new QWidget(this);
     QGridLayout * gridLayout_2 = new QGridLayout(tab);
@@ -92,7 +94,7 @@ TabCamera::TabCamera(QWidget *parent)
     gridLayout_2->addWidget(recordButton, 0, 0);
     gridLayout_2->addWidget(pauseButton, 1, 0);
     gridLayout_2->addWidget(stopButton, 2, 0);
-    //gridLayout_2->addWidget(verticalSpacer, 3, 0);
+    gridLayout_2->addItem(verticalSpacer, 3, 0);
     gridLayout_2->addWidget(muteButton, 4, 0);
     gridLayout_2->addWidget(metaDataButton, 5, 0);
 
@@ -126,11 +128,10 @@ TabCamera::TabCamera(QWidget *parent)
     gridLayout_3->addWidget(captureWidget, 0, 1);
     gridLayout_3->setColumnStretch(0, 3);
 
-
     actionStartCamera = new QAction(tr("Start Camera"), this);
     actionStopCamera = new QAction(tr("Stop Camera"), this);
-    actionSettings = new QAction(tr("Cfg Camera"), this);
-
+    actionSettings = new QAction(QIcon(tr(":/images/settings.png")),
+                                       tr("&Cfg"), this);
     connect(actionStartCamera, &QAction::triggered, this, &TabCamera::startCamera);
     connect(actionStopCamera, &QAction::triggered, this, &TabCamera::stopCamera);
     connect(actionSettings, &QAction::triggered, this, &TabCamera::configureCaptureSettings);
@@ -139,6 +140,13 @@ TabCamera::TabCamera(QWidget *parent)
     connect(stopButton, &QPushButton::clicked, this, &TabCamera::stop);
     connect(pauseButton, &QPushButton::clicked, this, &TabCamera::pause);
     connect(takeImageButton, &QPushButton::clicked, this, &TabCamera::takeImage);
+
+    QMenuBar *menubar = new QMenuBar(this);
+    menuDevices = new QMenu(this);
+    menuDevices->setIcon(QIcon(tr(":/images/camera.png")));
+
+    menubar->addAction(actionSettings);
+    menubar->addMenu(menuDevices);
 
     // disable all buttons by default
     updateCameraActive(false);
@@ -153,33 +161,6 @@ TabCamera::TabCamera(QWidget *parent)
 }
 
 void TabCamera::init() {
-#if QT_CONFIG(permissions)
-    // camera
-    QCameraPermission cameraPermission;
-    switch (qApp->checkPermission(cameraPermission)) {
-    case Qt::PermissionStatus::Undetermined:
-        qApp->requestPermission(cameraPermission, this, &TabCamera::init);
-        return;
-    case Qt::PermissionStatus::Denied:
-        qWarning("Camera permission is not granted!");
-        return;
-    case Qt::PermissionStatus::Granted:
-        break;
-    }
-    // microphone
-    QMicrophonePermission microphonePermission;
-    switch (qApp->checkPermission(microphonePermission)) {
-    case Qt::PermissionStatus::Undetermined:
-        qApp->requestPermission(microphonePermission, this, &TabCamera::init);
-        return;
-    case Qt::PermissionStatus::Denied:
-        qWarning("Microphone permission is not granted!");
-        return;
-    case Qt::PermissionStatus::Granted:
-        break;
-    }
-#endif
-
     m_audioInput.reset(new QAudioInput);
     m_captureSession.setAudioInput(m_audioInput.get());
 
@@ -254,10 +235,11 @@ void TabCamera::keyPressEvent(QKeyEvent *event) {
         if (m_doImageCapture) {
             takeImage();
         } else {
-            if (m_mediaRecorder->recorderState() == QMediaRecorder::RecordingState)
+            if (m_mediaRecorder->recorderState() == QMediaRecorder::RecordingState) {
                 stop();
-            else
+            } else {
                 record();
+            }
         }
         event->accept();
         break;
@@ -300,12 +282,11 @@ void TabCamera::configureVideoSettings() {
 }
 
 void TabCamera::configureImageSettings() {
-#if 0
-    ImageSettings settingsDialog(m_imageCapture.get());
+    DialogImageSettings settingsDialog(m_imageCapture.get());
 
-    if (settingsDialog.exec() == QDialog::Accepted)
+    if (settingsDialog.exec() == QDialog::Accepted) {
         settingsDialog.applyImageSettings();
-#endif
+    }
 }
 
 void TabCamera::record() {
@@ -393,13 +374,15 @@ void TabCamera::setExposureCompensation(int index) {
 }
 
 void TabCamera::displayRecorderError() {
-    if (m_mediaRecorder->error() != QMediaRecorder::NoError)
+    if (m_mediaRecorder->error() != QMediaRecorder::NoError) {
         QMessageBox::warning(this, tr("Capture Error"), m_mediaRecorder->errorString());
+    }
 }
 
 void TabCamera::displayCameraError() {
-    if (m_camera->error() != QCamera::NoError)
+    if (m_camera->error() != QCamera::NoError) {
         QMessageBox::warning(this, tr("Camera Error"), m_camera->errorString());
+    }
 }
 
 void TabCamera::updateCameraDevice(QAction *action) {
@@ -442,25 +425,28 @@ void TabCamera::closeEvent(QCloseEvent *event) {
 
 void TabCamera::updateCameras()
 {
-//    ui->menuDevices->clear();
+    menuDevices->clear();
     const QList<QCameraDevice> availableCameras = QMediaDevices::videoInputs();
     for (const QCameraDevice &cameraDevice : availableCameras) {
         QAction *videoDeviceAction = new QAction(cameraDevice.description(), videoDevicesGroup);
         videoDeviceAction->setCheckable(true);
         videoDeviceAction->setData(QVariant::fromValue(cameraDevice));
-        if (cameraDevice == QMediaDevices::defaultVideoInput())
+        if (cameraDevice == QMediaDevices::defaultVideoInput()) {
             videoDeviceAction->setChecked(true);
+        }
 
-//        ui->menuDevices->addAction(videoDeviceAction);
+        menuDevices->addAction(videoDeviceAction);
     }
 }
 
 void TabCamera::showMetaDataDialog() {
-    if (!m_metaDataDialog)
+    if (!m_metaDataDialog) {
         m_metaDataDialog = new MetaDataDialog(this);
+    }
     m_metaDataDialog->setAttribute(Qt::WA_DeleteOnClose, false);
-    if (m_metaDataDialog->exec() == QDialog::Accepted)
+    if (m_metaDataDialog->exec() == QDialog::Accepted) {
         saveMetaData();
+    }
 }
 
 void TabCamera::saveMetaData() {

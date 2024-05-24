@@ -30,6 +30,8 @@
 #include <QSlider>
 #include <QTabWidget>
 #include <QLabel>
+#include <QMenuBar>
+#include <QMenu>
 #include "tab_camera_metadata.h"
 
 class TabCamera : public QWidget {
@@ -117,6 +119,8 @@ class TabCamera : public QWidget {
     QAction *actionStartCamera;
     QAction *actionStopCamera;
     QAction *actionSettings;
+
+    QMenu *menuDevices;
 
 
     bool m_isCapturingImage = false;

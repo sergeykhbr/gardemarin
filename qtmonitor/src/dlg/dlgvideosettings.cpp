@@ -75,7 +75,7 @@ DialogVideoSettings::DialogVideoSettings(QMediaRecorder *mediaRecorder)
 
     QHBoxLayout *horizontalLayout = new QHBoxLayout();
     fpsSpinBox = new QSpinBox(this);
-    fpsSlider = new QSlider(this);
+    fpsSlider = new QSlider(Qt::Horizontal, this);
     horizontalLayout->addWidget(fpsSpinBox);
     horizontalLayout->addWidget(fpsSlider);
 

@@ -46,6 +46,10 @@ TabLights::TabLights(QWidget *parent)
     layout->addWidget(new QLabel(tr("Unused:"), this), 3, 0);
     layout->addWidget(slider_[3], 3, 1);
 
+    QSpacerItem *verticalSpacer = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Expanding);
+    layout->addItem(verticalSpacer, 4, 0, 1, 2);
+
+
     connect(slider_[0], &QAbstractSlider::valueChanged, this,
             &TabLights::slotChangeDim0);
 

@@ -15,6 +15,8 @@
  */
 
 #include "tabwindow.h"
+#include <QMenuBar>
+#include <QMenu>
 
 TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
     : QTabWidget(parent), serial_(serial) {
@@ -76,7 +78,6 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
 
     connect(serial_, &SerialWidget::signalRecvSerialPort,
             tabTest_, &TabTest::slotRecvData);
-
 }
 
 
