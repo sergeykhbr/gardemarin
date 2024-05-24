@@ -17,6 +17,9 @@
 #include "tab_lights.h"
 #include <QGridLayout>
 #include <QLabel>
+#include <QGroupBox>
+#include <QPushButton>
+#include <QSpinBox>
 
 TabLights::TabLights(QWidget *parent)
     : QWidget(parent) {
@@ -33,21 +36,52 @@ TabLights::TabLights(QWidget *parent)
         slider_[i]->setOrientation(Qt::Horizontal);
     }
     
+    QGroupBox *dimmingGroup = new QGroupBox(this);
+    dimmingGroup->setTitle(tr("LED Dimming"));
+    QGridLayout *dimmingLayout = new QGridLayout(dimmingGroup);
+    dimmingGroup->setLayout(dimmingLayout);
 
-    layout->addWidget(new QLabel(tr("Red:"), this), 0, 0);
-    layout->addWidget(slider_[0], 0, 1);
+    dimmingLayout->addWidget(new QLabel(tr("Red:"), this), 0, 0);
+    dimmingLayout->addWidget(slider_[0], 0, 1);
 
-    layout->addWidget(new QLabel(tr("Blue:"), this), 1, 0);
-    layout->addWidget(slider_[1], 1, 1);
+    dimmingLayout->addWidget(new QLabel(tr("Blue:"), this), 1, 0);
+    dimmingLayout->addWidget(slider_[1], 1, 1);
 
-    layout->addWidget(new QLabel(tr("White:"), this), 2, 0);
-    layout->addWidget(slider_[2], 2, 1);
+    dimmingLayout->addWidget(new QLabel(tr("White:"), this), 2, 0);
+    dimmingLayout->addWidget(slider_[2], 2, 1);
 
-    layout->addWidget(new QLabel(tr("Unused:"), this), 3, 0);
-    layout->addWidget(slider_[3], 3, 1);
+    dimmingLayout->addWidget(new QLabel(tr("Unused:"), this), 3, 0);
+    dimmingLayout->addWidget(slider_[3], 3, 1);
+
+
+    QGroupBox *liftGroup = new QGroupBox(this);
+    QGridLayout *liftLayout = new QGridLayout(liftGroup);
+    liftGroup->setTitle(tr("Lift"));
+    liftGroup->setLayout(liftLayout);
+
+    QLabel *labelLightsLift = new QLabel(tr("Move, [cm]: "), liftGroup);
+    QSpinBox *liftSpinBox = new QSpinBox(liftGroup);
+    liftSpinBox->setMinimum(0);
+    liftSpinBox->setMaximum(20);
+    liftSpinBox->setSingleStep(1);
+    liftSpinBox->setValue(2);
+
+    QPushButton *btnUp = new QPushButton(liftGroup);
+    btnUp->setText(tr("Up"));
+    QPushButton *btnDown = new QPushButton(liftGroup);
+    btnDown->setText(tr("Down"));
+
+    liftLayout->addWidget(labelLightsLift, 0, 0, 2, 1);
+    liftLayout->addWidget(liftSpinBox, 0, 1, 2, 1);
+    liftLayout->addWidget(btnUp, 0, 2);
+    liftLayout->addWidget(btnDown, 1, 2);
+
+
+    layout->addWidget(dimmingGroup, 0, 0);
+    layout->addWidget(liftGroup, 0, 1);
 
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Expanding);
-    layout->addItem(verticalSpacer, 4, 0, 1, 2);
+    layout->addItem(verticalSpacer, 1, 0, 1, 2);
 
 
     connect(slider_[0], &QAbstractSlider::valueChanged, this,

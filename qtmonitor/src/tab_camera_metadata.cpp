@@ -32,9 +32,9 @@ static QString defaultValue(QMediaMetaData::Key key)
 {
     switch (key) {
     case QMediaMetaData::Title:
-        return MetaDataDialog::tr("Qt Camera Example");
+        return MetaDataDialog::tr("Gardemarin Monitor");
     case QMediaMetaData::Author:
-        return MetaDataDialog::tr("The Qt Company");
+        return MetaDataDialog::tr("Sergei Khabarov");
     case QMediaMetaData::Date:
         return QDateTime::currentDateTime().toString();
     default:
