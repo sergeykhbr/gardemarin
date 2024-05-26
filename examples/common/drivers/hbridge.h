@@ -48,7 +48,7 @@ class HBridgeDriver : public FwObject,
     virtual void callbackTimer(uint64_t tickcnt) override;
 
     // Common methods:
-    void startDcMotor(int idx);
+    void startDcMotor(int idx, int8_t direction);
     void stopDcMotor(int idx);
 
  protected:

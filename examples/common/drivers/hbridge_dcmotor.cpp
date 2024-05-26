@@ -67,7 +67,7 @@ void DcMotor::setPwmDutyCycle(int duty) {
 //     1       0         1     0    backward rotation
 //     1       1         break break 
 void DcMotor::enablePwm() {
-    static_cast<HBridgeDriver *>(parent_)->startDcMotor(idx_);
+    static_cast<HBridgeDriver *>(parent_)->startDcMotor(idx_, direction_.to_int8());
 }
 
 void DcMotor::disablePwm() {

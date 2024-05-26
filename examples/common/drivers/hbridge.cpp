@@ -182,10 +182,15 @@ void HBridgeDriver::callbackTimer(uint64_t tickcnt) {
 //     0       1         0     1    forward rotation
 //     1       0         1     0    backward rotation
 //     1       1         break break 
-void HBridgeDriver::startDcMotor(int idx) {
+void HBridgeDriver::startDcMotor(int idx, int8_t direction) {
     // Set channel OUT[1:0] to 01 value
-    gpio_pin_set(&CFG_HBRDIGE[idx_].dc[idx].A);
-    gpio_pin_clear(&CFG_HBRDIGE[idx_].dc[idx].B);
+    if (direction == 0) {
+        gpio_pin_set(&CFG_HBRDIGE[idx_].dc[idx].A);
+        gpio_pin_clear(&CFG_HBRDIGE[idx_].dc[idx].B);
+    } else {
+        gpio_pin_clear(&CFG_HBRDIGE[idx_].dc[idx].A);
+        gpio_pin_set(&CFG_HBRDIGE[idx_].dc[idx].B);
+    }
 }
 
 void HBridgeDriver::stopDcMotor(int idx) {
