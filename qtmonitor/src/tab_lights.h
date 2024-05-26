@@ -18,6 +18,7 @@
 
 #include <QTabWidget>
 #include <QSlider>
+#include <QPushButton>
 
 class TabLights : public QWidget {
     Q_OBJECT
@@ -37,9 +38,13 @@ class TabLights : public QWidget {
     void slotChangeDim1(int idx);
     void slotChangeDim2(int idx);
     void slotChangeDim3(int idx);
+    void slotLightsMoveUp(bool checked);
+    void slotLightsMoveDown(bool checked);
 
  private:
     QSlider *slider_[4];
+    QPushButton *btnUp_;
+    QPushButton *btnDown_;
 };
 
 

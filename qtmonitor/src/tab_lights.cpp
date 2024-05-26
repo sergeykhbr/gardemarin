@@ -66,15 +66,17 @@ TabLights::TabLights(QWidget *parent)
     liftSpinBox->setSingleStep(1);
     liftSpinBox->setValue(2);
 
-    QPushButton *btnUp = new QPushButton(liftGroup);
-    btnUp->setText(tr("Up"));
-    QPushButton *btnDown = new QPushButton(liftGroup);
-    btnDown->setText(tr("Down"));
+    btnUp_ = new QPushButton(liftGroup);
+    btnUp_->setText(tr("Up"));
+    btnUp_->setCheckable(true);
+    btnDown_ = new QPushButton(liftGroup);
+    btnDown_->setText(tr("Down"));
+    btnDown_->setCheckable(true);
 
     liftLayout->addWidget(labelLightsLift, 0, 0, 2, 1);
     liftLayout->addWidget(liftSpinBox, 0, 1, 2, 1);
-    liftLayout->addWidget(btnUp, 0, 2);
-    liftLayout->addWidget(btnDown, 1, 2);
+    liftLayout->addWidget(btnUp_, 0, 2);
+    liftLayout->addWidget(btnDown_, 1, 2);
 
 
     layout->addWidget(dimmingGroup, 0, 0);
@@ -95,6 +97,12 @@ TabLights::TabLights(QWidget *parent)
 
     connect(slider_[3], &QAbstractSlider::valueChanged, this,
             &TabLights::slotChangeDim3);
+
+    connect(btnDown_, &QPushButton::toggled, this,
+            &TabLights::slotLightsMoveDown);
+
+    connect(btnUp_, &QPushButton::toggled, this,
+            &TabLights::slotLightsMoveUp);
 }
 
 void TabLights::slotChangeDim0(int idx) {
@@ -113,6 +121,18 @@ void TabLights::slotChangeDim3(int idx) {
     emit signalRequestWriteAttribute(tr("ledrbw"), tr("duty3"), static_cast<quint32>(idx));
 }
 
+void TabLights::slotLightsMoveUp(bool checked) {
+    // direction backward
+    emit signalRequestWriteAttribute(tr("hbrg2"), tr("dc1_direction"), static_cast<quint32>(1));
+    emit signalRequestWriteAttribute(tr("hbrg2"), tr("dc1_duty"), 100*static_cast<quint32>(checked));
+}
+
+void TabLights::slotLightsMoveDown(bool checked) {
+    // direction forward
+    emit signalRequestWriteAttribute(tr("hbrg2"), tr("dc1_direction"), static_cast<quint32>(0));
+    emit signalRequestWriteAttribute(tr("hbrg2"), tr("dc1_duty"), 100*static_cast<quint32>(checked));
+}
+
 void TabLights::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "ledrbw") {
         if (atrname == "duty0") {
@@ -123,6 +143,10 @@ void TabLights::slotResponseAttribute(const QString &objname, const QString &atr
             slider_[2]->setValue(data);
         } else if (atrname == "duty3") {
             slider_[3]->setValue(data);
+        }
+    } else if (objname == "hbrg2") {
+        if (atrname == "dc1_duty") {
+
         }
     }
 }
