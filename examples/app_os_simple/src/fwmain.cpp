@@ -24,21 +24,10 @@
 #include "app_tasks.h"
 
 extern "C" int fwmain(int argcnt, char *args[]) {
-    app_data_type *appdata;
+    TaskHandle_t handleTask1ms;
+    TaskHandle_t handleTaskEpoch;
 
     fw_init();
-
-    appdata = (app_data_type *)fw_get_ram_data(APP_TASK_NAME);
-    if (appdata == 0) {
-        appdata = (app_data_type *)fw_malloc(sizeof(app_data_type));
-        memset(appdata, 0, sizeof(app_data_type));
-        appdata->keyNotifier = 
-                new(fw_malloc(sizeof(KeyNotifierType))) KeyNotifierType();
-        appdata->keyNotifier->data = appdata;
-        appdata->keyNotifier->btnClick = false;
-
-        fw_register_ram_data(APP_TASK_NAME, appdata);
-    }
 
     EnableIrqGlobal();
 
@@ -47,16 +36,16 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     xTaskCreate(task1ms,
                  APP_TASK_NAME,
                  512,
-                 appdata,
+                 NULL,
                  tskIDLE_PRIORITY + 2UL,
-                 &appdata->handleTask1ms);
+                 &handleTask1ms);
 
-    xTaskCreate(task1sec,
+    xTaskCreate(taskEpoch,
                  APP_TASK_NAME,
                  1024,
-                 appdata,
+                 NULL,
                  tskIDLE_PRIORITY + 1UL,
-                 &appdata->handleTask1sec);
+                 &handleTaskEpoch);
 
     vTaskStartScheduler();
 

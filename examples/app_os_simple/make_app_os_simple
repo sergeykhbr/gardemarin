@@ -81,8 +81,9 @@ SOURCES = isr_vector \
 	fwkernel \
 	fwfifo \
 	dbc \
+	ManagementClass \
 	task1ms \
-	task1sec \
+	taskEpoch \
 	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))

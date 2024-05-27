@@ -13,16 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#pragma once
 
 #include <prjtypes.h>
-#include <FreeRTOS.h>
-#include <task.h>
-#include <timers.h>
-#include <semphr.h>
+#include <new>
+#include <fwapi.h>
+#include <fwobject.h>
+#include "app_tasks.h"
+#include "ManagementClass.h"
 
-#define APP_TASK_NAME "app"
+// current task is 0.5 sec
+#define SERVICE_SEC_TO_COUNT(sec) (2 * sec)
 
+portTASK_FUNCTION(taskEpoch, args)
+{
+    TaskHandle_t taskHandle = xTaskGetCurrentTaskHandle();
+    const TickType_t delay_ms = 1000 / portTICK_PERIOD_MS;
 
-portTASK_FUNCTION(task1ms, args);
-portTASK_FUNCTION(taskEpoch, args);
+    ManagementClass *epochClass_ = 
+        new (fw_malloc(sizeof(ManagementClass))) ManagementClass(taskHandle);
+
+    epochClass_->Init();
+    epochClass_->PostInit();
+
+    while (1) {
+        // do something
+        epochClass_->update();
+
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
+    }
+}
+
