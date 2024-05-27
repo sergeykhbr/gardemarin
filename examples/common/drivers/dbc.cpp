@@ -296,7 +296,8 @@ void DbcConverter::processRxCanFrame(can_frame_type *frame) {
 //                uart_printf("DBC write to %s::%s\r\n",
 //                            obj->ObjectName(),
 //                            attr->name());
-                attr->write(&frame->data.s8[1], frame->dlc - 1);
+                // silence = true: do not send message was update
+                attr->write(&frame->data.s8[1], frame->dlc - 1, true);
             } else {
 //                uart_printf("DBC read from %s::%s\r\n",
 //                            obj->ObjectName(),

@@ -267,7 +267,7 @@ class FwAttribute : public CommonInterface {
     /**
      * @brief modify attribute throught external interface
      */
-    void write(char *buf, int sz);
+    void write(char *buf, int sz, bool silence);
 
     /**
      * @brief modify attribute throught external interface

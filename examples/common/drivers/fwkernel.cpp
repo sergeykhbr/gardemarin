@@ -122,6 +122,7 @@ FwObject *obj;
 void KernelClass::TargetConfigAttribute::print_attribute(int idx,
                                                 FwAttribute *attr) {
     int t1;
+    float f1;
     uart_printk("           {'Index':%d", idx);
     uart_printk(", 'Name':'%s'", attr->name());
     uart_printk(", 'Type':'%s'", KindTypeString[attr->kind()]);
@@ -160,9 +161,16 @@ void KernelClass::TargetConfigAttribute::print_attribute(int idx,
         uart_printk("%" RV_PRI64 "x", attr->to_uint64());
         break;
     case Attr_Float:
-        t1 = static_cast<int>(attr->to_float());
+        f1 = attr->to_float();
+        if (f1 < 0) {
+            f1 = -f1;
+        }
+        t1 = static_cast<int>(f1);
+        if (attr->to_float() < 0) {
+            uart_printk("-");
+        }
         uart_printk("%d.%06d", t1,
-            static_cast<int>(1000000.0f * (attr->to_float() - t1)));
+            static_cast<int>(1000000.0f * (f1 - t1)));
         break;
     case Attr_Double:
         uart_printk("%.2f", attr->to_double());

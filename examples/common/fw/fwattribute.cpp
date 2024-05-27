@@ -256,11 +256,15 @@ void FwAttribute::set_byte(int idx, char v) {
     u_.data[idx & 0x7] = v;
 }
 
-void FwAttribute::write(char *buf, int sz) {
+void FwAttribute::write(char *buf, int sz, bool silence) {
     for (int i = 0; i < sz; i++) {
         u_.data[i & 0x7] = buf[i];
     }
     post_write();
+
+    if (!silence) {
+        // Send to external interface (CAN, UART) attribute was updated
+    }
 }
 
 void FwAttribute::read(char *buf, int sz) {

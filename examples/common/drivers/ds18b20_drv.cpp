@@ -27,20 +27,19 @@ static const gpio_pin_type GPIO_CFG[GARDEMARIN_DS18B20_TOTAL] = {
     {(GPIO_registers_type *)GPIOA_BASE, 11}
 };
 
-IrqHandlerInterface *drivers_ = 0;
+static IrqHandlerInterface *drivers_ = 0;
 
-extern "C" void startCounter(int usec) {
-    TIM_registers_type *TIM3 = (TIM_registers_type *)TIM3_BASE;
+static void startCounter(TIM_registers_type *TIM, int usec) {
     tim_cr1_reg_type cr1;
 
-    write32(&TIM3->ARR, static_cast<uint32_t>(usec));
-    write32(&TIM3->CNT, static_cast<uint32_t>(usec));
+    write32(&TIM->ARR, static_cast<uint32_t>(usec));
+    write32(&TIM->CNT, static_cast<uint32_t>(usec));
 
     cr1.val = 0;
     cr1.bits.CEN = 1;
     cr1.bits.OPM = 1;   // one pulse mode
     cr1.bits.DIR = 1;   // downcount
-    write32(&TIM3->CR1.val, cr1.val);
+    write32(&TIM->CR1.val, cr1.val);
 }
 
 // Configure TIM3 as a 15 us interval former
@@ -53,7 +52,7 @@ extern "C" void TIM3_irq_handler() {
     write16(&TIM3->SR, 0);  // clear all pending bits
     nvic_irq_clear(29);
     if (usec) {
-        startCounter(usec);
+        startCounter(TIM3, usec);
     }
 }
 
@@ -123,7 +122,7 @@ void Ds18b20Driver::callbackTimer(uint64_t tickcnt) {
         chn_ = (chn_ + 1) & 1;
         setInput(&GPIO_CFG[chn_]);
         requestConversion_ = true;
-        startCounter(50);
+        startCounter((TIM_registers_type *)TIM3_BASE, 50);
     }
 }
 
@@ -243,14 +242,14 @@ void Ds18b20Driver::handleInterrupt(int *argv) {
                 estate_ = Func_Command_44h;     // start temp conversion
                 if (chn_ == 0) {
                     SerialLsb0_.write(reinterpret_cast<char *>(
-                        &rxbuf_.rom33h.SerialNumber[0]), 4);
+                        &rxbuf_.rom33h.SerialNumber[0]), 4, true);
                     SerialMsb0_.write( reinterpret_cast<char *>(
-                        &rxbuf_.rom33h.SerialNumber[4]), 2);
+                        &rxbuf_.rom33h.SerialNumber[4]), 2, true);
                 } else {
                     SerialLsb1_.write(reinterpret_cast<char *>(
-                        &rxbuf_.rom33h.SerialNumber[0]), 4);
+                        &rxbuf_.rom33h.SerialNumber[0]), 4, true);
                     SerialMsb1_.write( reinterpret_cast<char *>(
-                        &rxbuf_.rom33h.SerialNumber[4]), 2);
+                        &rxbuf_.rom33h.SerialNumber[4]), 2, true);
                 }
             }
         }

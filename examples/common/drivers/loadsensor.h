@@ -23,6 +23,7 @@
 #include <RunInterface.h>
 #include <TimerInterface.h>
 #include <SensorInterface.h>
+#include <IrqInterface.h>
 #include <gpio_drv.h>
 
 class LoadSensorPort : public FwAttribute,
@@ -44,10 +45,13 @@ class LoadSensorPort : public FwAttribute,
     FwAttribute zero_;
     FwAttribute tara_;
     FwAttribute gram_;
+    FwAttribute gramflt_;
     int idx_;
+    float fltacc_;
 };
 
 class LoadSensorDriver : public FwObject,
+                         public IrqHandlerInterface,
                          public RunInterface,
                          public TimerListenerInterface {
  public:
@@ -56,13 +60,16 @@ class LoadSensorDriver : public FwObject,
     // FwObject interface:
     virtual void Init() override;
 
+    // IrqHandlerInterface
+    virtual void handleInterrupt(int *argv) override;
+
     // RunInterface
     virtual void setRun() override {}
     virtual void setStop() override {}
     virtual void setSleep() override;
 
     // TimerListenerInterface
-    virtual uint64_t getTimerInterval() { return 500; }
+    virtual uint64_t getTimerInterval() { return 100; }
     virtual void callbackTimer(uint64_t tickcnt) override;
 
  protected:
@@ -75,6 +82,18 @@ class LoadSensorDriver : public FwObject,
     // instead of using new() operator
     struct SensorType {
         LoadSensorPort *port;
+        uint32_t shifter;
     } chn_[GARDEMARIN_LOAD_SENSORS_TOTAL];
+
+    enum EState {
+        Idle,
+        Conversion,
+        WaitReady,
+        SCK_HIGH,
+        SCK_LOW,
+        Reading,
+        Sleep
+    } estate_;
+    int8_t bitCnt_;
 };
 

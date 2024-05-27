@@ -159,7 +159,7 @@ void write_obj_attribute(const char *objname,
     FwAttribute *atr = reinterpret_cast<FwAttribute *>(
                 fw_get_object_attribute(objname, atrname));
     if (atr) {
-        atr->write(buf, sz);
+        atr->write(buf, sz, false);
     } else {
         uart_printf("[%d] %s:%s not found\r\n",
             xTaskGetTickCount(), objname, atrname);

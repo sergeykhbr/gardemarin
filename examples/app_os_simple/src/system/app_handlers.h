@@ -31,6 +31,7 @@ extern void USART2_irq_handler();
 extern void ADC1_irq_ovr_handler();
 extern void TIM2_irq_handler();
 extern void TIM3_irq_handler();
+extern void TIM5_irq_handler();
 
 #define WWDG_IRQHandler DefaultISR
 #define PVD_IRQHandler DefaultISR
@@ -82,7 +83,7 @@ extern void TIM3_irq_handler();
 #define DMA1_Stream7_IRQHandler DefaultISR
 #define FSMC_IRQHandler DefaultISR
 #define SDIO_IRQHandler DefaultISR
-#define TIM5_IRQHandler DefaultISR
+#define TIM5_IRQHandler TIM5_irq_handler
 #define SPI3_IRQHandler DefaultISR
 #define UART4_IRQHandler DefaultISR
 #define UART5_IRQHandler DefaultISR

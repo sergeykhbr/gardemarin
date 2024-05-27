@@ -21,6 +21,8 @@
 #include <uart.h>
 #include "loadsensor.h"
 
+#define USE_TIM5
+
 // Chip select pins per channel
 struct LoadCellCfgType {
     const char *portname;        // all names should be placed into flash, do not use SRAM for that
@@ -29,14 +31,15 @@ struct LoadCellCfgType {
     const char *attr_alpha_name;
     const char *attr_zero_name;
     const char *attr_tara_name;    
-    const char *attr_gram_name;    
+    const char *attr_gram_name;
+    const char *attr_gramflt_name;
 };
 
 static const LoadCellCfgType CELL_CONFIG[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
-    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "alpha0", "zero0", "tara0", "gram0"},
-    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "alpha1", "zero1", "tara1", "gram1"},
-    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "alpha2", "zero2", "tara2", "gram2"},
-    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "alpha3", "zero3", "tara3", "gram3"}
+    {"scale0", {(GPIO_registers_type *)GPIOD_BASE, 2}, "value0", "alpha0", "zero0", "tara0", "gram0", "gram0flt"},
+    {"scale1", {(GPIO_registers_type *)GPIOD_BASE, 3}, "value1", "alpha1", "zero1", "tara1", "gram1", "gram1flt"},
+    {"scale2", {(GPIO_registers_type *)GPIOD_BASE, 4}, "value2", "alpha2", "zero2", "tara2", "gram2", "gram2flt"},
+    {"scale3", {(GPIO_registers_type *)GPIOD_BASE, 7}, "value3", "alpha3", "zero3", "tara3", "gram3", "gram3flt"}
 };
 
 // PC[12] = SPI3_MOSI  AF6 -> AF0 output (unused by HX711)
@@ -86,11 +89,50 @@ static const float INIT_TARA[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
     0.0f
 };
 
+static IrqHandlerInterface *drivers_ = 0;
+
+static void startCounter(TIM_registers_type *TIM, int usec) {
+    tim_cr1_reg_type cr1;
+
+    write32(&TIM->ARR, static_cast<uint32_t>(usec));
+    write32(&TIM->CNT, static_cast<uint32_t>(usec));
+
+    cr1.val = 0;
+    cr1.bits.CEN = 1;
+    cr1.bits.OPM = 1;   // one pulse mode
+    cr1.bits.DIR = 1;   // downcount
+    write32(&TIM->CR1.val, cr1.val);
+}
+
+extern "C" void TIM5_irq_handler() {
+    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
+
+    int usec = 0;
+    if (drivers_) {
+        drivers_->handleInterrupt(&usec);
+    }
+
+    write16(&TIM5->SR, 0);  // clear all pending bits
+    nvic_irq_clear(50);
+    if (usec) {
+        startCounter(TIM5, usec);
+    }
+}
+
+
 LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
+
+    estate_ = Idle;
+    bitCnt_ = 0;
+    drivers_ = static_cast<IrqHandlerInterface *>(this);
+
     for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
         chn_[i].port = new(fw_malloc(sizeof(LoadSensorPort)))
                LoadSensorPort(static_cast<FwObject *>(this), i);
     }
+
     selectChannel(-1);
 
     // Setup SPI interface. Use bitband instead of SPI3 controller because 
@@ -115,14 +157,90 @@ LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
                        GPIO_MEDIUM,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_clear(&SPI3_MOSI);
+
+    // adc clock on APB1 = 144/4 = 36 MHz
+    uint32_t t1 = read32(&RCC->APB1ENR);
+    t1 |= (1 << 3);             // APB1[3] TIM5EN
+    write32(&RCC->APB1ENR, t1);
+
+    write32(&TIM5->CR1.val, 0);         // stop counter
+    write16(&TIM5->PSC, system_clock_hz() / 2 / 1000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
+    write16(&TIM5->DIER, 1);            // [0] UIE - update interrupt enabled
+
+    // prio: 0 highest; 7 is lowest
+    nvic_irq_enable(50, 5);
 }
 
 void LoadSensorDriver::Init() {
+    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
     RegisterInterface(static_cast<RunInterface *>(this));
     RegisterInterface(static_cast<TimerListenerInterface *>(this));
 
     for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
         chn_[i].port->Init();
+    }
+}
+
+void LoadSensorDriver::handleInterrupt(int *argv) {
+    uint8_t ready = 0;
+    *argv = 0;
+    switch (estate_) {
+    case Idle:
+        return;
+    case Conversion:
+        gpio_pin_clear(&SPI3_SCK);
+        estate_ = WaitReady;
+        *argv = 200;
+        break;
+    case WaitReady:
+        for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+            selectChannel(i);
+            chn_[i].shifter = 0;
+            if (gpio_pin_get(&SPI3_MISO) == 0) {
+                ready |= 1 << i;
+            }
+        }
+        if (ready == ((1 << GARDEMARIN_LOAD_SENSORS_TOTAL) - 1)) {
+            estate_ = SCK_HIGH;
+            bitCnt_ = 0;
+        }
+        *argv = 10;
+        break;
+    case SCK_HIGH:
+        gpio_pin_set(&SPI3_SCK);
+        estate_ = SCK_LOW;
+        *argv = 1000;   // 0.2 us; typical 1 us; max 50 us
+        break;
+    case SCK_LOW:
+        gpio_pin_clear(&SPI3_SCK);
+        estate_ = Reading;
+        *argv = 1000;   // 0.2 us; typical 1 us
+        break;
+    case Reading:
+        for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+            selectChannel(i);
+            chn_[i].shifter <<= 1;
+            chn_[i].shifter |= gpio_pin_get(&SPI3_MISO);
+        }
+
+        if (++bitCnt_ >= 27) {
+            estate_ = Sleep;
+            for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
+                chn_[i].port->setSensorValue(chn_[i].shifter);
+            }
+        } else {
+            estate_ = SCK_HIGH;
+        }
+        *argv = 10;
+        break;
+    case Sleep:
+        selectChannel(-1);    // deselect all
+        //gpio_pin_set(&SPI3_SCK);
+        //*argv = 60000;
+        estate_ = Idle;
+        break;
+    default:
+        estate_ = Idle;
     }
 }
 
@@ -142,6 +260,12 @@ void LoadSensorDriver::setSleep() {
 }
 
 void LoadSensorDriver::callbackTimer(uint64_t tickcnt) {
+#ifdef USE_TIM5
+    if (estate_ == Idle) {
+        estate_ = Conversion;
+        startCounter((TIM_registers_type *)TIM5_BASE, 10);
+    }
+#else
     uint32_t ready = 0;
     uint32_t value[GARDEMARIN_LOAD_SENSORS_TOTAL];
     for (int i = 0; i < GARDEMARIN_LOAD_SENSORS_TOTAL; i++) {
@@ -170,17 +294,20 @@ void LoadSensorDriver::callbackTimer(uint64_t tickcnt) {
     }
 
     selectChannel(-1);    // deselect all
+#endif
 }
 
 
 LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) : 
     FwAttribute(CELL_CONFIG[idx].attr_value_name),
     parent_(parent),
-    alpha_(CELL_CONFIG[idx].attr_alpha_name),
-    zero_(CELL_CONFIG[idx].attr_zero_name),
-    tara_(CELL_CONFIG[idx].attr_tara_name),
-    gram_(CELL_CONFIG[idx].attr_gram_name),
-    idx_(idx) {
+    alpha_(CELL_CONFIG[idx].attr_alpha_name, "linear calibration rate"),
+    zero_(CELL_CONFIG[idx].attr_zero_name, "zero level in gram"),
+    tara_(CELL_CONFIG[idx].attr_tara_name, "tara weight in gram"),
+    gram_(CELL_CONFIG[idx].attr_gram_name, "value in gram"),
+    gramflt_(CELL_CONFIG[idx].attr_gramflt_name, "[g], 1/10 filtration"),
+    idx_(idx),
+    fltacc_(0) {
 
     gpio_pin_as_output(&CELL_CONFIG[idx].cs_gpio_cfg,
                        GPIO_NO_OPEN_DRAIN,
@@ -193,6 +320,7 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     zero_.make_float(INIT_ZERO[idx]);
     tara_.make_float(INIT_TARA[idx]);
     gram_.make_float(0);
+    gramflt_.make_float(0);
 }
 
 void LoadSensorPort::Init() {
@@ -200,6 +328,7 @@ void LoadSensorPort::Init() {
                                     static_cast<SensorInterface *>(this));
 
     parent_->RegisterAttribute(static_cast<FwAttribute *>(this));
+    parent_->RegisterAttribute(&gramflt_);
     parent_->RegisterAttribute(&gram_);
     parent_->RegisterAttribute(&alpha_);
     parent_->RegisterAttribute(&zero_);
@@ -214,5 +343,10 @@ void LoadSensorPort::setSensorValue(uint32_t val) {
         t1 |= 0xf8000000;
     }
     float phys = static_cast<float>(t1) * alpha_.to_float();
-    gram_.make_float(phys + zero_.to_float() + tara_.to_float());
+    phys += zero_.to_float() + tara_.to_float();
+    gram_.make_float(phys);
+
+    fltacc_ -= 0.1f * fltacc_;
+    fltacc_ += phys;
+    gramflt_.make_float(0.1f * fltacc_);
 }
