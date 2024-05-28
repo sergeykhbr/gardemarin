@@ -28,6 +28,9 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     btnClick_ = false;
     epochCnt_ = 0;
     epochMarker_ = 0;
+    sewer_gram_ = 0;
+    plants_gram_ = 0;
+    mix_gram_ = 0;
 
     requestToService_.make_int8(0);
     lastWatering_.make_uint32(0);
@@ -71,13 +74,15 @@ void ManagementClass::update() {
         break;
     case CheckMoisture:
         if (isPeriodExpired(30 * 60)
-            || (isPeriodExpired(10 * 60) && read_uint16("soil0", "moisture") < 750)) {
+            || (isPeriodExpired(10 * 60) && getMoisture() < 750)) {
             switchToState(DrainBefore);
             write_int8("hbrg0", "dc0_duty", 100);
         }
         break;
     case DrainBefore:
-        if (isPeriodExpired(10)) {
+        if (((plants_gram_ - getPlantWeight()) < 10.0f
+            && (getMixWeight() - mix_gram_) < 10.0f)
+            || isPeriodExpired(120)) {
             switchToState(OxygenSaturation);
             write_int8("hbrg0", "dc0_duty", 0);
             write_int8("hbrg2", "dc0_duty", 100);
@@ -92,17 +97,24 @@ void ManagementClass::update() {
         }
         break;
     case Watering:
-        if (isPeriodExpired(20)) {
+        if (getMoisture() > 980
+            || (mix_gram_ - getMixWeight()) < 5.0f      // no water in mix tank
+            || isPeriodExpired(30)) {
             write_int8("relais0", "state", 0);
             write_int8("hbrg0", "dc0_duty", 100);
             switchToState(DrainAfter);
         }
         break;
     case DrainAfter:
-        if (isPeriodExpired(10)) {
+        if (((plants_gram_ - getPlantWeight()) < 10.0f
+            && (getMixWeight() - mix_gram_) < 10.0f)
+            || isPeriodExpired(120)) {
             write_int8("hbrg0", "dc0_duty", 0);
-            switchToState(CheckMoisture);
+            switchToState(AdjustLights);
         }
+        break;
+    case AdjustLights:
+        switchToState(CheckMoisture);
         break;
 
     case Servicing:
@@ -112,6 +124,10 @@ void ManagementClass::update() {
     default:
         estate_ = WaitInit;
     }
+
+    sewer_gram_ = read_float32("scales", "gram0");
+    plants_gram_ = read_float32("scales", "gram1");
+    mix_gram_ = read_float32("scales", "gram2");
 }
 
 void ManagementClass::keyPressed() {
@@ -206,4 +222,30 @@ uint32_t ManagementClass::read_uint32(const char *objname,
         return atr->to_uint32();
     }
     return 0;
+}
+
+float ManagementClass::read_float32(const char *objname,
+                                    const char *atrname) {
+    FwAttribute *atr = reinterpret_cast<FwAttribute *>(
+                fw_get_object_attribute(objname, atrname));
+    if (atr) {
+        return atr->to_float();
+    }
+    return 0;
+}
+
+float ManagementClass::getPlantWeight() {
+    return read_float32("scales", "gram1");
+}
+
+float ManagementClass::getMixWeight() {
+    return read_float32("scales", "gram2");
+}
+
+float ManagementClass::getSewerWeight() {
+    return read_float32("scales", "gram0");
+}
+
+uint16_t ManagementClass::getMoisture() {
+    return read_uint16("soil0", "moisture");
 }

@@ -47,7 +47,9 @@ class ManagementClass : public FwObject,
         OxygenSaturation,
         Watering,
         DrainAfter,
-        Servicing
+        AdjustLights,
+        Servicing,
+        States_Total
     };
 
     bool isPeriodExpired(uint32_t period);
@@ -69,6 +71,13 @@ class ManagementClass : public FwObject,
                         const char *atrname);
     uint32_t read_uint32(const char *objname,
                          const char *atrname);
+    float read_float32(const char *objname,
+                         const char *atrname);
+
+    float getPlantWeight();
+    float getMixWeight();
+    float getSewerWeight();
+    uint16_t getMoisture();
 
  private:
     FwAttribute requestToService_;
@@ -84,4 +93,8 @@ class ManagementClass : public FwObject,
     struct NormalContextType {
         EState estate;
     } normal_;
+
+    float plants_gram_;
+    float sewer_gram_;
+    float mix_gram_;
 };
