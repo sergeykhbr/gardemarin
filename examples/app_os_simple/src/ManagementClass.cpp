@@ -57,6 +57,12 @@ void ManagementClass::update() {
 
     epochCnt_++;
 
+#if 0
+    uart_printf("%d %06x %06x\r\n", epochCnt_,
+                read_uint32("rtc", "Date"),
+                read_uint32("rtc", "Time"));
+#endif
+
     if (btnClick || requestToService_.to_int8()) {
         requestToService_.make_int8(0);
         if (estate_ != Servicing) {
@@ -93,14 +99,14 @@ void ManagementClass::update() {
             switchToState(Watering);
             lastWatering_.make_uint32(epochCnt_);
             write_int8("hbrg2", "dc0_duty", 0);
-            write_int8("relais0", "state", 1);
+            write_int8("relais0", "State", 1);
         }
         break;
     case Watering:
         if (getMoisture() > 980
             || (mix_gram_ - getMixWeight()) < 5.0f      // no water in mix tank
             || isPeriodExpired(30)) {
-            write_int8("relais0", "state", 0);
+            write_int8("relais0", "State", 0);
             write_int8("hbrg0", "dc0_duty", 100);
             switchToState(DrainAfter);
         }

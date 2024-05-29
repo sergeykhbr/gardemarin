@@ -55,11 +55,6 @@ UserButtonDriver::UserButtonDriver(const char *name)
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     uint32_t t1;
 
-    // enable clocks for bullet proof
-    t1 = read32(&RCC->AHB1ENR);
-    t1 |= (1 << 2);           // PC
-    write32(&RCC->AHB1ENR, t1);
-
     t1 = read32(&RCC->APB2ENR);
     t1 |= 1 << 14;            // APB2[14] SYSCFGEN includes EXTI control registers
     write32(&RCC->APB2ENR, t1);

@@ -26,11 +26,11 @@
 
 //    PA10 USART1_RX = AF7
 //    PA9  USART1_TX = AF7
-static const gpio_pin_type rx_pin = {
+static const gpio_pin_type CFG_PIN_UART1_RX = {
     (GPIO_registers_type *)GPIOA_BASE, 10
 };
 
-static const gpio_pin_type tx_pin = {
+static const gpio_pin_type CFG_PIN_UART1_TX = {
     (GPIO_registers_type *)GPIOA_BASE, 9
 };
 
@@ -92,22 +92,19 @@ extern "C" void USART1_irq_handler() {
     nvic_irq_clear(37);
 }
 
-
-UartDriver::UartDriver(const char *name)
-    : FwObject(name),
-    listener_(0) {
+extern "C" void uart_early_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     USART_registers_type *UART1  = (USART_registers_type *)USART1_BASE;
     uint32_t t1;
 
     t1 = read32(&RCC->APB2ENR);
-    t1 |= 1 << 4;             // APB2[4] USART1
+    t1 |= 1 << 4;               // APB2[4] USART1
     write32(&RCC->APB2ENR, t1);
 
     //    PA10 USART1_RX = AF7
     //    PA9  USART1_TX = AF7
-    gpio_pin_as_alternate(&rx_pin, 7);
-    gpio_pin_as_alternate(&tx_pin, 7);
+    gpio_pin_as_alternate(&CFG_PIN_UART1_RX, 7);
+    gpio_pin_as_alternate(&CFG_PIN_UART1_TX, 7);
 
     // UART1 on APB2 = 72 MHz
     // 72000000/(16*115200) = 39.0625
@@ -138,6 +135,15 @@ UartDriver::UartDriver(const char *name)
     write16(&UART1->CR1, t1);
     write16(&UART1->CR2, 0);
     write16(&UART1->CR3, 0);
+}
+
+UartDriver::UartDriver(const char *name)
+    : FwObject(name),
+    listener_(0) {
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    USART_registers_type *UART1  = (USART_registers_type *)USART1_BASE;
+
+    uart_early_init();
 
     fw_fifo_init(&rxfifo_, 256);
     prxFifo_ = &rxfifo_;

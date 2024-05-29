@@ -74,6 +74,7 @@ SOURCES = isr_vector \
 	can_drv \
 	ds18b20_drv \
 	soil_drv \
+	rtc_drv \
 	fwmem \
 	fwapi \
 	fwattribute \
