@@ -88,8 +88,7 @@ DialogImageSettings::DialogImageSettings(QImageCapture *imageCapture)
             imagecapture->captureSession()->camera()->cameraDevice().photoResolutions();
     for (const QSize &resolution : supportedResolutions) {
         imageResolutionBox->addItem(
-                u"%1x%2"_s.arg(resolution.width()).arg(resolution.height()),
-                QVariant(resolution));
+                QString::asprintf("%dx%d", resolution.width(), resolution.height()));
     }
 
     selectComboBoxItem(imageCodecBox, QVariant::fromValue(imagecapture->fileFormat()));
