@@ -34,6 +34,7 @@ TabLights::TabLights(QWidget *parent)
         slider_[i]->setPageStep(10);
         slider_[i]->setTickPosition(QSlider::TicksAbove);
         slider_[i]->setOrientation(Qt::Horizontal);
+        slider_[i]->setMinimumHeight(100);
     }
     
     QGroupBox *dimmingGroup = new QGroupBox(this);
@@ -41,16 +42,16 @@ TabLights::TabLights(QWidget *parent)
     QGridLayout *dimmingLayout = new QGridLayout(dimmingGroup);
     dimmingGroup->setLayout(dimmingLayout);
 
-    dimmingLayout->addWidget(new QLabel(tr("Red:"), this), 0, 0);
+    dimmingLayout->addWidget(new QLabel(tr("Blue:"), this), 0, 0);
     dimmingLayout->addWidget(slider_[0], 0, 1);
 
-    dimmingLayout->addWidget(new QLabel(tr("Blue:"), this), 1, 0);
+    dimmingLayout->addWidget(new QLabel(tr("Unused:"), this), 1, 0);
     dimmingLayout->addWidget(slider_[1], 1, 1);
 
     dimmingLayout->addWidget(new QLabel(tr("White:"), this), 2, 0);
     dimmingLayout->addWidget(slider_[2], 2, 1);
 
-    dimmingLayout->addWidget(new QLabel(tr("Unused:"), this), 3, 0);
+    dimmingLayout->addWidget(new QLabel(tr("Red/Blue:"), this), 3, 0);
     dimmingLayout->addWidget(slider_[3], 3, 1);
 
 

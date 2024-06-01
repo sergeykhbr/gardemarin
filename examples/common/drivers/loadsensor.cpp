@@ -107,15 +107,22 @@ static void startCounter(TIM_registers_type *TIM, int usec) {
 extern "C" void TIM5_irq_handler() {
     TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
 
-    int usec = 0;
+    int nsec = 0;
     if (drivers_) {
-        drivers_->handleInterrupt(&usec);
+        drivers_->handleInterrupt(&nsec);
+    }
+    // Convert nsec to timescale is 100 ns
+    if (nsec) {
+        nsec /= 100;
+        if (nsec == 0) {
+            nsec = 1;       // minimum 100 nsec interval
+        }
     }
 
     write16(&TIM5->SR, 0);  // clear all pending bits
     nvic_irq_clear(50);
-    if (usec) {
-        startCounter(TIM5, usec);
+    if (nsec) {
+        startCounter(TIM5, nsec);
     }
 }
 
@@ -164,7 +171,8 @@ LoadSensorDriver::LoadSensorDriver(const char *name) : FwObject(name) {
     write32(&RCC->APB1ENR, t1);
 
     write32(&TIM5->CR1.val, 0);         // stop counter
-    write16(&TIM5->PSC, system_clock_hz() / 2 / 1000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
+    // time scale 100 nsec
+    write16(&TIM5->PSC, system_clock_hz() / 2 / 10000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
     write16(&TIM5->DIER, 1);            // [0] UIE - update interrupt enabled
 
     // prio: 0 highest; 7 is lowest
@@ -200,6 +208,7 @@ void LoadSensorDriver::handleInterrupt(int *argv) {
                 ready |= 1 << i;
             }
         }
+        selectChannel(-1);    // deselect all
         if (ready == ((1 << GARDEMARIN_LOAD_SENSORS_TOTAL) - 1)) {
             estate_ = SCK_HIGH;
             bitCnt_ = 0;
@@ -222,6 +231,7 @@ void LoadSensorDriver::handleInterrupt(int *argv) {
             chn_[i].shifter <<= 1;
             chn_[i].shifter |= gpio_pin_get(&SPI3_MISO);
         }
+        selectChannel(-1);    // deselect all
 
         if (++bitCnt_ >= 27) {
             estate_ = Sleep;
@@ -234,7 +244,6 @@ void LoadSensorDriver::handleInterrupt(int *argv) {
         *argv = 10;
         break;
     case Sleep:
-        selectChannel(-1);    // deselect all
         //gpio_pin_set(&SPI3_SCK);
         //*argv = 60000;
         estate_ = Idle;

@@ -24,8 +24,6 @@
 
 #include <QDebug>
 
-using namespace Qt::StringLiterals;
-
 DialogImageSettings::DialogImageSettings(QImageCapture *imageCapture)
     : QDialog(nullptr), imagecapture(imageCapture)
 {

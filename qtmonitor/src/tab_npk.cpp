@@ -145,15 +145,15 @@ void TabNPK::slotTimeToRequest() {
 void TabNPK::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "soil0") {
         if (atrname == "EC") {
-            plotEC_->writeData(0, static_cast<double>(data) / 100.0);
+            plotEC_->writeData(0, static_cast<double>(data));
         } else if (atrname == "pH") {
             plotPH_->writeData(0, static_cast<double>(data) / 100.0);
         } else if (atrname == "N") {
-            plotNPK_->writeData(0, static_cast<double>(data) / 100.0);
+            plotNPK_->writeData(0, static_cast<double>(data));
         } else if (atrname == "P") {
-            plotNPK_->writeData(1, static_cast<double>(data) / 100.0);
+            plotNPK_->writeData(1, static_cast<double>(data));
         } else if (atrname == "K") {
-            plotNPK_->writeData(2, static_cast<double>(data) / 100.0);
+            plotNPK_->writeData(2, static_cast<double>(data));
         }
     }
 }

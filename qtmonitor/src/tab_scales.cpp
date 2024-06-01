@@ -155,7 +155,7 @@ void TabScales::slotResponseAttribute(const QString &objname, const QString &atr
         }
     } else if (objname == "soil0") {
         if (atrname == "moisture") {
-            plotMoisture_->writeData(0, static_cast<double>(data) / 100.0);
+            plotMoisture_->writeData(0, static_cast<double>(data) / 10.0);
         }
     }
 }

@@ -168,8 +168,8 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
 
 #ifdef _WIN32
     if (tickcnt == 4000) {
-        // [4,2] rgbw:red read
-        const char *xxx = ">!00000104,1,02";  // read value
+        // [16,1] oil moisture
+        const char *xxx = ">!00000110,1,01";  // read value
         for (int i = 0; i < strlen(xxx); i++) {
             fw_fifo_put(&rxfifo_, xxx[i]);
         }
