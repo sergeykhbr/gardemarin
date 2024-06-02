@@ -297,6 +297,18 @@ void DbcConverter::processRxCanFrame(can_frame_type *frame) {
 //                            obj->ObjectName(),
 //                            attr->name());
                 // silence = true: do not send message was update
+                if (attr->BitSize() == 16) {
+                    char t1 = frame->data.s8[1];
+                    frame->data.s8[1] = frame->data.s8[2];
+                    frame->data.s8[2] = t1;
+                } else if (attr->BitSize() == 32) {
+                    char t1 = frame->data.s8[1];
+                    frame->data.s8[1] = frame->data.s8[4];
+                    frame->data.s8[4] = t1;
+                    t1 = frame->data.s8[2];
+                    frame->data.s8[2] = frame->data.s8[3];
+                    frame->data.s8[3] = t1;
+                }
                 attr->write(&frame->data.s8[1], frame->dlc - 1, true);
             } else {
 //                uart_printf("DBC read from %s::%s\r\n",

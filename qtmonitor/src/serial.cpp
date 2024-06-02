@@ -165,6 +165,8 @@ QString SerialWidget::names2request(const QString &objname, const QString &atrna
 void SerialWidget::slotRecvSerialPort() {
     const QByteArray data = readAll();
     QByteArray raw;
+    bool ignore_cr = false;
+    bool ignore_lf = false;
 
     // search CAN frames over Serial interface
     for (auto &s : data) {
@@ -172,7 +174,16 @@ void SerialWidget::slotRecvSerialPort() {
         case State_PRM1:
             if (s == '<') {
                 eframestate_ = State_PRM2;
+                ignore_cr = false;
+                ignore_lf = false;
+            } else if (s == '\r' && ignore_cr) {
+                ignore_cr = false;
+            } else if (s == '\n' && ignore_lf) {
+                ignore_cr = false;
+                ignore_lf = false;
             } else {
+                ignore_cr = false;
+                ignore_lf = false;
                 raw += s;
             }
             break;
@@ -218,6 +229,8 @@ void SerialWidget::slotRecvSerialPort() {
             rawpayload_[rawcnt_ + 1] = '\0';
             if (++rawcnt_ == 2*rawdlc_) {
                 eframestate_ = State_PRM1;
+                ignore_cr = true;
+                ignore_lf = true;
                 can_frame_type frame;
                 frame.busid = 0;
                 frame.id = str2hex32(rawid_, 8);

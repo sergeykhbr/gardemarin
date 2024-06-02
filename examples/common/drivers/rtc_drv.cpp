@@ -170,14 +170,15 @@ void RtcDriver::DateAttribute::post_write() {
     if (!*pinitDone_) {
         return;
     }
-    uint32_t t1 = read32(&RTC->ISR);
-    t1 |= (1 << 7);             // [7] INIT
+    int wdog = 0;
+    write32(&RTC->ISR, (1 << 7)); // [7] INIT
     // Wait [6] INITF Calendar registers update is allowed
-    while ((read32(&RTC->ISR) & (1 << 6)) == 0) {}
+    while ((read32(&RTC->ISR) & (1 << 6)) == 0
+        && ++wdog < (system_clock_hz() / 1000)) {}
     write32(&RTC->DR, u_.u32);
 
-    t1 &= ~(1 << 7);            // [7] INIT
-    write32(&RTC->ISR, t1);
+    write32(&RTC->ISR, 0);          // [7] INIT
+    uart_printf("rtc: Date set %06x\r\n", u_.u32);
 }
 
 void RtcDriver::TimeAttribute::pre_read() {
@@ -194,15 +195,15 @@ void RtcDriver::TimeAttribute::post_write() {
     if (!*pinitDone_) {
         return;
     }
-    uint32_t t1 = read32(&RTC->ISR);
-    t1 |= (1 << 7);             // [7] INIT
+    int wdog = 0;
+    write32(&RTC->ISR, (1 << 7)); // [7] INIT
     // Wait [6] INITF Calendar registers update is allowed
-    while ((read32(&RTC->ISR) & (1 << 6)) == 0) {}
+    while ((read32(&RTC->ISR) & (1 << 6)) == 0
+        && ++wdog < (system_clock_hz() / 1000)) {}
 
     write32(&RTC->TR, u_.u32);
 
-    t1 &= ~(1 << 7);            // [7] INIT
-    write32(&RTC->ISR, t1);
+    write32(&RTC->ISR, 0);          // [7] INIT
 
     uart_printf("rtc: Time set %06x\r\n", u_.u32);
 }

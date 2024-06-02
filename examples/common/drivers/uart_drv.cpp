@@ -174,8 +174,8 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
             fw_fifo_put(&rxfifo_, xxx[i]);
         }
     } else if (tickcnt == 5000) {
-        // [4,1] rgbw:red enable=0x56 non-zero value
-        const char *xxx = ">!00000104,2,8156";
+        // [17,1] rtc::Time set 20:59:00
+        const char *xxx = ">!00000111,5,8100205900";
         for (int i = 0; i < strlen(xxx); i++) {
             fw_fifo_put(&rxfifo_, xxx[i]);
         }
