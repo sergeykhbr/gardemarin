@@ -20,6 +20,42 @@
 #include <KeyInterface.h>
 #include <task.h>
 
+enum EPlantStage {
+    Seeding,    // the sprout grows into a baby plant producing roots ad true leaves (<4)
+    Vegetative, // Plants develop sturdy stems and leafy growth with the help of nitrogen
+    Budding,    // Plants start producing reproductive parts such as buds, flowers and fruits
+    Flowering,  // The burds become flowers and negin forming fruits using phosphorous
+    Ripening,   // A fully matured plant with flowers and fruits
+    PlantStage_total
+};
+
+enum EPlantType {
+    Lattuce,
+    Strawberry,
+    PlantType_total
+};
+
+struct ProfileItemType {
+    uint32_t dayStartSec;
+    uint32_t dayEndSec;
+    uint8_t dutyBlue;       // 0..100
+    uint8_t dutyRed;        // 0..100
+    uint8_t dutyWhite;      // 0..100
+};
+
+static const ProfileItemType PlantProfile_[PlantType_total][PlantStage_total] = {
+    // Lattuce
+    {
+        {6*3600, 22*3600, 50,  0, 0},   // Seeding
+        {6*3600, 22*3600, 100, 0, 10},  // Vegetative
+        {6*3600, 22*3600, 100, 0, 20},  // Budding
+        {},                             // Flowering
+        {},                             // Rippening
+    },
+    // Strawberry
+    {}
+};
+
 class ManagementClass : public FwObject,
                         public KeyListenerInterface {
  public:
@@ -56,6 +92,7 @@ class ManagementClass : public FwObject,
     void switchToState(EState newstate);
     void switchToService();
     void switchToNormal();
+    void setDayLights(EPlantType plant, EPlantStage stage, uint32_t tow);
 
     void waitKeyPressed();
     void write_obj_attribute(const char *objname,
@@ -78,6 +115,7 @@ class ManagementClass : public FwObject,
     float getMixWeight();
     float getSewerWeight();
     uint16_t getMoisture();
+    uint32_t getTimeOfDay();
 
  private:
     FwAttribute requestToService_;
@@ -97,4 +135,5 @@ class ManagementClass : public FwObject,
     float plants_gram_;
     float sewer_gram_;
     float mix_gram_;
+    int confirmCnt_;
 };

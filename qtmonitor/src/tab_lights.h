@@ -19,6 +19,8 @@
 #include <QTabWidget>
 #include <QSlider>
 #include <QPushButton>
+#include <QSpinBox>
+#include <QShowEvent>
 
 class TabLights : public QWidget {
     Q_OBJECT
@@ -33,6 +35,9 @@ class TabLights : public QWidget {
  public slots:
     void slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data);
 
+ protected:
+    virtual void showEvent(QShowEvent *ev) override;
+
  private slots:
     void slotChangeDim0(int idx);
     void slotChangeDim1(int idx);
@@ -40,11 +45,15 @@ class TabLights : public QWidget {
     void slotChangeDim3(int idx);
     void slotLightsMoveUp(bool checked);
     void slotLightsMoveDown(bool checked);
+    void slotChangeTime();
 
  private:
     QSlider *slider_[4];
     QPushButton *btnUp_;
     QPushButton *btnDown_;
+    QSpinBox *hours_;
+    QSpinBox *minutes_;
+    QPushButton *btnSetTime_;
 };
 
 

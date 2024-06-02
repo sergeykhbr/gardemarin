@@ -48,6 +48,7 @@ class LoadSensorPort : public FwAttribute,
     FwAttribute gramflt_;
     int idx_;
     float fltacc_;
+    float v3of4[3];
 };
 
 class LoadSensorDriver : public FwObject,

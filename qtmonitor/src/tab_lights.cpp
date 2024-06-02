@@ -18,8 +18,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QGroupBox>
-#include <QPushButton>
-#include <QSpinBox>
+#include <QHBoxLayout>
 
 TabLights::TabLights(QWidget *parent)
     : QWidget(parent) {
@@ -83,8 +82,34 @@ TabLights::TabLights(QWidget *parent)
     layout->addWidget(dimmingGroup, 0, 0);
     layout->addWidget(liftGroup, 0, 1);
 
+    QGroupBox *timeGroup = new QGroupBox(this);
+    QHBoxLayout *timeLayout = new QHBoxLayout(timeGroup);
+    timeGroup->setTitle(tr("Time"));
+    timeGroup->setLayout(timeLayout);
+
+    hours_ = new QSpinBox(timeGroup);
+    hours_->setMinimum(0);
+    hours_->setMaximum(23);
+    hours_->setSingleStep(1);
+    hours_->setValue(10);
+    minutes_ = new QSpinBox(timeGroup);
+    minutes_->setMinimum(0);
+    minutes_->setMaximum(59);
+    minutes_->setSingleStep(1);
+    minutes_->setValue(30);
+    btnSetTime_ = new QPushButton(liftGroup);
+    btnSetTime_->setText(tr("Set"));
+    QSpacerItem *timeSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    timeLayout->addWidget(hours_);
+    timeLayout->addWidget(minutes_);
+    timeLayout->addWidget(btnSetTime_);
+    timeLayout->addItem(timeSpacer);
+
+    layout->addWidget(timeGroup, 1, 0, 1, 2);
+
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Expanding);
-    layout->addItem(verticalSpacer, 1, 0, 1, 2);
+    layout->addItem(verticalSpacer, 2, 0, 1, 2);
 
 
     connect(slider_[0], &QAbstractSlider::valueChanged, this,
@@ -104,6 +129,14 @@ TabLights::TabLights(QWidget *parent)
 
     connect(btnUp_, &QPushButton::toggled, this,
             &TabLights::slotLightsMoveUp);
+
+    connect(btnSetTime_, &QPushButton::clicked, this,
+            &TabLights::slotChangeTime);
+}
+
+void TabLights::showEvent(QShowEvent *ev) {
+    QWidget::showEvent(ev);
+    emit signalRequestReadAttribute(tr("rtc"), tr("Time"));
 }
 
 void TabLights::slotChangeDim0(int idx) {
@@ -134,7 +167,20 @@ void TabLights::slotLightsMoveDown(bool checked) {
     emit signalRequestWriteAttribute(tr("hbrg2"), tr("dc1_duty"), 100*static_cast<quint32>(checked));
 }
 
-void TabLights::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
+void TabLights::slotChangeTime() {
+    int tm = 0;
+    tm = (hours_->value() / 10) << 20;
+    tm |= (hours_->value() % 10) << 16;
+    tm |= (minutes_->value() / 10) << 12;
+    tm |= (minutes_->value() % 10) << 8;
+
+    emit signalRequestWriteAttribute(tr("rtc"), tr("Time"),
+                    static_cast<quint32>(tm));
+}
+
+void TabLights::slotResponseAttribute(const QString &objname,
+                                      const QString &atrname,
+                                      quint32 data) {
     if (objname == "ledrbw") {
         if (atrname == "duty0") {
             slider_[0]->setValue(data);
@@ -149,6 +195,18 @@ void TabLights::slotResponseAttribute(const QString &objname, const QString &atr
         if (atrname == "dc1_duty") {
 
         }
+    } else if (objname == "rtc") {
+        if (atrname == "Time") {
+            quint32 h = 10 * ((data >> 20) & 0x3);
+            h |= ((data >> 16) & 0xff);
+
+            quint32 m = 10 * ((data >> 12) & 0x7);
+            m |= ((data >> 8) & 0xff);
+
+            hours_->setValue(static_cast<int>(h));
+            minutes_->setValue(static_cast<int>(m));
+        }
     }
 }
+
 

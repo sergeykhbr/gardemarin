@@ -21,7 +21,7 @@
 #include <uart.h>
 #include "rtc_drv.h"
 
-#define RTC_USE_LSI
+#define xRTC_USE_LSI
 
 RtcDriver::RtcDriver(const char *name) : FwObject(name),
     date_(&initDone_),
@@ -146,6 +146,8 @@ RtcDriver::RtcDriver(const char *name) : FwObject(name),
         write32(&RTC->ISR, t1);
 
         initDone_ = true;
+    } else if (rtc_available) {
+        uart_printk("Current time: %08x", read32(&RTC->TR));
     }
 }
 
@@ -201,5 +203,7 @@ void RtcDriver::TimeAttribute::post_write() {
 
     t1 &= ~(1 << 7);            // [7] INIT
     write32(&RTC->ISR, t1);
+
+    uart_printf("rtc: Time set %06x\r\n", u_.u32);
 }
 

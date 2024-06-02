@@ -330,6 +330,9 @@ LoadSensorPort::LoadSensorPort(FwObject *parent, int idx) :
     tara_.make_float(INIT_TARA[idx]);
     gram_.make_float(0);
     gramflt_.make_float(0);
+    v3of4[0] = 0;
+    v3of4[1] = 0;
+    v3of4[2] = 0;
 }
 
 void LoadSensorPort::Init() {
@@ -353,9 +356,29 @@ void LoadSensorPort::setSensorValue(uint32_t val) {
     }
     float phys = static_cast<float>(t1) * alpha_.to_float();
     phys += zero_.to_float() + tara_.to_float();
-    gram_.make_float(phys);
 
-    fltacc_ -= 0.1f * fltacc_;
-    fltacc_ += phys;
-    gramflt_.make_float(0.1f * fltacc_);
+    float dltphys;
+    int validcnt = 0;
+    for (int i = 0; i < 3; i++) {
+        dltphys = phys - v3of4[i];
+        if (dltphys < 0) {
+            dltphys = -dltphys;
+        }
+
+        // +/- 100 grams 3 of 4 measurements to use as valid
+        if (dltphys < 100.0) {
+            validcnt++;
+        }
+    }
+    if (validcnt >= 2) {
+        gram_.make_float(phys);
+
+        fltacc_ -= 0.1f * fltacc_;
+        fltacc_ += phys;
+        gramflt_.make_float(0.1f * fltacc_);
+    }
+
+    v3of4[2] = v3of4[1];
+    v3of4[1] = v3of4[0];
+    v3of4[0] = phys;
 }

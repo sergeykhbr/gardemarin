@@ -155,7 +155,12 @@
            {'Index':6, 'Name':'P', 'Type':'uint16', 'Value':0x0000, 'Descr':''},
            {'Index':7, 'Name':'K', 'Type':'uint16', 'Value':0x0000, 'Descr':''}]
        },
-       {'Index':17, 'Name':'dbc',
+       {'Index':17, 'Name':'rtc',
+        'Attributes':[
+           {'Index':0, 'Name':'Date', 'Type':'uint32', 'Value':0x20240529, 'Descr':'yyyy.mm.dd'},
+           {'Index':1, 'Name':'Time', 'Type':'uint32', 'Value':0x00114800, 'Descr':'00hh.mm.ss'}]
+       },
+       {'Index':18, 'Name':'dbc',
         'Attributes':[]
    }]
 }

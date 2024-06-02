@@ -29,6 +29,7 @@
 #include "extisim.h"
 #include "adcsim.h"
 #include "timsim.h"
+#include "rtcsim.h"
 
 typedef unsigned (__stdcall* fw_thread_type)(void *args);
 
@@ -49,6 +50,7 @@ ST32F4xxSim::ST32F4xxSim(const char *name) :
     devlist_.push_back(new UARTSim("uart2", USART2_BASE, sizeof(USART_registers_type), 38));
     devlist_.push_back(new TimSim("tim2", TIM2_BASE, sizeof(TIM_registers_type), 28));
     devlist_.push_back(new TimSim("tim3", TIM3_BASE, sizeof(TIM_registers_type), 29));
+    devlist_.push_back(new RtcSim("rtc", RTC_BASE, sizeof(RTC_registers_type), 3));
     devlist_.push_back(new SCBSim("scb", SCB_BASE, sizeof(SCB_registers_type)));
     devlist_.push_back(new RCCSim("rcc", RCC_BASE, sizeof(RCC_registers_type)));
     devlist_.push_back(new SYSCFGSim("syscfg", SYSCFG_BASE, sizeof(SYSCFG_registers_type)));
