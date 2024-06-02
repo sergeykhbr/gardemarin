@@ -198,10 +198,10 @@ void TabLights::slotResponseAttribute(const QString &objname,
     } else if (objname == "rtc") {
         if (atrname == "Time") {
             quint32 h = 10 * ((data >> 20) & 0x3);
-            h |= ((data >> 16) & 0xff);
+            h += ((data >> 16) & 0xf);
 
             quint32 m = 10 * ((data >> 12) & 0x7);
-            m |= ((data >> 8) & 0xff);
+            m += ((data >> 8) & 0xf);
 
             hours_->setValue(static_cast<int>(h));
             minutes_->setValue(static_cast<int>(m));

@@ -58,12 +58,6 @@ void ManagementClass::update() {
 
     epochCnt_++;
 
-#if 0
-    uart_printf("%d %06x %06x\r\n", epochCnt_,
-                read_uint32("rtc", "Date"),
-                read_uint32("rtc", "Time"));
-#endif
-
     if (btnClick || requestToService_.to_int8()) {
         requestToService_.make_int8(0);
         if (estate_ != Servicing) {

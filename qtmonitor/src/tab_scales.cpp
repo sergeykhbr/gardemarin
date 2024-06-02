@@ -37,7 +37,7 @@ TabScales::TabScales(QWidget *parent)
           "{"
             "'Name':'moisture',"
             "'Format':'%.1f',"
-            "'RingLength':256,"
+            "'RingLength':720,"
             "'Color':'#007ACC',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
@@ -58,7 +58,7 @@ TabScales::TabScales(QWidget *parent)
           "{"
             "'Name':'sewer',"
             "'Format':'%.1f',"
-            "'RingLength':256,"
+            "'RingLength':720,"
             "'Color':'#BD63C5',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
@@ -72,7 +72,7 @@ TabScales::TabScales(QWidget *parent)
           "{"
             "'Name':'plant',"
             "'Format':'%.1f',"
-            "'RingLength':256,"
+            "'RingLength':720,"
             "'Color':'#40C977',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
@@ -86,7 +86,7 @@ TabScales::TabScales(QWidget *parent)
           "{"
             "'Name':'mix',"
             "'Format':'%.1f',"
-            "'RingLength':256,"
+            "'RingLength':720,"
             "'Color':'#007ACC',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
@@ -100,7 +100,7 @@ TabScales::TabScales(QWidget *parent)
           "{"
             "'Name':'total',"
             "'Format':'%.1f',"
-            "'RingLength':256,"
+            "'RingLength':720,"
             "'Color':'#FFFFFF',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
@@ -124,7 +124,7 @@ TabScales::TabScales(QWidget *parent)
     timer_.setSingleShot(false);
 
     connect(&timer_, &QTimer::timeout, this, &TabScales::slotTimeToRequest);
-    timer_.start(std::chrono::seconds{1});
+    timer_.start(std::chrono::seconds{10});
 
 }
 

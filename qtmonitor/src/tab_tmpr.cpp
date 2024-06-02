@@ -34,7 +34,35 @@ TabTemperature::TabTemperature(QWidget *parent)
             "'Name':'fog',"
             "'Format':'%.1f',"
             "'RingLength':256,"
-            "'Color':'#007ACC',"
+            "'Color':'#2A629A',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':0.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':60.0,"
+            "'NormalMaxY':false,"
+            "'NormalMaxYVal':0.0,"
+            "'NormalMinY':false,"
+            "'NormalMinYVal':0.0"
+          "},"
+          "{"
+            "'Name':'Tmix',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#FFDA78',"
+            "'FixedMinY':true,"
+            "'FixedMinYVal':0.0,"
+            "'FixedMaxY':true,"
+            "'FixedMaxYVal':60.0,"
+            "'NormalMaxY':false,"
+            "'NormalMaxYVal':0.0,"
+            "'NormalMinY':false,"
+            "'NormalMinYVal':0.0"
+          "},"
+          "{"
+            "'Name':'Tair',"
+            "'Format':'%.1f',"
+            "'RingLength':256,"
+            "'Color':'#FF7f3E',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
             "'FixedMaxY':true,"
@@ -48,7 +76,7 @@ TabTemperature::TabTemperature(QWidget *parent)
             "'Name':'cpu',"
             "'Format':'%.1f',"
             "'RingLength':256,"
-            "'Color':'#CA5100',"
+            "'Color':'#003285',"
             "'FixedMinY':true,"
             "'FixedMinYVal':0.0,"
             "'FixedMaxY':true,"
@@ -68,13 +96,15 @@ TabTemperature::TabTemperature(QWidget *parent)
     timer_.setSingleShot(false);
 
     connect(&timer_, &QTimer::timeout, this, &TabTemperature::slotTimeToRequest);
-    timer_.start(std::chrono::seconds{1});
+    timer_.start(std::chrono::seconds{10});
 
 }
 
 void TabTemperature::slotTimeToRequest() {
     emit signalRequestReadAttribute(tr("soil0"), tr("T"));
     emit signalRequestReadAttribute(tr("adc1"), tr("temperature"));
+    emit signalRequestReadAttribute(tr("temp0"), tr("T0"));
+    emit signalRequestReadAttribute(tr("temp0"), tr("T1"));
 }
 
 void TabTemperature::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
@@ -82,9 +112,15 @@ void TabTemperature::slotResponseAttribute(const QString &objname, const QString
         if (atrname == "T") {
             plotTemperature_->writeData(0, static_cast<double>(data) / 100.0);
         }
+    } else if (objname == "temp0") {
+        if (atrname == "T0") {
+            plotTemperature_->writeData(1, static_cast<double>(data) / 100.0);
+        } else if (atrname == "T1") {
+            plotTemperature_->writeData(2, static_cast<double>(data) / 100.0);
+        }
     } else if (objname == "adc1") {
         if (atrname == "temperature") {
-            plotTemperature_->writeData(1, static_cast<double>(data) / 10.0);
+            plotTemperature_->writeData(3, static_cast<double>(data) / 10.0);
         }
     }
 }

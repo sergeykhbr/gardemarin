@@ -130,7 +130,7 @@ TabNPK::TabNPK(QWidget *parent)
     timer_.setSingleShot(false);
 
     connect(&timer_, &QTimer::timeout, this, &TabNPK::slotTimeToRequest);
-    timer_.start(std::chrono::seconds{1});
+    timer_.start(std::chrono::seconds{10});
 
 }
 
