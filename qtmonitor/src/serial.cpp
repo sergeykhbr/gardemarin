@@ -164,7 +164,7 @@ QString SerialWidget::names2request(const QString &objname, const QString &atrna
 
 void SerialWidget::slotRecvSerialPort() {
     const QByteArray data = readAll();
-    emit signalRecvSerialPort(data);
+    QByteArray raw;
 
     // search CAN frames over Serial interface
     for (auto &s : data) {
@@ -172,6 +172,8 @@ void SerialWidget::slotRecvSerialPort() {
         case State_PRM1:
             if (s == '<') {
                 eframestate_ = State_PRM2;
+            } else {
+                raw += s;
             }
             break;
         case State_PRM2:
@@ -230,6 +232,10 @@ void SerialWidget::slotRecvSerialPort() {
             break;
         default:;
         }
+    }
+
+    if (raw.size()) {
+        emit signalRecvSerialPort(raw);
     }
 }
 
