@@ -33,8 +33,9 @@ TabLights::TabLights(QWidget *parent)
         slider_[i]->setPageStep(10);
         slider_[i]->setTickPosition(QSlider::TicksAbove);
         slider_[i]->setOrientation(Qt::Horizontal);
-        slider_[i]->setMinimumHeight(100);
+        slider_[i]->setMinimumHeight(50);
     }
+    pwmslider_ = new PwmSlider(this);
     
     QGroupBox *dimmingGroup = new QGroupBox(this);
     dimmingGroup->setTitle(tr("LED Dimming"));
@@ -52,6 +53,8 @@ TabLights::TabLights(QWidget *parent)
 
     dimmingLayout->addWidget(new QLabel(tr("Red/Blue:"), this), 3, 0);
     dimmingLayout->addWidget(slider_[3], 3, 1);
+
+    dimmingLayout->addWidget(pwmslider_, 4, 1);
 
 
     QGroupBox *liftGroup = new QGroupBox(this);

@@ -32,10 +32,10 @@ MainWindow::MainWindow(AttributeType *cfg) :
     Config_.clone(cfg);
 
     QSize appsz = qApp->screens()[0]->size();
-    if (appsz.width() <= 1200 && appsz.height() <= 600) {
+    if (appsz.width() <= 1280 && appsz.height() <= 600) {
         showFullScreen();
     } else {
-        appsz.setWidth(1200);
+        appsz.setWidth(1280);
         appsz.setHeight(600);
         setFixedSize(appsz);
     }

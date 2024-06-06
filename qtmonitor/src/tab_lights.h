@@ -21,6 +21,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QShowEvent>
+#include "pwmslider.h"
 
 class TabLights : public QWidget {
     Q_OBJECT
@@ -49,6 +50,7 @@ class TabLights : public QWidget {
 
  private:
     QSlider *slider_[4];
+    PwmSlider *pwmslider_;
     QPushButton *btnUp_;
     QPushButton *btnDown_;
     QSpinBox *hours_;
