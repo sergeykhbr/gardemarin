@@ -20,26 +20,35 @@
 #include <QEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <attribute.h>
 
 class PwmSlider : public QWidget {
     Q_OBJECT
 
  public:
-    explicit PwmSlider(QWidget *parent = nullptr);
+    explicit PwmSlider(QWidget *parent, AttributeType *cfg);
+
+ signals:
+    void signalRequestReadAttribute(const QString &objname, const QString &atrname);
+    void signalRequestWriteAttribute(const QString &objname, const QString &atrname, quint32 data);
+
+ public slots:
+    void slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data);
 
  protected:
     bool event(QEvent *e) override;
     void mousePressEvent(QMouseEvent *ev) override;
     void paintEvent(QPaintEvent *event_) override;
 
- signals:
-    void signalSendData(const QByteArray &data);
-
  private:
-    QPixmap pixmapBkg_;
+    void setValue(quint32 val);
+ private:
+    QString objname_;
+    QString attrname_;
     QPixmap pixmapSlider_;
     QPoint pointCursor_;
-    QRect rectSlider_;
+    QColor colorStart_;
+    QColor colorEnd_;
 };
 
 

@@ -40,17 +40,19 @@ class TabLights : public QWidget {
     virtual void showEvent(QShowEvent *ev) override;
 
  private slots:
-    void slotChangeDim0(int idx);
-    void slotChangeDim1(int idx);
-    void slotChangeDim2(int idx);
-    void slotChangeDim3(int idx);
+    // re-send signals from the child components
+    void slotRequestReadAttribute(const QString &objname, const QString &atrname) {
+        emit signalRequestReadAttribute(objname, atrname);
+    }
+    void slotRequestWriteAttribute(const QString &objname, const QString &atrname, quint32 data) {
+        emit signalRequestWriteAttribute(objname, atrname, data);
+    }
     void slotLightsMoveUp(bool checked);
     void slotLightsMoveDown(bool checked);
     void slotChangeTime();
 
  private:
-    QSlider *slider_[4];
-    PwmSlider *pwmslider_;
+    PwmSlider *slider_[4];
     QPushButton *btnUp_;
     QPushButton *btnDown_;
     QSpinBox *hours_;

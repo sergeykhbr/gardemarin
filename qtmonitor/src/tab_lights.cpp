@@ -26,16 +26,51 @@ TabLights::TabLights(QWidget *parent)
     QGridLayout *layout = new QGridLayout(this);
     setLayout(layout);
 
+    AttributeType slidersCfg;
+    slidersCfg.from_config("["
+          "{"
+            "'Name':'Blue',"
+            "'ObjName':'ledrbw',"
+            "'AttrName':'duty0',"
+            "'Active':true,"
+            "'ColorStart':'#040B68',"
+            "'ColorEnd':'#BDF1FD'"
+          "},"
+          "{"
+            "'Name':'Unused',"
+            "'ObjName':'ledrbw',"
+            "'AttrName':'duty1',"
+            "'Active':false,"
+            "'ColorStart':'#101010',"
+            "'ColorEnd':'#101010'"
+          "},"
+          "{"
+            "'ObjName':'ledrbw',"
+            "'AttrName':'duty2',"
+            "'Name':'White',"
+            "'Active':true,"
+            "'ColorStart':'#404040',"
+            "'ColorEnd':'#FFFFFF'"
+          "},"
+          "{"
+            "'Name':'Red/Blue',"
+            "'ObjName':'ledrbw',"
+            "'AttrName':'duty3',"
+            "'Active':true,"
+            "'ColorStart':'#1A000F',"
+            "'ColorEnd':'#F59BE7'"
+          "}"
+        "]");
+
+
     for (int i = 0; i < 4; i++) {
-        slider_[i] = new QSlider(this);
-        slider_[i]->setMaximum(100);
-        slider_[i]->setMinimum(0);
-        slider_[i]->setPageStep(10);
-        slider_[i]->setTickPosition(QSlider::TicksAbove);
-        slider_[i]->setOrientation(Qt::Horizontal);
-        slider_[i]->setMinimumHeight(50);
+        slider_[i] = new PwmSlider(this, &slidersCfg[i]);
+
+        connect(slider_[i], &PwmSlider::signalRequestReadAttribute, this,
+                &TabLights::slotRequestReadAttribute);
+        connect(slider_[i], &PwmSlider::signalRequestWriteAttribute, this,
+                &TabLights::slotRequestWriteAttribute);
     }
-    pwmslider_ = new PwmSlider(this);
     
     QGroupBox *dimmingGroup = new QGroupBox(this);
     dimmingGroup->setTitle(tr("LED Dimming"));
@@ -54,7 +89,6 @@ TabLights::TabLights(QWidget *parent)
     dimmingLayout->addWidget(new QLabel(tr("Red/Blue:"), this), 3, 0);
     dimmingLayout->addWidget(slider_[3], 3, 1);
 
-    dimmingLayout->addWidget(pwmslider_, 4, 1);
 
 
     QGroupBox *liftGroup = new QGroupBox(this);
@@ -76,10 +110,10 @@ TabLights::TabLights(QWidget *parent)
     btnDown_->setText(tr("Down"));
     btnDown_->setCheckable(true);
 
-    liftLayout->addWidget(labelLightsLift, 0, 0, 2, 1);
-    liftLayout->addWidget(liftSpinBox, 0, 1, 2, 1);
-    liftLayout->addWidget(btnUp_, 0, 2);
-    liftLayout->addWidget(btnDown_, 1, 2);
+    liftLayout->addWidget(btnUp_, 0, 0, 1, 2);
+    liftLayout->addWidget(labelLightsLift, 1, 0);
+    liftLayout->addWidget(liftSpinBox, 1, 1);
+    liftLayout->addWidget(btnDown_, 2, 0, 1, 2);
 
 
     layout->addWidget(dimmingGroup, 0, 0);
@@ -100,7 +134,7 @@ TabLights::TabLights(QWidget *parent)
     minutes_->setMaximum(59);
     minutes_->setSingleStep(1);
     minutes_->setValue(30);
-    btnSetTime_ = new QPushButton(liftGroup);
+    btnSetTime_ = new QPushButton(timeGroup);
     btnSetTime_->setText(tr("Set"));
     QSpacerItem *timeSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -115,18 +149,6 @@ TabLights::TabLights(QWidget *parent)
     layout->addItem(verticalSpacer, 2, 0, 1, 2);
 
 
-    connect(slider_[0], &QAbstractSlider::valueChanged, this,
-            &TabLights::slotChangeDim0);
-
-    connect(slider_[1], &QAbstractSlider::valueChanged, this,
-            &TabLights::slotChangeDim1);
-
-    connect(slider_[2], &QAbstractSlider::valueChanged, this,
-            &TabLights::slotChangeDim2);
-
-    connect(slider_[3], &QAbstractSlider::valueChanged, this,
-            &TabLights::slotChangeDim3);
-
     connect(btnDown_, &QPushButton::toggled, this,
             &TabLights::slotLightsMoveDown);
 
@@ -140,22 +162,6 @@ TabLights::TabLights(QWidget *parent)
 void TabLights::showEvent(QShowEvent *ev) {
     QWidget::showEvent(ev);
     emit signalRequestReadAttribute(tr("rtc"), tr("Time"));
-}
-
-void TabLights::slotChangeDim0(int idx) {
-    emit signalRequestWriteAttribute(tr("ledrbw"), tr("duty0"), static_cast<quint32>(idx));
-}
-
-void TabLights::slotChangeDim1(int idx) {
-    emit signalRequestWriteAttribute(tr("ledrbw"), tr("duty1"), static_cast<quint32>(idx));
-}
-
-void TabLights::slotChangeDim2(int idx) {
-    emit signalRequestWriteAttribute(tr("ledrbw"), tr("duty2"), static_cast<quint32>(idx));
-}
-
-void TabLights::slotChangeDim3(int idx) {
-    emit signalRequestWriteAttribute(tr("ledrbw"), tr("duty3"), static_cast<quint32>(idx));
 }
 
 void TabLights::slotLightsMoveUp(bool checked) {
@@ -184,17 +190,7 @@ void TabLights::slotChangeTime() {
 void TabLights::slotResponseAttribute(const QString &objname,
                                       const QString &atrname,
                                       quint32 data) {
-    if (objname == "ledrbw") {
-        if (atrname == "duty0") {
-            slider_[0]->setValue(data);
-        } else if (atrname == "duty1") {
-            slider_[1]->setValue(data);
-        } else if (atrname == "duty2") {
-            slider_[2]->setValue(data);
-        } else if (atrname == "duty3") {
-            slider_[3]->setValue(data);
-        }
-    } else if (objname == "hbrg2") {
+    if (objname == "hbrg2") {
         if (atrname == "dc1_duty") {
 
         }
