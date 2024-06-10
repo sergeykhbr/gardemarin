@@ -1,4 +1,149 @@
 {
+'MonitorConfig':{
+    'TabScales':{
+        'UpdateTime':10,
+        'Groups':[
+            {
+            'GroupName':'Moisture',
+            'GroupUnits':'%',
+            'Lines':[
+              {
+                'Name':'moisture',
+                'Format':'%.1f',
+                'RingLength':720,
+                'Color':'#007ACC',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':100.0,
+                'NormalMaxY':true, 'NormalMaxYVal':100.0, 'NormalMinY':true, 'NormalMinYVal':80.0
+            }]},
+            {
+              'GroupName':'Scales',
+              'GroupUnits':'gram',
+              'Lines':[
+                  {
+                    'Name':'sewer',
+                    'Format':'%.1f',
+                    'RingLength':720,
+                    'Color':'#BD63C5',
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+                  },{
+                    'Name':'plant',
+                    'Format':'%.1f',
+                    'RingLength':720,
+                    'Color':'#40C977',
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+                  },{
+                    'Name':'mix',
+                    'Format':'%.1f',
+                    'RingLength':720,
+                    'Color':'#007ACC',
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+                  },{
+                    'Name':'total',
+                    'Format':'%.1f',
+                    'RingLength':720,
+                    'Color':'#FFFFFF',
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'NormalMaxY':true, 'NormalMaxYVal':6000.0, 'NormalMinY':true, 'NormalMinYVal':4000.0
+            }]}
+            ]
+        },
+    'TabNPK':{ 
+        'UpdateTime':10,
+        'Groups':[
+            {
+            'GroupName':'Salinity',
+            'GroupUnits':'mg/kg',
+            'Lines':[
+              {
+                'Name':'EC',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#FFFFFF',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':600.0,
+                'NormalMaxY':true, 'NormalMaxYVal':250.0, 'NormalMinY':true, 'NormalMinYVal':110.0
+            }]},
+            {
+            'GroupName':'pH',
+            'GroupUnits':'',
+            'Lines':[
+              {
+                'Name':'pH',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#FFFFFF',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':10.0,
+                'NormalMaxY':true, 'NormalMaxYVal':7.0, 'NormalMinY':true, 'NormalMinYVal':5.5
+            }]},
+            {
+            'GroupName':'NPK',
+            'GroupUnits':'mg/kg',
+            'Lines':[
+              {
+                'Name':'N',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#BD63C5',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':500.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+              },{
+                'Name':'P',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#40C977',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':500.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+              },{
+                'Name':'K',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#007ACC',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':500.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+            }]}
+            ]
+        },
+    'TabTemperature':{
+        'UpdateTime':10,
+        'Groups':[
+            {
+            'GroupName':'Temperature',
+            'GroupUnits':'C',
+            'Lines':[
+            {
+                'Name':'fog',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#2A629A',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':60.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+            },{
+                'Name':'Tmix',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#FFDA78',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':60.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+            },{
+                'Name':'Tair',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#FF7f3E',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':60.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+            },{
+                'Name':'cpu',
+                'Format':'%.1f',
+                'RingLength':256,
+                'Color':'#003285',
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':60.0,
+                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
+            }]}
+            ]
+        }
+},
 'TargetConfig':{
     'ObjectsList':[
        {'Index':0, 'Name':'kernel',

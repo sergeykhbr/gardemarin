@@ -17,7 +17,7 @@
 #include "tab_tmpr.h"
 #include <QVBoxLayout>
 
-TabTemperature::TabTemperature(QWidget *parent)
+TabTemperature::TabTemperature(QWidget *parent, AttributeType *cfg)
     : QWidget(parent),
     timer_(this) {
 
@@ -25,70 +25,7 @@ TabTemperature::TabTemperature(QWidget *parent)
     layout->setSpacing(6);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    AttributeType cfgTemp;
-    cfgTemp.from_config("{"
-        "'GroupName':'Temperature',"
-        "'GroupUnits':'C',"
-        "'Lines':["
-          "{"
-            "'Name':'fog',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#2A629A',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':60.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'Tmix',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#FFDA78',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':60.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'Tair',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#FF7f3E',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':60.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'cpu',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#003285',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':60.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "}"
-        "]"
-        "}");
-    plotTemperature_ = new PlotWidget(this, &cfgTemp),
+    plotTemperature_ = new PlotWidget(this, &(*cfg)["Groups"][0u]),
 
     layout->addWidget(plotTemperature_);
     setLayout(layout);
@@ -96,7 +33,7 @@ TabTemperature::TabTemperature(QWidget *parent)
     timer_.setSingleShot(false);
 
     connect(&timer_, &QTimer::timeout, this, &TabTemperature::slotTimeToRequest);
-    timer_.start(std::chrono::seconds{10});
+    timer_.start(std::chrono::seconds{(*cfg)["UpdateTime"].to_int()});
 
 }
 

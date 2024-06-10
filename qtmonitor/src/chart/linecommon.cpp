@@ -174,7 +174,7 @@ bool LineCommon::getNext(int &x, int &y) {
     if (axis_[1].fixedMaxVal && val > axis_[1].maxVal) {
         y = 0;
     } else if (axis_[1].fixedMinVal && val < axis_[1].minVal) {
-        y = static_cast<int>(axis_[1].minVal * dy + 0.5);
+        y = static_cast<int>(axis_[1].maxVal * dy + 0.5);
     } else {
         y = static_cast<int>((axis_[1].maxVal - val) * dy + 0.5);
     }

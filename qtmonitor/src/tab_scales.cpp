@@ -17,7 +17,7 @@
 #include "tab_scales.h"
 #include <QVBoxLayout>
 
-TabScales::TabScales(QWidget *parent)
+TabScales::TabScales(QWidget *parent, AttributeType *cfg)
     : QWidget(parent),
     timer_(this),
     gram0_(0),
@@ -28,94 +28,8 @@ TabScales::TabScales(QWidget *parent)
     layout->setSpacing(6);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    AttributeType scalesCfg;
-    AttributeType moistureCfg;
-    moistureCfg.from_config("{"
-        "'GroupName':'Moisture',"
-        "'GroupUnits':'%',"
-        "'Lines':["
-          "{"
-            "'Name':'moisture',"
-            "'Format':'%.1f',"
-            "'RingLength':720,"
-            "'Color':'#007ACC',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':100.0,"
-            "'NormalMaxY':true,"
-            "'NormalMaxYVal':100.0,"
-            "'NormalMinY':true,"
-            "'NormalMinYVal':80.0"
-          "}"
-        "]"
-        "}");
-
-    scalesCfg.from_config("{"
-        "'GroupName':'Scales',"
-        "'GroupUnits':'gram',"
-        "'Lines':["
-          "{"
-            "'Name':'sewer',"
-            "'Format':'%.1f',"
-            "'RingLength':720,"
-            "'Color':'#BD63C5',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':6000.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'plant',"
-            "'Format':'%.1f',"
-            "'RingLength':720,"
-            "'Color':'#40C977',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':6000.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'mix',"
-            "'Format':'%.1f',"
-            "'RingLength':720,"
-            "'Color':'#007ACC',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':6000.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'total',"
-            "'Format':'%.1f',"
-            "'RingLength':720,"
-            "'Color':'#FFFFFF',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':6000.0,"
-            "'NormalMaxY':true,"
-            "'NormalMaxYVal':6000.0,"
-            "'NormalMinY':true,"
-            "'NormalMinYVal':4000.0"
-          "}"
-        "]"
-        "}");
-
-    plotMoisture_ = new PlotWidget(this, &moistureCfg),
-    plotScales_ = new PlotWidget(this, &scalesCfg);
+    plotMoisture_ = new PlotWidget(this, &(*cfg)["Groups"][0u]),
+    plotScales_ = new PlotWidget(this, &(*cfg)["Groups"][1]);
 
     layout->addWidget(plotMoisture_, 1);
     layout->addWidget(plotScales_, 2);
@@ -124,7 +38,7 @@ TabScales::TabScales(QWidget *parent)
     timer_.setSingleShot(false);
 
     connect(&timer_, &QTimer::timeout, this, &TabScales::slotTimeToRequest);
-    timer_.start(std::chrono::seconds{10});
+    timer_.start(std::chrono::seconds{(*cfg)["UpdateTime"].to_int()});
 
 }
 

@@ -27,7 +27,7 @@
 MainWindow::MainWindow(AttributeType *cfg) :
     QMainWindow(nullptr),
     serial_(new SerialWidget(this, cfg)),
-    tabWindow_(new TabWindow(this, serial_))   
+    tabWindow_(new TabWindow(this, serial_, cfg))   
 {
     Config_.clone(cfg);
 

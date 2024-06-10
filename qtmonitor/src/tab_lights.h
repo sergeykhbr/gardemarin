@@ -32,6 +32,7 @@ class TabLights : public QWidget {
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);
     void signalRequestWriteAttribute(const QString &objname, const QString &atrname, quint32 data);
+    void signalResponseAttribute(const QString &objname, const QString &atrname, quint32 data);
 
  public slots:
     void slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data);

@@ -247,7 +247,8 @@ void DialogSerialSettings::fillPortsInfo()
 
         serialPortInfoListBox->addItem(list.constFirst(), list);
         if (info.systemLocation().contains(tr("COM3"))
-            || info.systemLocation().contains(tr("COM4"))) {
+            || info.systemLocation().contains(tr("COM4"))
+            || info.systemLocation().contains(tr("ttyUSB0"))) {
             serialPortInfoListBox->setCurrentIndex(total);
         }
         total++;

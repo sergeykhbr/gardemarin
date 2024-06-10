@@ -24,7 +24,7 @@ class TabScales : public QWidget {
     Q_OBJECT
 
  public:
-    explicit TabScales(QWidget *parent = nullptr);
+    explicit TabScales(QWidget *parent, AttributeType *cfg);
 
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);

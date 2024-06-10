@@ -19,21 +19,15 @@
 PwmSlider::PwmSlider(QWidget *parent, AttributeType *cfg)
     : QWidget(parent) {
     setMinimumHeight(100);
-    setMinimumWidth(1000);
     objname_ = QString((*cfg)["ObjName"].to_string());
     attrname_ = QString((*cfg)["AttrName"].to_string());
     colorStart_ = QColor((*cfg)["ColorStart"].to_string());
     colorEnd_ = QColor((*cfg)["ColorEnd"].to_string());
 }
 
-bool PwmSlider::event(QEvent *e) {
-    if (e->type() == QEvent::Leave){
-        update();
-    } else if (e->type() == QEvent::Show){
-        emit signalRequestReadAttribute(objname_, attrname_);
-        pointCursor_.setY(height() / 2);
-    }
-    return QWidget::event(e);
+void PwmSlider::showEvent(QShowEvent *ev) {
+    pointCursor_.setY(height() / 2);
+    emit signalRequestReadAttribute(objname_, attrname_);
 }
 
 void PwmSlider::mousePressEvent(QMouseEvent *event) {
@@ -59,23 +53,10 @@ void PwmSlider::mousePressEvent(QMouseEvent *event) {
     setValue(static_cast<quint32>(rate));
 }
 
-void PwmSlider::setValue(quint32 val) {
-    if (val > 100) {
-        val = 100;
-    }
-    double rate = (static_cast<double>(width()) / 100.0);
-    rate *= val;
-    if (rate > width()) {
-        rate = width();
-    }
-    pointCursor_.setX(static_cast<int>(rate));
-    if (isVisible()) {
-        update();
-    }
-}
-
 void PwmSlider::paintEvent(QPaintEvent *event) {
+    QColor bkg1 = QColor(Qt::black);
     QPixmap pixmapPaint(size());
+    pixmapPaint.fill(bkg1);
     
     QPainter p1(&pixmapPaint);
     QLinearGradient g(0, 0, width(), 0);
@@ -96,6 +77,19 @@ void PwmSlider::paintEvent(QPaintEvent *event) {
     QPainter p(this);
     p.drawPixmap(QPoint(0,0), pixmapPaint);
     p.end();
+}
+
+void PwmSlider::setValue(quint32 val) {
+    if (val > 100) {
+        val = 100;
+    }
+    double rate = (static_cast<double>(width()) / 100.0);
+    rate *= val;
+    if (rate > width()) {
+        rate = width();
+    }
+    pointCursor_.setX(static_cast<int>(rate));
+    update();
 }
 
 void PwmSlider::slotResponseAttribute(const QString &objname,

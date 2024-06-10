@@ -181,7 +181,7 @@ void PlotWidget::renderMarker(QPainter &p) {
         /** 
             Vertial Marker line:
         */
-        p.setPen(QPen(QColor(0xff, 0, 0, 0xa0)));
+        p.setPen(QPen(QColor(0xff, 0, 0, 0xa0), 5));
         QPoint ptA(x, 0);
         QPoint ptB(x, rectPlot.height());
         p.drawLine(ptA, ptB);

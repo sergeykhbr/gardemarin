@@ -36,9 +36,9 @@ class PwmSlider : public QWidget {
     void slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data);
 
  protected:
-    bool event(QEvent *e) override;
+    void showEvent(QShowEvent *ev) override;
     void mousePressEvent(QMouseEvent *ev) override;
-    void paintEvent(QPaintEvent *event_) override;
+    void paintEvent(QPaintEvent *ev) override;
 
  private:
     void setValue(quint32 val);

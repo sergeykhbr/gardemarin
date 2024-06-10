@@ -29,7 +29,7 @@ class TabWindow : public QTabWidget {
     Q_OBJECT
 
  public:
-    TabWindow(QWidget *parent, SerialWidget *serial);
+    TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg);
 
  signals:
     void signalSendData(const QByteArray &data);

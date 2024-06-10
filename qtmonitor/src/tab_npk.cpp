@@ -17,7 +17,7 @@
 #include "tab_npk.h"
 #include <QVBoxLayout>
 
-TabNPK::TabNPK(QWidget *parent)
+TabNPK::TabNPK(QWidget *parent, AttributeType *cfg)
     : QWidget(parent),
     timer_(this) {
 
@@ -25,102 +25,9 @@ TabNPK::TabNPK(QWidget *parent)
     layout->setSpacing(6);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    AttributeType cfgEC;
-    AttributeType cfgPH;
-    AttributeType cfgNPK;
-    cfgEC.from_config("{"
-        "'GroupName':'Salinity',"
-        "'GroupUnits':'mg/kg',"
-        "'Lines':["
-          "{"
-            "'Name':'EC',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#FFFFFF',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':600.0,"
-            "'NormalMaxY':true,"
-            "'NormalMaxYVal':250.0,"
-            "'NormalMinY':true,"
-            "'NormalMinYVal':110.0"
-          "}"
-        "]"
-        "}");
-
-    cfgPH.from_config("{"
-        "'GroupName':'pH',"
-        "'GroupUnits':'',"
-        "'Lines':["
-          "{"
-            "'Name':'pH',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#FFFFFF',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':10.0,"
-            "'NormalMaxY':true,"
-            "'NormalMaxYVal':7.0,"
-            "'NormalMinY':true,"
-            "'NormalMinYVal':5.5"
-          "}"
-        "]"
-        "}");
-    cfgNPK.from_config("{"
-        "'GroupName':'NPK',"
-        "'GroupUnits':'mg/kg',"
-        "'Lines':["
-          "{"
-            "'Name':'N',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#BD63C5',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':500.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'P',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#40C977',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':500.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "},"
-          "{"
-            "'Name':'K',"
-            "'Format':'%.1f',"
-            "'RingLength':256,"
-            "'Color':'#007ACC',"
-            "'FixedMinY':true,"
-            "'FixedMinYVal':0.0,"
-            "'FixedMaxY':true,"
-            "'FixedMaxYVal':500.0,"
-            "'NormalMaxY':false,"
-            "'NormalMaxYVal':0.0,"
-            "'NormalMinY':false,"
-            "'NormalMinYVal':0.0"
-          "}"
-        "]"
-        "}");
-
-    plotEC_ = new PlotWidget(this, &cfgEC),
-    plotPH_ = new PlotWidget(this, &cfgPH);
-    plotNPK_ = new PlotWidget(this, &cfgNPK);
+    plotEC_ = new PlotWidget(this, &(*cfg)["Groups"][0u]),
+    plotPH_ = new PlotWidget(this, &(*cfg)["Groups"][1]);
+    plotNPK_ = new PlotWidget(this, &(*cfg)["Groups"][2]);
 
     layout->addWidget(plotEC_, 1);
     layout->addWidget(plotPH_, 1);
@@ -130,7 +37,7 @@ TabNPK::TabNPK(QWidget *parent)
     timer_.setSingleShot(false);
 
     connect(&timer_, &QTimer::timeout, this, &TabNPK::slotTimeToRequest);
-    timer_.start(std::chrono::seconds{10});
+    timer_.start(std::chrono::seconds{(*cfg)["UpdateTime"].to_int()});
 
 }
 

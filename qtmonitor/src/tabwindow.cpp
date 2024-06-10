@@ -18,11 +18,11 @@
 #include <QMenuBar>
 #include <QMenu>
 
-TabWindow::TabWindow(QWidget *parent, SerialWidget *serial)
+TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     : QTabWidget(parent), serial_(serial) {
-    tabScales_ = new TabScales(this);
-    tabNPK_ = new TabNPK(this);
-    tabTemperature_ = new TabTemperature(this);
+    tabScales_ = new TabScales(this, &(*cfg)["MonitorConfig"]["TabScales"]);
+    tabNPK_ = new TabNPK(this, &(*cfg)["MonitorConfig"]["TabNPK"]);
+    tabTemperature_ = new TabTemperature(this, &(*cfg)["MonitorConfig"]["TabTemperature"]);
     tabLights_ = new TabLights(this);
     tabCamera_ = new TabCamera(this);
     tabTest_ = new TabTest(this);

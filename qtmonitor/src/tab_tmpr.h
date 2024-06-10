@@ -24,7 +24,7 @@ class TabTemperature : public QWidget {
     Q_OBJECT
 
  public:
-    explicit TabTemperature(QWidget *parent = nullptr);
+    explicit TabTemperature(QWidget *parent, AttributeType *cfg);
 
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);

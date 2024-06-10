@@ -70,6 +70,8 @@ TabLights::TabLights(QWidget *parent)
                 &TabLights::slotRequestReadAttribute);
         connect(slider_[i], &PwmSlider::signalRequestWriteAttribute, this,
                 &TabLights::slotRequestWriteAttribute);
+        connect(this, &TabLights::signalResponseAttribute,
+                slider_[i], &PwmSlider::slotResponseAttribute);
     }
     
     QGroupBox *dimmingGroup = new QGroupBox(this);
@@ -88,6 +90,7 @@ TabLights::TabLights(QWidget *parent)
 
     dimmingLayout->addWidget(new QLabel(tr("Red/Blue:"), this), 3, 0);
     dimmingLayout->addWidget(slider_[3], 3, 1);
+    dimmingLayout->setColumnStretch(1, 11);
 
 
 
@@ -206,6 +209,7 @@ void TabLights::slotResponseAttribute(const QString &objname,
             minutes_->setValue(static_cast<int>(m));
         }
     }
+    emit signalResponseAttribute(objname, atrname, data);
 }
 
 

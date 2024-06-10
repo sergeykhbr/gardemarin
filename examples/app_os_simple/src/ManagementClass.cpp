@@ -75,7 +75,7 @@ void ManagementClass::update() {
         break;
     case CheckMoisture:
         if (isPeriodExpired(30 * 60)
-            || (isPeriodExpired(10 * 60) && getMoisture() < 750)) {
+            || (isPeriodExpired(15 * 60) && getMoisture() < 450)) {
             switchToState(DrainBefore);
             write_int8("hbrg0", "dc0_duty", 100);
             confirmCnt_ = 0;
@@ -109,11 +109,12 @@ void ManagementClass::update() {
         if ((mix_gram_ - getMixWeight()) < 5.0f) {
             // no water in mix tank
             confirmCnt_++;
+            uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());
         } else {
             confirmCnt_ = 0;
         }
         // 240 sec * 14 = 3360 grams of water
-        if (getMoisture() > 980
+        if (getMoisture() > 800
             || confirmCnt_ > 2
             || isPeriodExpired(240)) {
             write_int8("relais0", "State", 0);

@@ -24,7 +24,7 @@ class TabNPK : public QWidget {
     Q_OBJECT
 
  public:
-    explicit TabNPK(QWidget *parent = nullptr);
+    explicit TabNPK(QWidget *parent, AttributeType *cfg);
 
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);
