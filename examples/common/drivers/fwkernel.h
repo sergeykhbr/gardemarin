@@ -31,6 +31,7 @@
 #include "ds18b20_drv.h"
 #include "soil_drv.h"
 #include "rtc_drv.h"
+#include "usrsettings.h"
 #include "dbc.h"
 
 class KernelClass : public FwObject {
@@ -108,5 +109,6 @@ class KernelClass : public FwObject {
     Ds18b20Driver temp0_;
     SoilDriver soil0_;
     RtcDriver rtc_;
+    UserSettings settings_;
     DbcConverter dbc_;        // CAN database converter
 };

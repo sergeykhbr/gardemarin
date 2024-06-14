@@ -75,6 +75,7 @@ SOURCES = isr_vector \
 	ds18b20_drv \
 	soil_drv \
 	rtc_drv \
+	usrsettings \
 	fwmem \
 	fwapi \
 	fwattribute \

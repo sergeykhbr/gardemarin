@@ -305,7 +305,23 @@
            {'Index':0, 'Name':'Date', 'Type':'uint32', 'Value':0x20240529, 'Descr':'yyyy.mm.dd'},
            {'Index':1, 'Name':'Time', 'Type':'uint32', 'Value':0x00114800, 'Descr':'00hh.mm.ss'}]
        },
-       {'Index':18, 'Name':'dbc',
+       {'Index':18, 'Name':'usrset',
+        'Attributes':[
+           {'Index':0, 'Name':'LastServiceTime', 'Type':'invalid', 'Value':, 'Descr':'rtc time'},
+           {'Index':1, 'Name':'RequestToService', 'Type':'int8', 'Value':0, 'Descr':''},
+           {'Index':2, 'Name':'WateringPerDrain', 'Type':'int8', 'Value':15, 'Descr':'0..n counts'},
+           {'Index':3, 'Name':'WateringInterval', 'Type':'uint16', 'Value':0x003c, 'Descr':'[sec]'},
+           {'Index':4, 'Name':'WateringDuration', 'Type':'uint16', 'Value':0x0014, 'Descr':'[sec]'},
+           {'Index':5, 'Name':'LastWatering', 'Type':'uint32', 'Value':0x00000000, 'Descr':'rtc time'},
+           {'Index':6, 'Name':'OxygenSaturationInterval', 'Type':'uint16', 'Value':0x001e, 'Descr':'[sec]'},
+           {'Index':7, 'Name':'DayStart', 'Type':'uint32', 'Value':0x00005460, 'Descr':'[sec] time of day'},
+           {'Index':8, 'Name':'DayEnd', 'Type':'uint32', 'Value':0x00013560, 'Descr':'[sec] time of day'},
+           {'Index':9, 'Name':'DayDuty0', 'Type':'int8', 'Value':50, 'Descr':'pwm: 0..100 (blue)'},
+           {'Index':10, 'Name':'DayDuty1', 'Type':'int8', 'Value':0, 'Descr':'pwm: 0..100 (unused)'},
+           {'Index':11, 'Name':'DayDuty2', 'Type':'int8', 'Value':0, 'Descr':'pwm: 0..100 (white)'},
+           {'Index':12, 'Name':'DayDuty3', 'Type':'int8', 'Value':0, 'Descr':'pwm: 0..100 (red/blue)'}]
+       },
+       {'Index':19, 'Name':'dbc',
         'Attributes':[]
    }]
 }

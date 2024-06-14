@@ -21,8 +21,6 @@
 
 ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     : FwObject("man"),
-    requestToService_("RequestToService"),
-    lastWatering_("LastWatering"),
     estate_(WaitInit),
     taskHandle_(taskHandle) {
     btnClick_ = false;
@@ -32,14 +30,10 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     plants_gram_ = 0;
     mix_gram_ = 0;
     confirmCnt_ = 0;
-
-    requestToService_.make_int8(0);
-    lastWatering_.make_uint32(0);
+    shortWateringCnt_ = 0;
 }
 
 void ManagementClass::Init() {
-    RegisterAttribute(&requestToService_);
-    RegisterAttribute(&lastWatering_);
 }
 
 void ManagementClass::PostInit() {
@@ -58,8 +52,8 @@ void ManagementClass::update() {
 
     epochCnt_++;
 
-    if (btnClick || requestToService_.to_int8()) {
-        requestToService_.make_int8(0);
+    if (btnClick || read_int8("usrset", "RequestToService")) {
+        write_int8("usrset", "RequestToService", 0);
         if (estate_ != Servicing) {
             switchToService();
         } else {
@@ -73,10 +67,13 @@ void ManagementClass::update() {
             switchToState(DrainBefore);
         }
         break;
-    case CheckMoisture:
-        if (isPeriodExpired(30 * 60)
-            || (isPeriodExpired(15 * 60) && getMoisture() < 450)) {
-            switchToState(DrainBefore);
+    case CheckWateringInterval:
+        if (isPeriodExpired(read_uint16("usrset", "WateringInterval"))) {
+            if (read_int8("usrset", "WateringPerDrain") > 1) {
+                switchToState(DrainBefore);
+            } else {
+                switchToState(Watering);
+            }
             write_int8("hbrg0", "dc0_duty", 100);
             confirmCnt_ = 0;
         }
@@ -96,10 +93,10 @@ void ManagementClass::update() {
         }
         break;
     case OxygenSaturation:
-        if (isPeriodExpired(30)) {
+        if (isPeriodExpired(read_uint16("usrset", "OxygenSaturationInterval"))) {
             switchToState(Watering);
             confirmCnt_ = 0;
-            lastWatering_.make_uint32(epochCnt_);
+            write_uint32("", "", read_uint32("rtc", "Time"));
             write_int8("hbrg2", "dc0_duty", 0);
             write_int8("relais0", "State", 1);
         }
@@ -114,12 +111,16 @@ void ManagementClass::update() {
             confirmCnt_ = 0;
         }
         // 240 sec * 14 = 3360 grams of water
-        if (getMoisture() > 800
-            || confirmCnt_ > 2
-            || isPeriodExpired(240)) {
+        if (confirmCnt_ > 2
+            || isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
             write_int8("relais0", "State", 0);
             write_int8("hbrg0", "dc0_duty", 100);
-            switchToState(DrainAfter);
+            if (++shortWateringCnt_ < read_int8("usrset", "WateringPerDrain")) {
+                switchToState(AdjustLights);
+            } else {
+                switchToState(DrainAfter);
+                shortWateringCnt_ = 0;
+            }
             confirmCnt_ = 0;
         }
         break;
@@ -137,8 +138,8 @@ void ManagementClass::update() {
         }
         break;
     case AdjustLights:
-        setDayLights(Lattuce, Vegetative, getTimeOfDay());
-        switchToState(CheckMoisture);
+        setDayLights(getTimeOfDay());
+        switchToState(CheckWateringInterval);
         break;
 
     case Servicing:
@@ -190,6 +191,7 @@ void ManagementClass::switchToService() {
     write_int8("hbrg2", "dc0_duty", 0); // oxygen
     write_int8("hbrg2", "dc1_duty", 0); // lights up/down
     write_int8("uled0", "state", 0);
+    write_uint32("usrset", "LastServiceTime", read_uint32("rtc", "Time"));
     estate_ = Servicing;
     uart_printf("[%d] Switching to Service\r\n", xTaskGetTickCount());
 }
@@ -200,19 +202,19 @@ void ManagementClass::switchToNormal() {
     uart_printf("[%d] Switching to Normal\r\n", xTaskGetTickCount());
 }
 
-void ManagementClass::setDayLights(EPlantType plant,
-                                   EPlantStage stage,
-                                   uint32_t tow) {
-    const ProfileItemType *prf = &PlantProfile_[plant][stage];
-    if (tow < prf->dayStartSec || tow > prf->dayEndSec) {
+void ManagementClass::setDayLights(uint32_t tow) {
+    uint32_t dayStart = read_uint32("usrset", "DayStart");
+    uint32_t dayEnd = read_uint32("usrset", "DayEnd");
+    if (tow < dayStart || tow > dayEnd) {
         write_int8("ledrbw", "duty0", 0);   // blue
         write_int8("ledrbw", "duty1", 0);   // unused
         write_int8("ledrbw", "duty2", 0);   // white
         write_int8("ledrbw", "duty3", 0);   // red/blue
     } else {
-        write_int8("ledrbw", "duty0", prf->dutyBlue);   // blue
-        write_int8("ledrbw", "duty2", prf->dutyWhite);   // white
-        write_int8("ledrbw", "duty3", prf->dutyRed);   // red/blue
+        write_int8("ledrbw", "duty0", read_int8("usrset", "DayDuty0"));   // blue
+        write_int8("ledrbw", "duty1", read_int8("usrset", "DayDuty1"));   // unused
+        write_int8("ledrbw", "duty2", read_int8("usrset", "DayDuty2"));   // white
+        write_int8("ledrbw", "duty3", read_int8("usrset", "DayDuty3"));   // red/blue
     }
 }
 
@@ -236,6 +238,16 @@ void ManagementClass::write_int8(const char *objname,
                                 int8_t v) {
     char buf[2] = {static_cast<char>(v), 0};
     write_obj_attribute(objname, atrname, buf, 1);
+}
+
+void ManagementClass::write_uint32(const char *objname,
+                                   const char *atrname,
+                                   uint32_t v) {
+    char buf[5] = {static_cast<char>(v),
+                   static_cast<char>(v >> 8),
+                   static_cast<char>(v >> 16),
+                   static_cast<char>(v >> 24)};
+    write_obj_attribute(objname, atrname, buf, 4);
 }
 
 int8_t ManagementClass::read_int8(const char *objname,

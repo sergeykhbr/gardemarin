@@ -20,42 +20,6 @@
 #include <KeyInterface.h>
 #include <task.h>
 
-enum EPlantStage {
-    Seeding,    // the sprout grows into a baby plant producing roots ad true leaves (<4)
-    Vegetative, // Plants develop sturdy stems and leafy growth with the help of nitrogen
-    Budding,    // Plants start producing reproductive parts such as buds, flowers and fruits
-    Flowering,  // The burds become flowers and negin forming fruits using phosphorous
-    Ripening,   // A fully matured plant with flowers and fruits
-    PlantStage_total
-};
-
-enum EPlantType {
-    Lattuce,
-    Strawberry,
-    PlantType_total
-};
-
-struct ProfileItemType {
-    uint32_t dayStartSec;
-    uint32_t dayEndSec;
-    uint8_t dutyBlue;       // 0..100
-    uint8_t dutyRed;        // 0..100
-    uint8_t dutyWhite;      // 0..100
-};
-
-static const ProfileItemType PlantProfile_[PlantType_total][PlantStage_total] = {
-    // Lattuce
-    {
-        {6*3600, 22*3600, 50,  0, 0},   // Seeding
-        {6*3600, 22*3600, 100, 0, 10},  // Vegetative
-        {6*3600, 22*3600, 100, 0, 20},  // Budding
-        {},                             // Flowering
-        {},                             // Rippening
-    },
-    // Strawberry
-    {}
-};
-
 class ManagementClass : public FwObject,
                         public KeyListenerInterface {
  public:
@@ -78,7 +42,7 @@ class ManagementClass : public FwObject,
  protected:
     enum EState {
         WaitInit,
-        CheckMoisture,
+        CheckWateringInterval,
         DrainBefore,
         OxygenSaturation,
         Watering,
@@ -92,7 +56,7 @@ class ManagementClass : public FwObject,
     void switchToState(EState newstate);
     void switchToService();
     void switchToNormal();
-    void setDayLights(EPlantType plant, EPlantStage stage, uint32_t tow);
+    void setDayLights(uint32_t tow);
 
     void waitKeyPressed();
     void write_obj_attribute(const char *objname,
@@ -102,6 +66,9 @@ class ManagementClass : public FwObject,
     void write_int8(const char *objname,
                     const char *atrname,
                     int8_t v);
+    void write_uint32(const char *objname,
+                      const char *atrname,
+                      uint32_t v);
     int8_t read_int8(const char *objname,
                      const char *atrname);
     uint16_t read_uint16(const char *objname,
@@ -118,9 +85,6 @@ class ManagementClass : public FwObject,
     uint32_t getTimeOfDay();
 
  private:
-    FwAttribute requestToService_;
-    FwAttribute lastWatering_;
-
     EState  estate_;
 
     TaskHandle_t taskHandle_;
@@ -136,4 +100,5 @@ class ManagementClass : public FwObject,
     float sewer_gram_;
     float mix_gram_;
     int confirmCnt_;
+    int8_t shortWateringCnt_;      // Watering count before drain enabled
 };

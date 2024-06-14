@@ -44,6 +44,7 @@ KernelClass::KernelClass(const char *name) : FwObject(name),
     temp0_("temp0"),
     soil0_("soil0"),
     rtc_("rtc"),
+    settings_("usrset"),
     dbc_("dbc")
 {
     version_.make_uint32(0x20240804);
