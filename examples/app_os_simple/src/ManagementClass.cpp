@@ -30,6 +30,8 @@ const char *ManagementClass::STATES_NAMES[States_Total] = {
     "Servicing"
 };
 
+static const int MIX_TANK_EMPTY_CNT_MAX = 3;
+
 ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     : FwObject("man"),
     estate_(WaitInit),
@@ -60,6 +62,7 @@ void ManagementClass::PostInit() {
 
 void ManagementClass::update() {
     int btnClick = btnClick_;
+    float ftmp;
     btnClick_ = 0;
 
     epochCnt_++;
@@ -120,20 +123,23 @@ void ManagementClass::update() {
         break;
     case Watering:
         // Watering rate ~14 gram/sec
-        if ((mix_gram_ - getMixWeight()) < 5.0f) {
-            // no water in mix tank
-            if (++confirmCnt_ > 2) {
+        ftmp = getMixWeight();
+        uart_printf("[%d] %d\r\n", xTaskGetTickCount(),
+                                    (int)(mix_gram_ - ftmp));
+        if ((mix_gram_ - ftmp) < 3.0f) {
+            if (++confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX) {
+                // no water in mix tank
                 uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());
             }
         } else {
             confirmCnt_ = 0;
         }
         // 240 sec * 14 = 3360 grams of water
-        if (confirmCnt_ > 2
+        if (confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX
             || isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
             write_int8("relais0", "State", 0);
             if (++shortWateringCnt_ >= read_int8("usrset", "WateringPerDrain")
-                || confirmCnt_ > 2) {
+                || confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX) {
                 switchToState(DrainAfter);
                 write_int8("hbrg0", "dc0_duty", 100);
                 shortWateringCnt_ = 0;
