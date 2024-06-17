@@ -57,6 +57,12 @@ class ManagementClass : public FwObject,
     void switchToService();
     void switchToNormal();
     void setDayLights(uint32_t tow);
+    void enableHighPressurePump();
+    void disableHighPressurePump();
+    void enableDrainPump();
+    void disableDrainPump();
+    void enableOxyPump();
+    void disableOxyPump();
 
     void waitKeyPressed();
     void write_obj_attribute(const char *objname,

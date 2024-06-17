@@ -87,14 +87,16 @@ void ManagementClass::update() {
             if (read_int8("usrset", "WateringPerDrain") > 1) {
                 if (shortWateringCnt_ == 0) {
                     switchToState(OxygenSaturation);
+                    enableOxyPump();
                 } else {
                     switchToState(Watering);
+                    enableHighPressurePump();
                 }
                 // drain only after cycle is finished
             } else {
                 switchToState(DrainBefore);
+                enableDrainPump();
             }
-            write_int8("hbrg0", "dc0_duty", 100);
             confirmCnt_ = 0;
         }
         break;
@@ -108,8 +110,8 @@ void ManagementClass::update() {
         // 240 sec * 22 = 5280 grams watchdog
         if (confirmCnt_ > 2 || isPeriodExpired(240)) {
             switchToState(OxygenSaturation);
-            write_int8("hbrg0", "dc0_duty", 0);
-            write_int8("hbrg2", "dc0_duty", 100);
+            disableDrainPump();
+            enableOxyPump();
         }
         break;
     case OxygenSaturation:
@@ -117,8 +119,8 @@ void ManagementClass::update() {
             switchToState(Watering);
             confirmCnt_ = 0;
             write_uint32("usrset", "LastWatering", read_uint32("rtc", "Time"));
-            write_int8("hbrg2", "dc0_duty", 0);
-            write_int8("relais0", "State", 1);
+            disableOxyPump();
+            enableHighPressurePump();
         }
         break;
     case Watering:
@@ -137,11 +139,11 @@ void ManagementClass::update() {
         // 240 sec * 14 = 3360 grams of water
         if (confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX
             || isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
-            write_int8("relais0", "State", 0);
+            disableHighPressurePump();
             if (++shortWateringCnt_ >= read_int8("usrset", "WateringPerDrain")
                 || confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX) {
                 switchToState(DrainAfter);
-                write_int8("hbrg0", "dc0_duty", 100);
+                enableDrainPump();
                 shortWateringCnt_ = 0;
             } else {
                 // skip drain
@@ -159,7 +161,7 @@ void ManagementClass::update() {
         }
         // 240 sec * 22 = 5280 grams watchdog
         if (confirmCnt_ > 2 || isPeriodExpired(240)) {
-            write_int8("hbrg0", "dc0_duty", 0);
+            disableDrainPump();
             switchToState(AdjustLights);
         }
         break;
@@ -219,9 +221,9 @@ void ManagementClass::switchToState(EState newstate) {
 
 void ManagementClass::switchToService() {
     normal_.estate = estate_;
-    write_int8("relais0", "State", 0);  // watering
-    write_int8("hbrg0", "dc0_duty", 0); // sewer
-    write_int8("hbrg2", "dc0_duty", 0); // oxygen
+    disableHighPressurePump();  // watering
+    disableDrainPump();         // sewer
+    disableOxyPump();           // oxygen
     write_int8("hbrg2", "dc1_duty", 0); // lights up/down
     write_int8("uled0", "state", 0);
     write_uint32("usrset", "LastServiceTime", read_uint32("rtc", "Time"));
@@ -251,6 +253,29 @@ void ManagementClass::setDayLights(uint32_t tow) {
     }
 }
 
+void ManagementClass::enableHighPressurePump() {
+    write_int8("relais0", "State", 1);
+}
+
+void ManagementClass::disableHighPressurePump() {
+    write_int8("relais0", "State", 0);
+}
+
+void ManagementClass::enableDrainPump() {
+    write_int8("hbrg0", "dc0_duty", 100);
+}
+
+void ManagementClass::disableDrainPump() {
+    write_int8("hbrg0", "dc0_duty", 0);
+}
+
+void ManagementClass::enableOxyPump() {
+    write_int8("hbrg2", "dc0_duty", 100);
+}
+
+void ManagementClass::disableOxyPump() {
+    write_int8("hbrg2", "dc0_duty", 0);
+}
 
 void ManagementClass::write_obj_attribute(const char *objname,
                          const char *atrname,
