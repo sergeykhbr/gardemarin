@@ -35,6 +35,7 @@ UserSettings::UserSettings(const char *name) : FwObject(name),
     dayDuty2_("DayDuty2", "pwm: 0..100 (white)"),
     dayDuty3_("DayDuty3", "pwm: 0..100 (red/blue)") {
 
+    lastServiceTime_.make_uint32(0);
     requestToService_.make_int8(0);
     wateringPerDrain_.make_int8(15);
     wateringInterval_.make_uint16(60);

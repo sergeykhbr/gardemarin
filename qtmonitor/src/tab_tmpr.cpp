@@ -47,7 +47,7 @@ void TabTemperature::slotTimeToRequest() {
 void TabTemperature::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "soil0") {
         if (atrname == "T") {
-            plotTemperature_->writeData(0, static_cast<double>(data) / 100.0);
+            plotTemperature_->writeData(0, static_cast<double>(data) / 10.0);
         }
     } else if (objname == "temp0") {
         if (atrname == "T0") {

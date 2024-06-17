@@ -307,7 +307,7 @@
        },
        {'Index':18, 'Name':'usrset',
         'Attributes':[
-           {'Index':0, 'Name':'LastServiceTime', 'Type':'invalid', 'Value':, 'Descr':'rtc time'},
+           {'Index':0, 'Name':'LastServiceTime', 'Type':'uin32', 'Value':0x00000000, 'Descr':'rtc time'},
            {'Index':1, 'Name':'RequestToService', 'Type':'int8', 'Value':0, 'Descr':''},
            {'Index':2, 'Name':'WateringPerDrain', 'Type':'int8', 'Value':15, 'Descr':'0..n counts'},
            {'Index':3, 'Name':'WateringInterval', 'Type':'uint16', 'Value':0x003c, 'Descr':'[sec]'},

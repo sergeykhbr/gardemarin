@@ -166,7 +166,7 @@ void UartDriver::callbackTimer(uint64_t tickcnt) {
     RawListenerInterface *iface;
     char rxbyte;
 
-#ifdef _WIN32
+#ifdef x_WIN32
     if (tickcnt == 4000) {
         // [16,1] oil moisture
         const char *xxx = ">!00000110,1,01";  // read value

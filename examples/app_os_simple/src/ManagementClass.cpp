@@ -19,6 +19,17 @@
 #include <FreeRTOS.h>
 #include "ManagementClass.h"
 
+const char *ManagementClass::STATES_NAMES[States_Total] = {
+    "WaitInit",
+    "CheckWateringInterval",
+    "DrainBefore",
+    "OxygenSaturation",
+    "Watering",
+    "DrainAfter",
+    "AdjustLights",
+    "Servicing"
+};
+
 ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     : FwObject("man"),
     estate_(WaitInit),
@@ -26,6 +37,7 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     btnClick_ = false;
     epochCnt_ = 0;
     epochMarker_ = 0;
+    stateSwitchedLast_ = 0;
     sewer_gram_ = 0;
     plants_gram_ = 0;
     mix_gram_ = 0;
@@ -64,15 +76,20 @@ void ManagementClass::update() {
     switch (estate_) {
     case WaitInit:
         if (isPeriodExpired(60)) {
-            switchToState(DrainBefore);
+            switchToState(CheckWateringInterval);
         }
         break;
     case CheckWateringInterval:
         if (isPeriodExpired(read_uint16("usrset", "WateringInterval"))) {
             if (read_int8("usrset", "WateringPerDrain") > 1) {
-                switchToState(DrainBefore);
+                if (shortWateringCnt_ == 0) {
+                    switchToState(OxygenSaturation);
+                } else {
+                    switchToState(Watering);
+                }
+                // drain only after cycle is finished
             } else {
-                switchToState(Watering);
+                switchToState(DrainBefore);
             }
             write_int8("hbrg0", "dc0_duty", 100);
             confirmCnt_ = 0;
@@ -96,7 +113,7 @@ void ManagementClass::update() {
         if (isPeriodExpired(read_uint16("usrset", "OxygenSaturationInterval"))) {
             switchToState(Watering);
             confirmCnt_ = 0;
-            write_uint32("", "", read_uint32("rtc", "Time"));
+            write_uint32("usrset", "LastWatering", read_uint32("rtc", "Time"));
             write_int8("hbrg2", "dc0_duty", 0);
             write_int8("relais0", "State", 1);
         }
@@ -105,8 +122,9 @@ void ManagementClass::update() {
         // Watering rate ~14 gram/sec
         if ((mix_gram_ - getMixWeight()) < 5.0f) {
             // no water in mix tank
-            confirmCnt_++;
-            uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());
+            if (++confirmCnt_ > 2) {
+                uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());
+            }
         } else {
             confirmCnt_ = 0;
         }
@@ -114,12 +132,14 @@ void ManagementClass::update() {
         if (confirmCnt_ > 2
             || isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
             write_int8("relais0", "State", 0);
-            write_int8("hbrg0", "dc0_duty", 100);
-            if (++shortWateringCnt_ < read_int8("usrset", "WateringPerDrain")) {
-                switchToState(AdjustLights);
-            } else {
+            if (++shortWateringCnt_ >= read_int8("usrset", "WateringPerDrain")
+                || confirmCnt_ > 2) {
                 switchToState(DrainAfter);
+                write_int8("hbrg0", "dc0_duty", 100);
                 shortWateringCnt_ = 0;
+            } else {
+                // skip drain
+                switchToState(AdjustLights);
             }
             confirmCnt_ = 0;
         }
@@ -181,6 +201,13 @@ bool ManagementClass::isPeriodExpired(uint32_t period) {
 
 void ManagementClass::switchToState(EState newstate) {
     epochMarker_ = epochCnt_;
+    uart_printf("[%d, %d, %s, %s]\r\n",
+        xTaskGetTickCount(),
+        epochMarker_ - stateSwitchedLast_,
+        STATES_NAMES[estate_],
+        STATES_NAMES[newstate]);
+
+    stateSwitchedLast_ = epochMarker_;
     estate_ = newstate;
 }
 

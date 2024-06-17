@@ -109,7 +109,7 @@ void UserButtonDriver::registerKeyListener(KeyListenerInterface *iface) {
 void UserButtonDriver::callbackTimer(uint64_t tickcnt) {
     uint32_t ev = event_;
     event_ ^= ev;
-#ifdef _WIN32
+#ifdef x_WIN32
 if ((tickcnt % 5000) == 4999) {
     ev |= BTN_EVENT_PRESSED; 
 }

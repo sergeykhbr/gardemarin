@@ -86,11 +86,13 @@ class ManagementClass : public FwObject,
 
  private:
     EState  estate_;
+    static const char *STATES_NAMES[States_Total];
 
     TaskHandle_t taskHandle_;
     bool btnClick_;
     uint32_t epochCnt_;
     uint32_t epochMarker_;
+    uint32_t stateSwitchedLast_;
 
     struct NormalContextType {
         EState estate;
