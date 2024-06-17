@@ -30,7 +30,7 @@ const char *ManagementClass::STATES_NAMES[States_Total] = {
     "Servicing"
 };
 
-static const int MIX_TANK_EMPTY_CNT_MAX = 3;
+static const int MIX_TANK_EMPTY_CNT_MAX = 2;
 
 ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     : FwObject("man"),
@@ -126,9 +126,9 @@ void ManagementClass::update() {
     case Watering:
         // Watering rate ~14 gram/sec
         ftmp = getMixWeight();
-        uart_printf("[%d] %d\r\n", xTaskGetTickCount(),
-                                    (int)(mix_gram_ - ftmp));
-        if ((mix_gram_ - ftmp) < 3.0f) {
+        //uart_printf("[%d] %d\r\n", xTaskGetTickCount(),
+        //                            (int)(mix_gram_ - ftmp));
+        if ((mix_gram_ - ftmp) < 5.0f) {
             if (++confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX) {
                 // no water in mix tank
                 uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());

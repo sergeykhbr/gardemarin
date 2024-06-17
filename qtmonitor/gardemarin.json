@@ -13,7 +13,7 @@
                 'RingLength':720,
                 'Color':'#007ACC',
                 'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':100.0,
-                'NormalMaxY':true, 'NormalMaxYVal':100.0, 'NormalMinY':true, 'NormalMinYVal':80.0
+                'NormalMaxY':true, 'NormalMaxYVal':70.0, 'NormalMinY':true, 'NormalMinYVal':50.0
             }]},
             {
               'GroupName':'Scales',
@@ -24,29 +24,29 @@
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#BD63C5',
-                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
                   },{
                     'Name':'plant',
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#40C977',
-                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
                   },{
                     'Name':'mix',
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#007ACC',
-                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
                   },{
                     'Name':'total',
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#FFFFFF',
-                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':6000.0,
-                    'NormalMaxY':true, 'NormalMaxYVal':6000.0, 'NormalMinY':true, 'NormalMinYVal':4000.0
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':10000.0,
+                    'NormalMaxY':true, 'NormalMaxYVal':8000.0, 'NormalMinY':true, 'NormalMinYVal':6000.0
             }]}
             ]
         },
@@ -131,13 +131,6 @@
                 'Format':'%.1f',
                 'RingLength':256,
                 'Color':'#FF7f3E',
-                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':60.0,
-                'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
-            },{
-                'Name':'cpu',
-                'Format':'%.1f',
-                'RingLength':256,
-                'Color':'#003285',
                 'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':60.0,
                 'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
             }]}
