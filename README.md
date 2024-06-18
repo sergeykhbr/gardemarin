@@ -46,6 +46,32 @@ functions and interfacing primarily via the CAN bus.
 
 ![Top Side](docs/pics/assembled_aeroponic.png)
 
+## Monitor application
+
+The qtmonitor application provides a user-friendly interface for interaction with the Gardemrin
+board using a GUI and touchscreen. This application is built on Qt6 libraries and is so compatible
+with the both Windows and Linux operating systems.
+
+![Top Side](docs/pics/sensors_1.gif)
+*qtmonitor sensors data: moisture and weights values while watering, NPK, EC, pH and temperatures*
+
+The GIF image above ilustrates how sensor data changes during the watering cycle. In this example,
+tap water without fertilizers is used. Watering cycle (~20 minutes) is split on small sub-cycles:
+20 seconds watering 1 minute pause. The scales measurements perfectly show this process.
+Oxygen saturation process is implemented at the beginning of each cycle in the water tank with the mixture.
+Oxygen saturation process increases pH value upto ~7.0 without mixing with additional components.
+
+Use cmake-gui or the following command to build _qtmonitor_ application:
+
+<b>Linux:</b>
+
+    > cd qtmonitor
+    > cmake -S . -B ./build
+    > cd build
+    > make
+    > ./bin/qtmonitor --cfg ../gardemarin.cfg
+
+
 ## CAN database file (DBC)
 
 For applications involving CAN access, each example in the repository is accompanied by

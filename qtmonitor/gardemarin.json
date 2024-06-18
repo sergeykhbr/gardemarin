@@ -13,7 +13,7 @@
                 'RingLength':720,
                 'Color':'#007ACC',
                 'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':100.0,
-                'NormalMaxY':true, 'NormalMaxYVal':70.0, 'NormalMinY':true, 'NormalMinYVal':50.0
+                'NormalMaxY':true, 'NormalMaxYVal':75.0, 'NormalMinY':true, 'NormalMinYVal':55.0
             }]},
             {
               'GroupName':'Scales',
@@ -45,7 +45,7 @@
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#FFFFFF',
-                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':10000.0,
+                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':true, 'NormalMaxYVal':8000.0, 'NormalMinY':true, 'NormalMinYVal':6000.0
             }]}
             ]
@@ -55,15 +55,15 @@
         'Groups':[
             {
             'GroupName':'Salinity',
-            'GroupUnits':'mg/kg',
+            'GroupUnits':'uS/cm',
             'Lines':[
               {
                 'Name':'EC',
                 'Format':'%.1f',
                 'RingLength':256,
                 'Color':'#FFFFFF',
-                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':600.0,
-                'NormalMaxY':true, 'NormalMaxYVal':250.0, 'NormalMinY':true, 'NormalMinYVal':110.0
+                'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':2000.0,
+                'NormalMaxY':true, 'NormalMaxYVal':840.0, 'NormalMinY':true, 'NormalMinYVal':560.0
             }]},
             {
             'GroupName':'pH',
@@ -75,7 +75,7 @@
                 'RingLength':256,
                 'Color':'#FFFFFF',
                 'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':10.0,
-                'NormalMaxY':true, 'NormalMaxYVal':7.0, 'NormalMinY':true, 'NormalMinYVal':5.5
+                'NormalMaxY':true, 'NormalMaxYVal':6.5, 'NormalMinY':true, 'NormalMinYVal':5.5
             }]},
             {
             'GroupName':'NPK',
