@@ -146,7 +146,12 @@ TabLights::TabLights(QWidget *parent)
     timeLayout->addWidget(btnSetTime_);
     timeLayout->addItem(timeSpacer);
 
-    layout->addWidget(timeGroup, 1, 0, 1, 2);
+    //layout->addWidget(timeGroup, 1, 0, 1, 2);
+    layout->addWidget(timeGroup, 1, 0);
+
+    btnUpdateLightSettings_ = new QPushButton(timeGroup);
+    btnUpdateLightSettings_->setText(tr("Update"));
+    layout->addWidget(btnUpdateLightSettings_, 1, 1);
 
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Expanding);
     layout->addItem(verticalSpacer, 2, 0, 1, 2);
@@ -188,6 +193,23 @@ void TabLights::slotChangeTime() {
 
     emit signalRequestWriteAttribute(tr("rtc"), tr("Time"),
                     static_cast<quint32>(tm));
+}
+
+/**
+    User settings Day lightning
+ */
+void TabLights::slotUpdateLightSettings() {
+    quint32 duty;
+    const QString DayDuty[4] = {
+        tr("DayDuty0"),
+        tr("DayDuty1"),
+        tr("DayDuty2"),
+        tr("DayDuty3")
+    };
+    for (int i = 0; i < 4; i++) {
+        duty = slider_[i]->getValue();
+        emit signalRequestWriteAttribute(tr("usrset"), DayDuty[i], duty);
+    }
 }
 
 void TabLights::slotResponseAttribute(const QString &objname,

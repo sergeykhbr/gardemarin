@@ -41,16 +41,11 @@ void PwmSlider::mousePressEvent(QMouseEvent *event) {
         return;
     }
 
-    double minStepNearLimit = height() / 2 / (static_cast<double>(width()) / 100.0);
-    double rate = event->pos().x() / (static_cast<double>(width()) / 100.0);
-    if (rate <= minStepNearLimit) {
-        rate = 0;
-    } else if (rate >= (100.0 - minStepNearLimit)) {
-        rate = 100.0;
-    }
+    pointCursor_.setX(event->pos().x());
+    quint32 rate = getValue();
 
-    emit signalRequestWriteAttribute(objname_, attrname_, static_cast<quint32>(rate));
-    setValue(static_cast<quint32>(rate));
+    emit signalRequestWriteAttribute(objname_, attrname_, rate);
+    setValue(rate);
 }
 
 void PwmSlider::paintEvent(QPaintEvent *event) {
@@ -90,6 +85,17 @@ void PwmSlider::setValue(quint32 val) {
     }
     pointCursor_.setX(static_cast<int>(rate));
     update();
+}
+
+quint32 PwmSlider::getValue() {
+    double minStepNearLimit = height() / 2 / (static_cast<double>(width()) / 100.0);
+    double rate = pointCursor_.x() / (static_cast<double>(width()) / 100.0);
+    if (rate <= minStepNearLimit) {
+        rate = 0;
+    } else if (rate >= (100.0 - minStepNearLimit)) {
+        rate = 100.0;
+    }
+    return static_cast<quint32>(rate);
 }
 
 void PwmSlider::slotResponseAttribute(const QString &objname,

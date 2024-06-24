@@ -51,6 +51,7 @@ class TabLights : public QWidget {
     void slotLightsMoveUp(bool checked);
     void slotLightsMoveDown(bool checked);
     void slotChangeTime();
+    void slotUpdateLightSettings();
 
  private:
     PwmSlider *slider_[4];
@@ -59,6 +60,7 @@ class TabLights : public QWidget {
     QSpinBox *hours_;
     QSpinBox *minutes_;
     QPushButton *btnSetTime_;
+    QPushButton *btnUpdateLightSettings_;
 };
 
 

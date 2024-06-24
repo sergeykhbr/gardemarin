@@ -28,6 +28,9 @@ class PwmSlider : public QWidget {
  public:
     explicit PwmSlider(QWidget *parent, AttributeType *cfg);
 
+    void setValue(quint32 val);
+    quint32 getValue();
+
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);
     void signalRequestWriteAttribute(const QString &objname, const QString &atrname, quint32 data);
@@ -40,8 +43,6 @@ class PwmSlider : public QWidget {
     void mousePressEvent(QMouseEvent *ev) override;
     void paintEvent(QPaintEvent *ev) override;
 
- private:
-    void setValue(quint32 val);
  private:
     QString objname_;
     QString attrname_;
