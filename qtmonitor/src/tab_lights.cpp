@@ -165,6 +165,9 @@ TabLights::TabLights(QWidget *parent)
 
     connect(btnSetTime_, &QPushButton::clicked, this,
             &TabLights::slotChangeTime);
+
+    connect(btnUpdateLightSettings_, &QPushButton::clicked, this,
+            &TabLights::slotUpdateLightSettings);
 }
 
 void TabLights::showEvent(QShowEvent *ev) {

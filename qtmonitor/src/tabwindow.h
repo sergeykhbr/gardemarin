@@ -24,6 +24,7 @@
 #include "tab_test.h"
 #include "tab_camera.h"
 #include "tab_lights.h"
+#include "tab_usrset.h"
 
 class TabWindow : public QTabWidget {
     Q_OBJECT
@@ -57,6 +58,7 @@ class TabWindow : public QTabWidget {
     TabTemperature *tabTemperature_;
     TabCamera *tabCamera_;
     TabLights *tabLights_;
+    TabUserSettings *tabUsrSettings_;
     TabTest *tabTest_;
 };
 

@@ -25,6 +25,7 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     tabTemperature_ = new TabTemperature(this, &(*cfg)["MonitorConfig"]["TabTemperature"]);
     tabLights_ = new TabLights(this);
     tabCamera_ = new TabCamera(this);
+    tabUsrSettings_ = new TabUserSettings(this);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));
@@ -32,6 +33,7 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     addTab(tabTemperature_, tr("T"));
     addTab(tabLights_, tr("Lights"));
     addTab(tabCamera_, tr("Camera"));
+    addTab(tabUsrSettings_, tr("Settings"));
     addTab(tabTest_, tr("Test"));
 
     // connect TabScales:
@@ -71,6 +73,17 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     // connect TabCamera:
     connect(tabCamera_, &TabCamera::signalTextToStatusBar,
             this, &TabWindow::slotTextToStatusBar);
+
+    // connect TabUserSettings
+    connect(tabUsrSettings_, &TabUserSettings::signalRequestReadAttribute,
+            serial_, &SerialWidget::slotRequestReadAttribute);
+
+    connect(tabUsrSettings_, &TabUserSettings::signalRequestWriteAttribute,
+            serial_, &SerialWidget::slotRequestWriteAttribute);
+
+    connect(serial_, &SerialWidget::signalResponseReadAttribute,
+            tabUsrSettings_, &TabUserSettings::slotResponseAttribute);
+
 
     // connect TabTest:
     connect(tabTest_, &TabTest::signalSendData,
