@@ -18,7 +18,7 @@
 
 #include <QTabWidget>
 #include <QPushButton>
-#include <QSpinBox>
+#include <QLineEdit>
 #include <QShowEvent>
 
 class TabUserSettings : public QWidget {
@@ -42,6 +42,16 @@ class TabUserSettings : public QWidget {
     void slotUpdateUserSettings();
 
  private:
+    QLineEdit *editLastServiceDate_;
+    QLineEdit *editLastServiceTime_;
+    QLineEdit *editRequestToService_;
+    QLineEdit *editWateringPerDrain_;
+    QLineEdit *editWateringInterval_;
+    QLineEdit *editWateringDuration_;
+    QLineEdit *editLastWatering_;
+    QLineEdit *editOxygenSaturationInterval_;
+    QLineEdit *editDayStart_;
+    QLineEdit *editDayEnd_;
     QPushButton *btnUpdateSettings_;
 };
 

@@ -31,6 +31,7 @@ class UserSettings : public FwObject {
  protected:
 
  protected:
+    FwAttribute lastServiceDate_;
     FwAttribute lastServiceTime_;
     FwAttribute requestToService_;
     FwAttribute wateringPerDrain_;
@@ -44,4 +45,5 @@ class UserSettings : public FwObject {
     FwAttribute dayDuty1_;
     FwAttribute dayDuty2_;
     FwAttribute dayDuty3_;
+    FwAttribute state_;
 };

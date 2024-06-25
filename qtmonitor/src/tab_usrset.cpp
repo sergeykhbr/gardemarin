@@ -25,37 +25,62 @@ TabUserSettings::TabUserSettings(QWidget *parent)
 
     QGridLayout *layout = new QGridLayout(this);
     setLayout(layout);
+
+    editLastServiceDate_ = new QLineEdit(this);
+    editLastServiceDate_->setReadOnly(true);
+    layout->addWidget(new QLabel(tr("LastServiceDate")), 0, 0);
+    layout->addWidget(editLastServiceDate_, 0, 1);
     
-    layout->addWidget(new QLabel(tr("LastServiceTime")), 0, 0);
-    layout->addWidget(new QLabel(tr("RequestToService")), 1, 0);
+    editLastServiceTime_ = new QLineEdit(this);
+    editLastServiceTime_->setReadOnly(true);
+    layout->addWidget(new QLabel(tr("LastServiceTime")), 1, 0);
+    layout->addWidget(editLastServiceTime_, 1, 1);
+
+    editWateringPerDrain_ = new QLineEdit(this);
     layout->addWidget(new QLabel(tr("WateringPerDrain")), 2, 0);
+    layout->addWidget(editWateringPerDrain_, 2, 1);
+
+    editWateringInterval_ = new QLineEdit(this);
     layout->addWidget(new QLabel(tr("WateringInterval")), 3, 0);
+    layout->addWidget(editWateringInterval_, 3, 1);
+
+    editWateringDuration_ = new QLineEdit(this);
     layout->addWidget(new QLabel(tr("WateringDuration")), 4, 0);
+    layout->addWidget(editWateringDuration_, 4, 1);
+
+    editLastWatering_ = new QLineEdit(this);
+    editLastWatering_->setReadOnly(true);
     layout->addWidget(new QLabel(tr("LastWatering")), 5 ,0);
+    layout->addWidget(editLastWatering_, 5, 1);
+
+    editOxygenSaturationInterval_ = new QLineEdit(this);
     layout->addWidget(new QLabel(tr("OxygenSaturationInterval")), 6, 0);
+    layout->addWidget(editOxygenSaturationInterval_, 6, 1);
+
+    editDayStart_ = new QLineEdit(this);
     layout->addWidget(new QLabel(tr("DayStart")), 7, 0);
+    layout->addWidget(editDayStart_, 7, 1);
+
+    editDayEnd_ = new QLineEdit(this);
     layout->addWidget(new QLabel(tr("DayEnd")), 8, 0);
+    layout->addWidget(editDayEnd_, 8, 1);
 
-    //dimmingLayout->setColumnStretch(1, 11);
-
-
-
-
-    //QSpinBox *liftSpinBox = new QSpinBox(liftGroup);
-    //liftSpinBox->setMinimum(0);
-    //liftSpinBox->setMaximum(20);
-    //liftSpinBox->setSingleStep(1);
-    //liftSpinBox->setValue(2);
 
     QSpacerItem *btnSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Fixed);
     btnUpdateSettings_ = new QPushButton(this);
     btnUpdateSettings_->setText(tr("Update"));
+    layout->addWidget(btnUpdateSettings_, 9, 0);
 
-    layout->addItem(btnSpacer, 9, 0);
-    layout->addWidget(btnUpdateSettings_, 9, 1);
+    layout->addItem(btnSpacer, 9, 1);
 
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Expanding);
+    QSpacerItem *horizontalSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Expanding);
     layout->addItem(verticalSpacer, 10, 0, 1, 2);
+    layout->addItem(horizontalSpacer, 0, 2, 10, 1);
+
+    layout->setColumnStretch(0, 1);
+    layout->setColumnStretch(1, 2);
+    layout->setColumnStretch(2, 5);
 
 
     connect(btnUpdateSettings_, &QPushButton::clicked, this,
@@ -64,7 +89,16 @@ TabUserSettings::TabUserSettings(QWidget *parent)
 
 void TabUserSettings::showEvent(QShowEvent *ev) {
     QWidget::showEvent(ev);
-    emit signalRequestReadAttribute(tr("rtc"), tr("Time"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("LastServiceDate"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("LastServiceTime"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("WateringPerDrain"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("WateringInterval"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("WateringDuration"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("LastWatering"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("OxygenSaturationInterval"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("DayStart"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("DayEnd"));
+    emit signalRequestReadAttribute(tr("usrset"), tr("State"));
 }
 
 void TabUserSettings::slotUpdateUserSettings() {
@@ -72,17 +106,38 @@ void TabUserSettings::slotUpdateUserSettings() {
     //emit signalRequestWriteAttribute(tr("usrset"), tr("WateringPerDrain"), duty);
 }
 
+quint32 toBCD8(quint32 v) {
+    quint32 ret = 10 * ((v >> 4) & 0xf);
+    ret += (v & 0xf);
+    return ret;
+}
+
 void TabUserSettings::slotResponseAttribute(const QString &objname,
                                       const QString &atrname,
                                       quint32 data) {
     if (objname == "usrset") {
-        if (atrname == "WateringPerDrain") {
-            /*quint32 h = 10 * ((data >> 20) & 0x3);
-            h += ((data >> 16) & 0xf);
-
-            quint32 m = 10 * ((data >> 12) & 0x7);
-            m += ((data >> 8) & 0xf);
-            */
+        
+        if (atrname == "LastServiceDate") {
+            editLastServiceDate_->setText(QString::asprintf("%02d/%02d/%02d",
+                toBCD8(data >> 16), toBCD8(data >> 8), toBCD8(data)));
+        } else if (atrname == "LastServiceTime") {
+            editLastServiceTime_->setText(QString::asprintf("%02d:%02d:%02d",
+                toBCD8(data >> 16), toBCD8(data >> 8), toBCD8(data)));
+        } else if (atrname == "WateringPerDrain") {
+            editWateringPerDrain_->setText(QString::asprintf("%d", data));
+        } else if (atrname == "WateringInterval") {
+            editWateringInterval_->setText(QString::asprintf("%d", data));
+        } else if (atrname == "WateringDuration") {
+            editWateringDuration_->setText(QString::asprintf("%d", data));
+        } else if (atrname == "LastWatering") {
+            editLastWatering_->setText(QString::asprintf("%02d:%02d:%02d",
+                toBCD8(data >> 16), toBCD8(data >> 8), toBCD8(data)));
+        } else if (atrname == "OxygenSaturationInterval") {
+            editOxygenSaturationInterval_->setText(QString::asprintf("%d", data));
+        } else if (atrname == "DayStart") {
+            editDayStart_->setText(QString::asprintf("%d", data));
+        } else if (atrname == "DayEnd") {
+            editDayEnd_->setText(QString::asprintf("%d", data));
         }
     }
 }

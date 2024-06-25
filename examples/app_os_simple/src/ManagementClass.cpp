@@ -217,6 +217,7 @@ void ManagementClass::switchToState(EState newstate) {
 
     stateSwitchedLast_ = epochMarker_;
     estate_ = newstate;
+    write_int8("usrset", "State", static_cast<int8_t>(newstate));
 }
 
 void ManagementClass::switchToService() {
@@ -227,6 +228,8 @@ void ManagementClass::switchToService() {
     write_int8("hbrg2", "dc1_duty", 0); // lights up/down
     write_int8("uled0", "state", 0);
     write_uint32("usrset", "LastServiceTime", read_uint32("rtc", "Time"));
+    write_uint32("usrset", "LastServiceDate", read_uint32("rtc", "Date"));
+    write_int8("usrset", "State", static_cast<int8_t>(Servicing));
     estate_ = Servicing;
     uart_printf("[%d] Switching to Service\r\n", xTaskGetTickCount());
 }
@@ -234,6 +237,7 @@ void ManagementClass::switchToService() {
 void ManagementClass::switchToNormal() {
     estate_ = normal_.estate;
     write_int8("uled0", "state", 1);
+    write_int8("usrset", "State", static_cast<int8_t>(normal_.estate));
     uart_printf("[%d] Switching to Normal\r\n", xTaskGetTickCount());
 }
 

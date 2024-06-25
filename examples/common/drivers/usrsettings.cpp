@@ -21,6 +21,7 @@
 #include <uart.h>
 
 UserSettings::UserSettings(const char *name) : FwObject(name),
+    lastServiceDate_("LastServiceDate", "rtc date"),
     lastServiceTime_("LastServiceTime", "rtc time"),
     requestToService_("RequestToService"),
     wateringPerDrain_("WateringPerDrain", "0..n counts"),
@@ -33,8 +34,18 @@ UserSettings::UserSettings(const char *name) : FwObject(name),
     dayDuty0_("DayDuty0", "pwm: 0..100 (blue)"),
     dayDuty1_("DayDuty1", "pwm: 0..100 (unused)"),
     dayDuty2_("DayDuty2", "pwm: 0..100 (white)"),
-    dayDuty3_("DayDuty3", "pwm: 0..100 (red/blue)") {
+    dayDuty3_("DayDuty3", "pwm: 0..100 (red/blue)"),
+    state_("State", "Management task state: "
+        "0=WaitInit, "
+        "1=CheckWateringInterval, "
+        "2=DrainBefore, "
+        "3=OxygenSaturation, "
+        "4=Watering, "
+        "5=DrainAfter, "
+        "6=AdjustLights, "
+        "7=Servicing") {
 
+    lastServiceDate_.make_uint32(0);
     lastServiceTime_.make_uint32(0);
     requestToService_.make_int8(0);
     wateringPerDrain_.make_int8(10);
@@ -48,10 +59,12 @@ UserSettings::UserSettings(const char *name) : FwObject(name),
     dayDuty1_.make_int8(0);
     dayDuty2_.make_int8(0);
     dayDuty3_.make_int8(0);
+    state_.make_int8(0);
 }
 
 void UserSettings::Init() {
     RegisterAttribute(&lastServiceTime_);
+    RegisterAttribute(&lastServiceDate_);
     RegisterAttribute(&requestToService_);
     RegisterAttribute(&wateringPerDrain_);
     RegisterAttribute(&wateringInterval_);
@@ -64,5 +77,6 @@ void UserSettings::Init() {
     RegisterAttribute(&dayDuty1_);
     RegisterAttribute(&dayDuty2_);
     RegisterAttribute(&dayDuty3_);
+    RegisterAttribute(&state_);
 }
 
