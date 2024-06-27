@@ -17,7 +17,9 @@
 #pragma once
 
 #include <QTabWidget>
+#include <QDoubleSpinBox>
 #include <QSpinBox>
+#include <QLabel>
 #include <QShowEvent>
 
 class TabCalculator : public QWidget {
@@ -32,15 +34,26 @@ class TabCalculator : public QWidget {
  public slots:
     void slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data);
 
+ private slots:
+    void slotSaltConcentrationChanged(double v);
+
  protected:
     virtual void showEvent(QShowEvent *ev) override;
 
  private:
-    QSpinBox *boxNitratK_;
-    QSpinBox *boxNitratCa_;
-    QSpinBox *boxMonophosphatK_;
-    QSpinBox *boxSulfatMg_;
-    QSpinBox *boxNitratPosphatAmmoni_;
+    QDoubleSpinBox *boxNitratK_;
+    QDoubleSpinBox *boxNitratCa_;
+    QDoubleSpinBox *boxMonophosphatK_;
+    QDoubleSpinBox *boxSulfatMg_;
+    QDoubleSpinBox *boxNitratPosphatAmmoni_;
+    QDoubleSpinBox *boxCarbomid_;
+    QSpinBox *boxWeight_;
+    QLabel *editN_;
+    QLabel *editP_;
+    QLabel *editK_;
+    QLabel *editCa_;
+    QLabel *editMg_;
+    QLabel *editS_;
 };
 
 
