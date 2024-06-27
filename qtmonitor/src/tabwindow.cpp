@@ -26,6 +26,7 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     tabLights_ = new TabLights(this);
     tabCamera_ = new TabCamera(this);
     tabUsrSettings_ = new TabUserSettings(this);
+    tabCalculator_ = new TabCalculator(this);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));
@@ -34,6 +35,7 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     addTab(tabLights_, tr("Lights"));
     addTab(tabCamera_, tr("Camera"));
     addTab(tabUsrSettings_, tr("Settings"));
+    addTab(tabCalculator_, tr("Calc"));
     addTab(tabTest_, tr("Test"));
 
     // connect TabScales:
