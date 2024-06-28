@@ -135,6 +135,28 @@
                 'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
             }]}
             ]
+        },
+    'TabCalculator':{
+        'Salts':[
+            ['KNO3', 'Potassium nitrate'],
+            ['Ca(NO3)2', 'Calcium nitrate'],
+            ['KH2PO4', 'Monopotassium phosphate'],
+            ['MgSO4', 'Magnesium sulfate'],
+            ['(NH4)3PO4', 'Ammonium nitrate phosphate'],
+            ['CH4N2O', 'Carbomid']
+        ],
+        'Receipts':[
+           {'Comment':'28 Jun 2024: initial mix',
+            'Weight':1000.0,
+            'Components':{
+                   'Potassium nitrate':0.3,
+                   'Calcium nitrate':0.7,
+                   'Monopotassium phosphate':0.1,
+                   'Magnesium sulfate':0.25,
+                   'Ammonium nitrate phosphate':0.0,
+                   'Carbomid':0.0
+               }}
+        ]
         }
 },
 'TargetConfig':{

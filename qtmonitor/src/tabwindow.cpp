@@ -26,7 +26,7 @@ TabWindow::TabWindow(QWidget *parent, SerialWidget *serial, AttributeType *cfg)
     tabLights_ = new TabLights(this);
     tabCamera_ = new TabCamera(this);
     tabUsrSettings_ = new TabUserSettings(this);
-    tabCalculator_ = new TabCalculator(this);
+    tabCalculator_ = new TabCalculator(this, &(*cfg)["MonitorConfig"]["TabCalculator"]);
     tabTest_ = new TabTest(this);
 
     addTab(tabScales_, tr("Scales"));

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <attribute.h>
 #include <QTabWidget>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
@@ -26,7 +27,7 @@ class TabCalculator : public QWidget {
     Q_OBJECT
 
  public:
-    explicit TabCalculator(QWidget *parent);
+    explicit TabCalculator(QWidget *parent, AttributeType *cfg);
 
  signals:
     void signalRequestReadAttribute(const QString &objname, const QString &atrname);
@@ -36,6 +37,7 @@ class TabCalculator : public QWidget {
 
  private slots:
     void slotSaltConcentrationChanged(double v);
+    void slotWeightChanged(double v);
 
  protected:
     virtual void showEvent(QShowEvent *ev) override;
@@ -47,13 +49,14 @@ class TabCalculator : public QWidget {
     QDoubleSpinBox *boxSulfatMg_;
     QDoubleSpinBox *boxNitratPosphatAmmoni_;
     QDoubleSpinBox *boxCarbomid_;
-    QSpinBox *boxWeight_;
+    QDoubleSpinBox *boxWeight_;
     QLabel *editN_;
     QLabel *editP_;
     QLabel *editK_;
     QLabel *editCa_;
     QLabel *editMg_;
     QLabel *editS_;
+    double weight_;
 };
 
 
