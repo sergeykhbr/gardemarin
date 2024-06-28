@@ -137,14 +137,24 @@
             ]
         },
     'TabCalculator':{
-        'Salts':[
-            ['KNO3', 'Potassium nitrate'],
-            ['Ca(NO3)2', 'Calcium nitrate'],
-            ['KH2PO4', 'Monopotassium phosphate'],
-            ['MgSO4', 'Magnesium sulfate'],
-            ['(NH4)3PO4', 'Ammonium nitrate phosphate'],
-            ['CH4N2O', 'Carbomid']
-        ],
+        'Sources':{
+            'N':['NH2', 'NO3', 'NH4'],
+            'P':['P2O5'],
+            'K':['K2O'],
+            'Ca':['Ca'],
+            'Mg':['Mg'],
+            'S':['S'],
+        },
+        'Salts':{
+            'Chesnokov':{'NO3':105.0, 'NH4':35.0, 'P2O5':38.5, 'K2O':190.0, 'Ca':164.0, 'Mg':30.0},
+            'Knop':{'NO3':154.0, 'P2O5':56.0, 'K2O':167.0, 'Ca':170.0, 'Mg':24.0},
+            'Carbomid':{'NH2':46.5},
+            'Ammonium nitrate phosphate':{'NO3':6.5, 'NH4':19.5, 'S':14.8},
+            'Potassium nitrate':{'NO3':13.5, 'K2O':46.2},
+            'Calcium nitrate':{'NO3':14.4, 'NH4':1.1, 'Ca':19.0},
+            'Monopotassium phosphate':{'P2O5':52.0, 'K2O':34.0},
+            'Magnesium sulfate':{'MgO':16, 'Mg':9.6, 'SO3':32.5, 'S':13.0}
+        },
         'Receipts':[
            {'Comment':'28 Jun 2024: initial mix',
             'Weight':1000.0,

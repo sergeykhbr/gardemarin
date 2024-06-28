@@ -27,10 +27,79 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
 
     QGridLayout *layout = new QGridLayout(this);
     setLayout(layout);
-    AttributeType &receipt = (*cfg)["Receipts"][0u];
-    AttributeType &components = receipt["Components"];
 
-    weight_ = receipt["Weight"].to_float();
+    Sources_ = (*cfg)["Sources"];       // not included SO3 and MgO
+    Salts_ = (*cfg)["Salts"];
+    AttributeType &receipt0 = (*cfg)["Receipts"][0u];
+    AttributeType &receipt0Components = receipt0["Components"];
+    AttributeType allParts(Attr_List);
+    weight_ = receipt0["Weight"].to_float();
+
+    boxSaltConcentration_ = new QDoubleSpinBox *[Salts_.size()];
+    labelReslut_ = new QLabel *[Sources_.size()];
+
+    for (unsigned i = 0; i < Sources_.size(); i++) {
+       
+        layout->addWidget(
+            new QLabel(QString::asprintf("%s", Sources_.dict_key(i)->to_string())),
+            0, 2 + allParts.size(),
+            1, Sources_[i].size());
+
+        for (unsigned n = 0; n < Sources_[i].size(); n++) {
+            const char *srcName = Sources_[i][n].to_string();
+            layout->addWidget(new QLabel(
+                QString::asprintf("%s    ", srcName)), 2, 2 + allParts.size());
+            allParts.add_to_list(&Sources_[i][n]);
+        }
+    }
+
+    boxWeight_ = new QDoubleSpinBox(this);
+    boxWeight_->setDecimals(0);
+    boxWeight_->setMinimum(1000);
+    boxWeight_->setMaximum(10000);
+    boxWeight_->setValue(weight_);
+    layout->addWidget(new QLabel(tr("Weight, g:")), 1, 0);
+    layout->addWidget(boxWeight_, 1, 1);
+
+    unsigned totalElements = 0;
+    for (unsigned i = 0; i < Sources_.size(); i++) {
+        labelReslut_[i] = new QLabel(this);
+        labelReslut_[i]->setText(tr("0"));
+
+        layout->addWidget(labelReslut_[i],
+            1, 2 + totalElements,
+            1, Sources_[i].size());
+
+        totalElements += Sources_[i].size();
+    }
+
+
+    for (unsigned saltidx = 0; saltidx < Salts_.size(); saltidx++) {
+        AttributeType &saltName = *Salts_.dict_key(saltidx);
+        AttributeType &saltComps = *Salts_.dict_value(saltidx);
+
+        if (receipt0Components.has_key(saltName.to_string())) {
+            boxSaltConcentration_[saltidx] = new QDoubleSpinBox(this);
+            boxSaltConcentration_[saltidx]->setDecimals(2);
+            boxSaltConcentration_[saltidx]->setValue(
+                receipt0Components[saltName.to_string()].to_float());
+        } else {
+            boxSaltConcentration_[saltidx] = 0;
+        }
+        connect(boxSaltConcentration_[saltidx], &QDoubleSpinBox::valueChanged,
+                this, &TabCalculator::slotSaltConcentrationChanged);
+
+        layout->addWidget(new QLabel(tr(saltName.to_string())), 3 + saltidx, 0);
+        layout->addWidget(boxSaltConcentration_[saltidx], 3 + saltidx, 1);
+
+        for (unsigned srcidx = 0; srcidx < allParts.size(); srcidx++) {
+            const char *srcName = allParts[srcidx].to_string();
+            if (saltComps.has_key(srcName)) {
+                layout->addWidget(new QLabel(QString::asprintf("%.1f",
+                        saltComps[srcName].to_float())), 3 + saltidx, 2 + srcidx);
+            }
+        }
+    }
 
     enum ESaltComponentIndex {
         SaltName,
@@ -62,7 +131,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
         RowTotal
     };
     
-    layout->addWidget(new QLabel(tr("N-NH2    ")), RowHeader, N_NH2);
+    /*layout->addWidget(new QLabel(tr("N-NH2    ")), RowHeader, N_NH2);
     layout->addWidget(new QLabel(tr("N-NO3    ")), RowHeader, N_NO3);
     layout->addWidget(new QLabel(tr("N-NH4    ")), RowHeader, N_NH4);
     layout->addWidget(new QLabel(tr("P2O5    ")), RowHeader, P2O5);
@@ -129,38 +198,10 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
     layout->addWidget(new QLabel(tr("Carbomid 46-0-0:")), Carbomid, SaltName);
     layout->addWidget(boxCarbomid_, Carbomid, Weight);
     layout->addWidget(new QLabel(tr("46.5")), Carbomid, N_NH2);
+    */
 
 
-    layout->addWidget(new QLabel(tr("N")), TextNPK, N_NH2, 1, 3);
-    layout->addWidget(new QLabel(tr("P")), TextNPK, P2O5);
-    layout->addWidget(new QLabel(tr("K")), TextNPK, K2O);
-    layout->addWidget(new QLabel(tr("Ca")), TextNPK, Ca);
-    layout->addWidget(new QLabel(tr("Mg")), TextNPK, MgO, 1, 2);
-    layout->addWidget(new QLabel(tr("S")), TextNPK, SO3, 1, 2);
-
-    layout->addWidget(new QLabel(tr("Chesnokov:")), ValueNPKChesnokov, 0);
-    layout->addWidget(new QLabel(tr("105+35")), ValueNPKChesnokov, N_NH2, 1, 3);
-    layout->addWidget(new QLabel(tr("38.5")), ValueNPKChesnokov, P2O5);
-    layout->addWidget(new QLabel(tr("190")), ValueNPKChesnokov, K2O);
-    layout->addWidget(new QLabel(tr("164")), ValueNPKChesnokov, Ca);
-    layout->addWidget(new QLabel(tr("30")), ValueNPKChesnokov, MgO, 1, 2);
-
-    layout->addWidget(new QLabel(tr("Knop:")), ValueNPKKnop, 0);
-    layout->addWidget(new QLabel(tr("154")), ValueNPKKnop, N_NH2, 1, 3);
-    layout->addWidget(new QLabel(tr("56")), ValueNPKKnop, P2O5);
-    layout->addWidget(new QLabel(tr("167")), ValueNPKKnop, K2O);
-    layout->addWidget(new QLabel(tr("170")), ValueNPKKnop, Ca);
-    layout->addWidget(new QLabel(tr("24")), ValueNPKKnop, MgO, 1, 2);
-
-    boxWeight_ = new QDoubleSpinBox(this);
-    boxWeight_->setDecimals(0);
-    boxWeight_->setMinimum(1000);
-    boxWeight_->setMaximum(10000);
-    boxWeight_->setValue(weight_);
-    layout->addWidget(new QLabel(tr("Weight, g:")), ValueNPK, 0);
-    layout->addWidget(boxWeight_, ValueNPK, 1);
-
-    editN_ = new QLabel(this);
+    /*editN_ = new QLabel(this);
     editN_->setText(tr("0"));
     layout->addWidget(editN_, ValueNPK, N_NH2, 1, 3);
 
@@ -182,7 +223,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
 
     editS_ = new QLabel(this);
     editS_->setText(tr("0"));
-    layout->addWidget(editS_, ValueNPK, SO3, 1, 2);
+    layout->addWidget(editS_, ValueNPK, SO3, 1, 2);*/
 
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Expanding);
     QSpacerItem *horizontalSpacer = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -193,7 +234,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
     //layout->setColumnStretch(1, 2);
     //layout->setColumnStretch(2, 5);
 
-    connect(boxNitratK_, &QDoubleSpinBox::valueChanged,
+    /*connect(boxNitratK_, &QDoubleSpinBox::valueChanged,
             this, &TabCalculator::slotSaltConcentrationChanged);
     connect(boxNitratCa_, &QDoubleSpinBox::valueChanged,
             this, &TabCalculator::slotSaltConcentrationChanged);
@@ -206,7 +247,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
     connect(boxCarbomid_, &QDoubleSpinBox::valueChanged,
             this, &TabCalculator::slotSaltConcentrationChanged);
     connect(boxWeight_, &QDoubleSpinBox::valueChanged,
-            this, &TabCalculator::slotWeightChanged);
+            this, &TabCalculator::slotWeightChanged);*/
 
     slotSaltConcentrationChanged(0);
 }
@@ -220,7 +261,7 @@ void TabCalculator::slotSaltConcentrationChanged(double v) {
     double valS = 0;
     double liter = boxWeight_->value() / 1000.0;
 
-    valN += boxNitratK_->value() * 13.5 * PERCENTAGE_TO_MG_PER_L / liter;
+    /*valN += boxNitratK_->value() * 13.5 * PERCENTAGE_TO_MG_PER_L / liter;
     valK += boxNitratK_->value() * 46.2 * PERCENTAGE_TO_MG_PER_L / liter;
 
     valN += boxNitratCa_->value() * 14.4 * PERCENTAGE_TO_MG_PER_L / liter;
@@ -237,26 +278,26 @@ void TabCalculator::slotSaltConcentrationChanged(double v) {
     valN += boxNitratPosphatAmmoni_->value() * 19.5 * PERCENTAGE_TO_MG_PER_L / liter;
     valS += boxNitratPosphatAmmoni_->value() * 14.8 * PERCENTAGE_TO_MG_PER_L / liter;
 
-    valN += boxCarbomid_->value() * 46.5 * PERCENTAGE_TO_MG_PER_L / liter;
+    valN += boxCarbomid_->value() * 46.5 * PERCENTAGE_TO_MG_PER_L / liter;*/
 
-    editN_->setText(QString::asprintf("%.2f", valN));
+    /*editN_->setText(QString::asprintf("%.2f", valN));
     editP_->setText(QString::asprintf("%.2f", valP));
     editK_->setText(QString::asprintf("%.2f", valK));
     editCa_->setText(QString::asprintf("%.2f", valCa));
     editMg_->setText(QString::asprintf("%.2f", valMg));
-    editS_->setText(QString::asprintf("%.2f", valS));
+    editS_->setText(QString::asprintf("%.2f", valS));*/
 }
 
 void TabCalculator::slotWeightChanged(double v) {
     double rate = v / weight_;
     weight_ = v;
 
-    boxNitratK_->setValue(rate * boxNitratK_->value());
+    /*boxNitratK_->setValue(rate * boxNitratK_->value());
     boxNitratCa_->setValue(rate * boxNitratCa_->value());
     boxMonophosphatK_->setValue(rate * boxMonophosphatK_->value());
     boxSulfatMg_->setValue(rate * boxSulfatMg_->value());
     boxNitratPosphatAmmoni_->setValue(rate * boxNitratPosphatAmmoni_->value());
-    boxCarbomid_->setValue(rate * boxCarbomid_->value());
+    boxCarbomid_->setValue(rate * boxCarbomid_->value());*/
 
     slotSaltConcentrationChanged(0);
 }

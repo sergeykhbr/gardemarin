@@ -43,19 +43,12 @@ class TabCalculator : public QWidget {
     virtual void showEvent(QShowEvent *ev) override;
 
  private:
-    QDoubleSpinBox *boxNitratK_;
-    QDoubleSpinBox *boxNitratCa_;
-    QDoubleSpinBox *boxMonophosphatK_;
-    QDoubleSpinBox *boxSulfatMg_;
-    QDoubleSpinBox *boxNitratPosphatAmmoni_;
-    QDoubleSpinBox *boxCarbomid_;
+    AttributeType Sources_;
+    AttributeType Salts_;
+
+    QDoubleSpinBox **boxSaltConcentration_;
     QDoubleSpinBox *boxWeight_;
-    QLabel *editN_;
-    QLabel *editP_;
-    QLabel *editK_;
-    QLabel *editCa_;
-    QLabel *editMg_;
-    QLabel *editS_;
+    QLabel **labelReslut_;
     double weight_;
 };
 
