@@ -43,12 +43,16 @@ class TabCalculator : public QWidget {
     virtual void showEvent(QShowEvent *ev) override;
 
  private:
+    double calculateResult(double weight, const char *src);
+
+ private:
     AttributeType Sources_;
+    AttributeType AllSourceForms_;
     AttributeType Salts_;
 
     QDoubleSpinBox **boxSaltConcentration_;
     QDoubleSpinBox *boxWeight_;
-    QLabel **labelReslut_;
+    QLabel **labelResult_;
     double weight_;
 };
 
