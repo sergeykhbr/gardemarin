@@ -52,7 +52,7 @@ RtcDriver::RtcDriver(const char *name) : FwObject(name),
     write32(&PWR->CR, t1);
 
     // unlock write protection on all RTC registers except ISR[13:8], TAFCR, BKPxR
-//    write32(&RCC->BDCR, 1 << 16);   // [16] BDRST. Backup domain software reset only after PWR_CR=1
+    write32(&RCC->BDCR, 1 << 16);   // [16] BDRST. Backup domain software reset only after PWR_CR=1
     write8(&RTC->WPR, 0xCA);
     write8(&RTC->WPR, 0x53);
 
@@ -171,8 +171,8 @@ void RtcDriver::DateAttribute::post_write() {
         return;
     }
     int wdog = 0;
-    write8(&RTC->WPR, 0xCA);
-    write8(&RTC->WPR, 0x53);
+//    write8(&RTC->WPR, 0xCA);
+//    write8(&RTC->WPR, 0x53);
     write32(&RTC->ISR, (1 << 7)); // [7] INIT
     // Wait [6] INITF Calendar registers update is allowed
     while ((read32(&RTC->ISR) & (1 << 6)) == 0
@@ -198,8 +198,8 @@ void RtcDriver::TimeAttribute::post_write() {
         return;
     }
     int wdog = 0;
-    write8(&RTC->WPR, 0xCA);
-    write8(&RTC->WPR, 0x53);
+//    write8(&RTC->WPR, 0xCA);
+//    write8(&RTC->WPR, 0x53);
     write32(&RTC->ISR, (1 << 7)); // [7] INIT
     // Wait [6] INITF Calendar registers update is allowed
     while ((read32(&RTC->ISR) & (1 << 6)) == 0
