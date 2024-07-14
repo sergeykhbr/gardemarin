@@ -43,10 +43,13 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
         row 1: <see at the end>
         row 2:      NH2 NO3 NH4 P2O5 ..
     */
+    QLabel *tmpLabel;
     for (unsigned i = 0; i < Sources_.size(); i++) {
-       
+        QString tstr = QString::asprintf("%s", Sources_.dict_key(i)->to_string());
+        tmpLabel = new QLabel(tstr);
+        tmpLabel->setStyleSheet("font-weight: bold; color: black");
         layout->addWidget(
-            new QLabel(QString::asprintf("%s", Sources_.dict_key(i)->to_string())),
+            tmpLabel,
             0, 2 + AllSourceForms_.size(),
             1, Sources_[i].size());
 
@@ -134,6 +137,7 @@ double TabCalculator::calculateResult(double weight, const char *src) {
     double liter = weight / 1000.0;
     for (unsigned saltidx = 0; saltidx < Salts_.size(); saltidx++) {
         if (!boxSaltConcentration_[saltidx]) {
+            // skip reference (not selectable salts: Chesnokov, Knop)
             continue;
         }
 
@@ -151,10 +155,27 @@ double TabCalculator::calculateResult(double weight, const char *src) {
 }
 
 void TabCalculator::slotSaltConcentrationChanged(double v) {
-    for (unsigned i = 0; i < Sources_.size(); i++) {
+    // Compute total salts weights to evaluate EC:
+    double mg_total = 0;
+    for (unsigned saltidx = 0; saltidx < Salts_.size(); saltidx++) {
+        if (!boxSaltConcentration_[saltidx]) {
+            // skip reference (not selectable salts: Chesnokov, Knop)
+            continue;
+        }
+        mg_total += boxSaltConcentration_[saltidx]->value();
+    }
+    double EC = (mg_total / weight_) * 1000000;
+
+    
+    // Update NPK+ values. The last one is 'EC'
+    for (unsigned i = 0; i < Sources_.size() - 1; i++) {
         labelResult_[i]->setText(QString::asprintf("%.1f",
             calculateResult(weight_, Sources_.dict_key(i)->to_string())));
+        labelResult_[i]->setStyleSheet("font-weight: bold; color: blue");
     }
+    // EC
+    labelResult_[Sources_.size() - 1]->setText(QString::asprintf("%.1f", EC));
+    labelResult_[Sources_.size() - 1]->setStyleSheet("font-weight: bold; color: blue");
 }
 
 void TabCalculator::slotWeightChanged(double v) {

@@ -144,6 +144,7 @@
             'Ca':['Ca'],
             'Mg':['Mg'],
             'S':['S'],
+            'EC':['-'],
         },
         'Salts':{
             'Chesnokov':{'NO3':105.0, 'NH4':35.0, 'P2O5':38.5, 'K2O':190.0, 'Ca':164.0, 'Mg':30.0},
@@ -156,6 +157,16 @@
             'Magnesium sulfate':{'MgO':16, 'Mg':9.6, 'SO3':32.5, 'S':13.0}
         },
         'Receipts':[
+           {'Comment':'14 Jul 2024: Tuning N value. Use nitrat monium 7L, expected: N=159 P=52 K=172 Ca=81 Mg=13 S=48 EC=1171. Before changing water EC=700 (after 780), pH=6.4(after 4.5 same as osmos)',
+            'Weight':7000.0,
+            'Components':{
+                   'Ammonium nitrate phosphate':1.4,
+                   'Potassium nitrate':2.1,
+                   'Calcium nitrate':3.0,
+                   'Monopotassium phosphate':0.7,
+                   'Magnesium sulfate':1.0,
+                   'Carbomid':0.0
+               }},
            {'Comment':'7 Jul 2024: inrease Potassium nitrate +1g/5L. EC=1800',
             'Weight':5000.0,
             'Components':{
