@@ -51,6 +51,12 @@ RtcDriver::RtcDriver(const char *name) : FwObject(name),
     t1 |= (1 << 8);         // Write access to RTC backup registers and backup SRAM
     write32(&PWR->CR, t1);
 
+    // [4] INITS: 1=Calendar was initialized
+    t1 = read32(&RTC->ISR);
+    if ((t1 & (1 << 4))) {
+        uart_printk("RTC: was initialized before reset\r\n");
+    }
+
     // unlock write protection on all RTC registers except ISR[13:8], TAFCR, BKPxR
     write32(&RCC->BDCR, 1 << 16);   // [16] BDRST. Backup domain software reset only after PWR_CR=1
     write8(&RTC->WPR, 0xCA);
