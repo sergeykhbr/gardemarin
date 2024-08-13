@@ -40,6 +40,7 @@ class TabUserSettings : public QWidget {
 
  private slots:
     void slotUpdateUserSettings();
+    void slotSettingsWasChanged(const QString &);
 
  private:
     QLineEdit *editLastServiceDate_;
@@ -53,6 +54,7 @@ class TabUserSettings : public QWidget {
     QLineEdit *editDayStart_;
     QLineEdit *editDayEnd_;
     QPushButton *btnUpdateSettings_;
+    bool wasChanged_;
 };
 
 

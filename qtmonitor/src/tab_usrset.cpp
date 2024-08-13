@@ -83,6 +83,22 @@ TabUserSettings::TabUserSettings(QWidget *parent)
     layout->setColumnStretch(2, 5);
 
 
+    wasChanged_ = false;
+    connect(editWateringPerDrain_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+    connect(editWateringInterval_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+    connect(editWateringDuration_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+    connect(editLastWatering_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+    connect(editOxygenSaturationInterval_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+    connect(editDayStart_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+    connect(editDayEnd_, &QLineEdit::textChanged, this,
+            &TabUserSettings::slotSettingsWasChanged);
+
     connect(btnUpdateSettings_, &QPushButton::clicked, this,
             &TabUserSettings::slotUpdateUserSettings);
 }
@@ -101,9 +117,27 @@ void TabUserSettings::showEvent(QShowEvent *ev) {
     emit signalRequestReadAttribute(tr("usrset"), tr("State"));
 }
 
+void TabUserSettings::slotSettingsWasChanged(const QString &) {
+    wasChanged_ = true;
+}
+
 void TabUserSettings::slotUpdateUserSettings() {
-    //quint32 duty;
-    //emit signalRequestWriteAttribute(tr("usrset"), tr("WateringPerDrain"), duty);
+    if (!wasChanged_) {
+        return;
+    }
+    quint32 t1;
+    t1 = editWateringPerDrain_->text().toInt();
+    emit signalRequestWriteAttribute(tr("usrset"), tr("WateringPerDrain"), t1);
+    t1 = editWateringInterval_->text().toInt();
+    emit signalRequestWriteAttribute(tr("usrset"), tr("WateringInterval"), t1);
+    t1 = editWateringDuration_->text().toInt();
+    emit signalRequestWriteAttribute(tr("usrset"), tr("WateringDuration"), t1);
+    t1 = editLastWatering_->text().toInt();
+    emit signalRequestWriteAttribute(tr("usrset"), tr("OxygenSaturationInterval"), t1);
+    t1 = editDayStart_->text().toInt();
+    emit signalRequestWriteAttribute(tr("usrset"), tr("DayStart"), t1);
+    t1 = editDayEnd_->text().toInt();
+    emit signalRequestWriteAttribute(tr("usrset"), tr("DayEnd"), t1);
 }
 
 quint32 toBCD8(quint32 v) {
@@ -116,7 +150,8 @@ void TabUserSettings::slotResponseAttribute(const QString &objname,
                                       const QString &atrname,
                                       quint32 data) {
     if (objname == "usrset") {
-        
+        wasChanged_ = false;
+
         if (atrname == "LastServiceDate") {
             editLastServiceDate_->setText(QString::asprintf("%02d/%02d/%02d",
                 toBCD8(data >> 16), toBCD8(data >> 8), toBCD8(data)));
