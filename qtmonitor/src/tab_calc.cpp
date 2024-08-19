@@ -100,7 +100,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
 
         if (receipt0Components.has_key(saltName.to_string())) {
             boxSaltConcentration_[saltidx] = new QDoubleSpinBox(this);
-            boxSaltConcentration_[saltidx]->setDecimals(2);
+            boxSaltConcentration_[saltidx]->setDecimals(3);
             boxSaltConcentration_[saltidx]->setValue(
                 receipt0Components[saltName.to_string()].to_float());
 

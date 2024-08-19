@@ -31,9 +31,11 @@ RtcDriver::RtcDriver(const char *name) : FwObject(name),
     PWR_registers_type *PWR = (PWR_registers_type *)PWR_BASE;
     RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
     uint32_t t1;
+    uint32_t ttime = 0x00215530;
+    uint32_t tdate = 0x00240529;
 
-    date_.make_uint32(0x20240529);
-    time_.make_uint32(0x00215500);
+    //date_.make_uint32(0x20240529);
+    //time_.make_uint32(0x00215500);
 
     // page 120
     // Enable the power interface
@@ -55,10 +57,12 @@ RtcDriver::RtcDriver(const char *name) : FwObject(name),
     t1 = read32(&RTC->ISR);
     if ((t1 & (1 << 4))) {
         uart_printk("RTC: was initialized before reset\r\n");
-    } else {
-        // unlock write protection on all RTC registers except ISR[13:8], TAFCR, BKPxR
-        write32(&RCC->BDCR, 1 << 16);   // [16] BDRST. Backup domain software reset only after PWR_CR=1
+        ttime = read32(&RTC->TR);
+        tdate = read32(&RTC->DR);
     }
+    // unlock write protection on all RTC registers except ISR[13:8], TAFCR, BKPxR
+    write32(&RCC->BDCR, 1 << 16);   // [16] BDRST. Backup domain software reset only after PWR_CR=1
+
     write8(&RTC->WPR, 0xCA);
     write8(&RTC->WPR, 0x53);
 
@@ -145,8 +149,8 @@ RtcDriver::RtcDriver(const char *name) : FwObject(name),
 
 
         // Set default Date and Time:
-        write32(&RTC->TR, 0x00215530);
-        write32(&RTC->DR, 0x00240529);
+        write32(&RTC->TR, ttime);
+        write32(&RTC->DR, tdate);
         
         t1 &= ~(1 << 7);            // [7] INIT
         write32(&RTC->ISR, t1);
