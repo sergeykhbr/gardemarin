@@ -59,6 +59,8 @@ class ManagementClass : public FwObject,
     void setDayLights(uint32_t tow);
     void enableHighPressurePump();
     void disableHighPressurePump();
+    void enableRelaisLight();
+    void disableRelaisLight();
     void enableDrainPump();
     void disableDrainPump();
     void enableOxyPump();

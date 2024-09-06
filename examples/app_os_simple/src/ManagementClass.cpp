@@ -249,11 +249,13 @@ void ManagementClass::setDayLights(uint32_t tow) {
         write_int8("ledrbw", "duty1", 0);   // unused
         write_int8("ledrbw", "duty2", 0);   // white
         write_int8("ledrbw", "duty3", 0);   // red/blue
+        disableRelaisLight();
     } else {
         write_int8("ledrbw", "duty0", read_int8("usrset", "DayDuty0"));   // blue
         write_int8("ledrbw", "duty1", read_int8("usrset", "DayDuty1"));   // unused
         write_int8("ledrbw", "duty2", read_int8("usrset", "DayDuty2"));   // white
         write_int8("ledrbw", "duty3", read_int8("usrset", "DayDuty3"));   // red/blue
+        enableRelaisLight();
     }
 }
 
@@ -264,6 +266,15 @@ void ManagementClass::enableHighPressurePump() {
 void ManagementClass::disableHighPressurePump() {
     write_int8("relais0", "State", 0);
 }
+
+void ManagementClass::enableRelaisLight() {
+    write_int8("relais1", "State", 1);
+}
+
+void ManagementClass::disableRelaisLight() {
+    write_int8("relais1", "State", 0);
+}
+
 
 void ManagementClass::enableDrainPump() {
     write_int8("hbrg0", "dc0_duty", 100);

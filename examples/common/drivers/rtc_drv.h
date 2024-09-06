@@ -31,7 +31,9 @@ class RtcDriver : public FwObject {
     class DateAttribute : public FwAttribute {
      public:
         DateAttribute(bool *initDone) : FwAttribute("Date", "yyyy.mm.dd"),
-            pinitDone_(initDone) {}
+            pinitDone_(initDone) {
+            kind_ = Attr_UInt32;
+        }
 
         virtual void pre_read() override;
         virtual void post_write() override;
@@ -42,7 +44,9 @@ class RtcDriver : public FwObject {
     class TimeAttribute : public FwAttribute {
      public:
         TimeAttribute(bool *initDone) : FwAttribute("Time", "00hh.mm.ss"),
-            pinitDone_(initDone) {}
+            pinitDone_(initDone) {
+            kind_ = Attr_UInt32;
+        }
 
         virtual void pre_read() override;
         virtual void post_write() override;
