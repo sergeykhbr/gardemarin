@@ -114,7 +114,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
         for (unsigned srcidx = 0; srcidx < AllSourceForms_.size(); srcidx++) {
             const char *srcFormName = AllSourceForms_[srcidx].to_string();
             if (saltComps.has_key(srcFormName)) {
-                layout->addWidget(new QLabel(QString::asprintf("%.1f",
+                layout->addWidget(new QLabel(QString::asprintf("%.3f",
                         saltComps[srcFormName].to_float())), 3 + saltidx, 2 + srcidx);
             }
         }
@@ -169,7 +169,7 @@ void TabCalculator::slotSaltConcentrationChanged(double v) {
     
     // Update NPK+ values. The last one is 'EC'
     for (unsigned i = 0; i < Sources_.size() - 1; i++) {
-        labelResult_[i]->setText(QString::asprintf("%.1f",
+        labelResult_[i]->setText(QString::asprintf("%.3f",
             calculateResult(weight_, Sources_.dict_key(i)->to_string())));
         labelResult_[i]->setStyleSheet("font-weight: bold; color: blue");
     }
