@@ -40,8 +40,6 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     epochCnt_ = 0;
     epochMarker_ = 0;
     stateSwitchedLast_ = 0;
-    sewer_gram_ = 0;
-    plants_gram_ = 0;
     mix_gram_ = 0;
     confirmCnt_ = 0;
     shortWateringCnt_ = 0;
@@ -102,7 +100,7 @@ void ManagementClass::update() {
         break;
     case DrainBefore:
         // Drain speed ~22 gram/sec
-        if ((plants_gram_ - getPlantWeight()) < 10.0f) {
+        if ((getMixWeight() - mix_gram_) < 10.0f) {
             confirmCnt_++;
         } else {
             confirmCnt_ = 0;
@@ -154,7 +152,7 @@ void ManagementClass::update() {
         break;
     case DrainAfter:
         // Drain speed ~22 gram/sec
-        if ((plants_gram_ - getPlantWeight()) < 10.0f) {
+        if ((getMixWeight() - mix_gram_) < 10.0f) {
             confirmCnt_++;
         } else {
             confirmCnt_ = 0;
@@ -178,9 +176,7 @@ void ManagementClass::update() {
         estate_ = WaitInit;
     }
 
-    sewer_gram_ = read_float32("scales", "gram0");
-    plants_gram_ = read_float32("scales", "gram1");
-    mix_gram_ = read_float32("scales", "gram2");
+    mix_gram_ = getMixWeight();
 }
 
 void ManagementClass::keyPressed() {
@@ -386,16 +382,8 @@ float ManagementClass::read_float32(const char *objname,
     return 0;
 }
 
-float ManagementClass::getPlantWeight() {
-    return read_float32("scales", "gram1");
-}
-
 float ManagementClass::getMixWeight() {
     return read_float32("scales", "gram2");
-}
-
-float ManagementClass::getSewerWeight() {
-    return read_float32("scales", "gram0");
 }
 
 uint16_t ManagementClass::getMoisture() {

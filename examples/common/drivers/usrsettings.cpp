@@ -49,7 +49,7 @@ UserSettings::UserSettings(const char *name) : FwObject(name),
     lastServiceTime_.make_uint32(0);
     requestToService_.make_int8(0);
     wateringPerDrain_.make_int8(4);
-    wateringInterval_.make_uint16(520);
+    wateringInterval_.make_uint16(720);
     wateringDuration_.make_uint16(45);
     lastWatering_.make_uint32(0);
     oxygenSaturationInterval_.make_uint16(60);

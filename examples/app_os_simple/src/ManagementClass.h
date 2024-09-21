@@ -86,9 +86,7 @@ class ManagementClass : public FwObject,
     float read_float32(const char *objname,
                          const char *atrname);
 
-    float getPlantWeight();
     float getMixWeight();
-    float getSewerWeight();
     uint16_t getMoisture();
     uint32_t getTimeOfDay();
 
@@ -106,8 +104,6 @@ class ManagementClass : public FwObject,
         EState estate;
     } normal_;
 
-    float plants_gram_;
-    float sewer_gram_;
     float mix_gram_;
     int confirmCnt_;
     int8_t shortWateringCnt_;      // Watering count before drain enabled

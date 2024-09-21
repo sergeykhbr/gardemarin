@@ -62,7 +62,7 @@ static const gpio_pin_type SPI3_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10};
 //     ++375  003f2300
 //      2000  00487980
 //    ++2000  004b8900
-// 3 mix       y = 404.58*x + 1E+06
+// 2 mix       y = 404.58*x + 1E+06
 //          0 0011b400 (3.3 kg)
 //      +124  00127800
 //     ++375  0014b400
@@ -77,14 +77,14 @@ static const float INIT_ALPHA[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
 
 static const float INIT_ZERO[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
     -402.6f,
-    -10681.81f,
+    -13085.0f,
     113.0f,
     0.0f
 };
 
 static const float INIT_TARA[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
     0.0f,
-    1646.0f,
+    0.0f,
     422.0f,
     0.0f
 };
