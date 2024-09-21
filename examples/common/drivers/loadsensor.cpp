@@ -77,7 +77,7 @@ static const float INIT_ALPHA[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
 
 static const float INIT_ZERO[GARDEMARIN_LOAD_SENSORS_TOTAL] = {
     -402.6f,
-    -13085.0f,
+    -4989.0f,
     113.0f,
     0.0f
 };
