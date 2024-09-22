@@ -40,9 +40,9 @@ class TabScales : public QWidget {
     PlotWidget *plotMoisture_;
     PlotWidget *plotScales_;
     QTimer timer_;
-    float gram0_;
     float gram1_;
     float gram2_;
+    float gram2flt_;
 };
 
 

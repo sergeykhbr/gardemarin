@@ -20,34 +20,28 @@
               'GroupUnits':'gram',
               'Lines':[
                   {
-                    'Name':'sewer',
+                    'Name':'mix',
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#BD63C5',
                     'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
                   },{
-                    'Name':'plant',
+                    'Name':'mixflt',
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#40C977',
                     'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
                   },{
-                    'Name':'mix',
+                    'Name':'plant',
                     'Format':'%.1f',
                     'RingLength':720,
                     'Color':'#007ACC',
                     'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
                     'NormalMaxY':false, 'NormalMaxYVal':0.0, 'NormalMinY':false, 'NormalMinYVal':0.0
-                  },{
-                    'Name':'total',
-                    'Format':'%.1f',
-                    'RingLength':720,
-                    'Color':'#FFFFFF',
-                    'FixedMinY':true, 'FixedMinYVal':0.0, 'FixedMaxY':true, 'FixedMaxYVal':8000.0,
-                    'NormalMaxY':true, 'NormalMaxYVal':8000.0, 'NormalMinY':true, 'NormalMinYVal':6000.0
-            }]}
+                  }
+            ]}
             ]
         },
     'TabNPK':{ 

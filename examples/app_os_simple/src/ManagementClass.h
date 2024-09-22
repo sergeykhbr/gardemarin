@@ -52,6 +52,9 @@ class ManagementClass : public FwObject,
         States_Total
     };
 
+    void updateMixWeight();
+    bool isDrainEnd();
+    bool isWateringEnd();
     bool isPeriodExpired(uint32_t period);
     void switchToState(EState newstate);
     void switchToService();
@@ -94,6 +97,10 @@ class ManagementClass : public FwObject,
     EState  estate_;
     static const char *STATES_NAMES[States_Total];
 
+    static const int WEIGHT_PERIOD_LENGTH = 3;
+    int lastGram_[2*WEIGHT_PERIOD_LENGTH];
+    int *plastGram_;
+
     TaskHandle_t taskHandle_;
     bool btnClick_;
     uint32_t epochCnt_;
@@ -105,6 +112,5 @@ class ManagementClass : public FwObject,
     } normal_;
 
     float mix_gram_;
-    int confirmCnt_;
     int8_t shortWateringCnt_;      // Watering count before drain enabled
 };

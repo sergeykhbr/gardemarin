@@ -41,8 +41,11 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     epochMarker_ = 0;
     stateSwitchedLast_ = 0;
     mix_gram_ = 0;
-    confirmCnt_ = 0;
     shortWateringCnt_ = 0;
+    for (int i = 0; i < 2*WEIGHT_PERIOD_LENGTH; i++) {
+        lastGram_[i] = 0;
+    }
+    plastGram_ = &lastGram_[WEIGHT_PERIOD_LENGTH - 1];
 }
 
 void ManagementClass::Init() {
@@ -60,10 +63,11 @@ void ManagementClass::PostInit() {
 
 void ManagementClass::update() {
     int btnClick = btnClick_;
-    float ftmp;
     btnClick_ = 0;
 
     epochCnt_++;
+
+    updateMixWeight();
 
     if (btnClick || read_int8("usrset", "RequestToService")) {
         write_int8("usrset", "RequestToService", 0);
@@ -77,7 +81,8 @@ void ManagementClass::update() {
     switch (estate_) {
     case WaitInit:
         if (isPeriodExpired(60)) {
-            switchToState(CheckWateringInterval);
+            switchToState(DrainBefore);
+            enableDrainPump();
         }
         break;
     case CheckWateringInterval:
@@ -95,18 +100,11 @@ void ManagementClass::update() {
                 switchToState(DrainBefore);
                 enableDrainPump();
             }
-            confirmCnt_ = 0;
         }
         break;
     case DrainBefore:
         // Drain speed ~22 gram/sec
-        if ((getMixWeight() - mix_gram_) < 10.0f) {
-            confirmCnt_++;
-        } else {
-            confirmCnt_ = 0;
-        }
-        // 240 sec * 22 = 5280 grams watchdog
-        if (confirmCnt_ > 2 || isPeriodExpired(240)) {
+        if (isDrainEnd()) {
             switchToState(OxygenSaturation);
             disableDrainPump();
             enableOxyPump();
@@ -115,7 +113,6 @@ void ManagementClass::update() {
     case OxygenSaturation:
         if (isPeriodExpired(read_uint16("usrset", "OxygenSaturationInterval"))) {
             switchToState(Watering);
-            confirmCnt_ = 0;
             write_uint32("usrset", "LastWatering", read_uint32("rtc", "Time"));
             disableOxyPump();
             enableHighPressurePump();
@@ -123,23 +120,9 @@ void ManagementClass::update() {
         break;
     case Watering:
         // Watering rate ~14 gram/sec
-        ftmp = getMixWeight();
-        //uart_printf("[%d] %d\r\n", xTaskGetTickCount(),
-        //                            (int)(mix_gram_ - ftmp));
-        if ((mix_gram_ - ftmp) < 5.0f) {
-            if (++confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX) {
-                // no water in mix tank
-                uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());
-            }
-        } else {
-            confirmCnt_ = 0;
-        }
-        // 240 sec * 14 = 3360 grams of water
-        if (confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX
-            || isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
+        if (isWateringEnd()) {
             disableHighPressurePump();
-            if (++shortWateringCnt_ >= read_int8("usrset", "WateringPerDrain")
-                || confirmCnt_ > MIX_TANK_EMPTY_CNT_MAX) {
+            if (++shortWateringCnt_ >= read_int8("usrset", "WateringPerDrain")) {
                 switchToState(DrainAfter);
                 enableDrainPump();
                 shortWateringCnt_ = 0;
@@ -147,18 +130,10 @@ void ManagementClass::update() {
                 // skip drain
                 switchToState(AdjustLights);
             }
-            confirmCnt_ = 0;
         }
         break;
     case DrainAfter:
-        // Drain speed ~22 gram/sec
-        if ((getMixWeight() - mix_gram_) < 10.0f) {
-            confirmCnt_++;
-        } else {
-            confirmCnt_ = 0;
-        }
-        // 240 sec * 22 = 5280 grams watchdog
-        if (confirmCnt_ > 2 || isPeriodExpired(240)) {
+        if (isDrainEnd()) {
             disableDrainPump();
             switchToState(AdjustLights);
         }
@@ -193,6 +168,62 @@ void ManagementClass::waitKeyPressed() {
                     0xffffffffUL,  // Reset the notification value to 0 on exit
                     &notifiedValue,
                     portMAX_DELAY); // Block indefinetly
+}
+
+void ManagementClass::updateMixWeight() {
+    int deltaGram = static_cast<int>(getMixWeight() - mix_gram_);
+    plastGram_--;
+    if (plastGram_ < lastGram_) {
+        plastGram_ = &lastGram_[WEIGHT_PERIOD_LENGTH - 1];
+    }
+
+    *plastGram_ = deltaGram;
+    *(plastGram_ + WEIGHT_PERIOD_LENGTH) = deltaGram;
+
+}
+
+bool ManagementClass::isDrainEnd() {
+    int deltaGram = 0;
+    if (isPeriodExpired(240)) {
+        // 240 sec * 22 = 5280 grams watchdog
+        return true;
+    }
+    if (mix_gram_ < 5000.0f) {
+        // minimal full tank volume
+        return false;
+    }
+    for (int i = 0; i < WEIGHT_PERIOD_LENGTH; i++) {
+        deltaGram += plastGram_[i];
+    }
+    // Drain speed ~22 gram/sec
+    if (deltaGram < 10) {
+        return true;
+    }
+    return false;
+}
+
+bool ManagementClass::isWateringEnd() {
+    int deltaGram = 0;
+    if (isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
+        // 240 sec * 14 = 3360 grams of water
+        return true;
+    }
+    if (mix_gram_ > 2000.0f) {
+        // minimal safe tank volume
+        return false;
+    }
+    for (int i = 0; i < WEIGHT_PERIOD_LENGTH; i++) {
+        deltaGram += plastGram_[i];
+    }
+    // Watering rate ~14 gram/sec
+    if (deltaGram > -5) {
+        // no water in mix tank
+        uart_printf("[%d] Mix tank is empty\r\n", xTaskGetTickCount());
+        // to switch to DrainAfter state
+        shortWateringCnt_ = read_int8("usrset", "WateringPerDrain");
+        return true;
+    }
+    return false;
 }
 
 bool ManagementClass::isPeriodExpired(uint32_t period) {

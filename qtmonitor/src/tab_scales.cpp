@@ -20,9 +20,9 @@
 TabScales::TabScales(QWidget *parent, AttributeType *cfg)
     : QWidget(parent),
     timer_(this),
-    gram0_(0),
     gram1_(0),
-    gram2_(0) {
+    gram2_(0),
+    gram2flt_(0) {
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setSpacing(6);
@@ -43,29 +43,28 @@ TabScales::TabScales(QWidget *parent, AttributeType *cfg)
 }
 
 void TabScales::slotTimeToRequest() {
-    emit signalRequestReadAttribute(tr("scales"), tr("gram0"));
     emit signalRequestReadAttribute(tr("scales"), tr("gram1"));
     emit signalRequestReadAttribute(tr("scales"), tr("gram2"));
+    emit signalRequestReadAttribute(tr("scales"), tr("gram2flt"));
     emit signalRequestReadAttribute(tr("soil0"), tr("moisture"));
 }
 
 void TabScales::slotResponseAttribute(const QString &objname, const QString &atrname, quint32 data) {
     if (objname == "scales") {
-        if (atrname == "gram0") {
-            *reinterpret_cast<quint32 *>(&gram0_) = data;
-            plotScales_->writeData(0, gram0_);
-        } else if (atrname == "gram1") {
-            float prev = gram1_;
+        if (atrname == "gram1") {
             *reinterpret_cast<quint32 *>(&gram1_) = data;
-            plotScales_->writeData(1, gram1_);
+            plotScales_->writeData(2, gram1_);
+        } else if (atrname == "gram2") {
+            float prev = gram2_;
+            *reinterpret_cast<quint32 *>(&gram2_) = data;
+            plotScales_->writeData(0, gram2_);
 
             // Show delta mix grams in the status bar
             QString text = QString::asprintf("%.1f", gram1_ - prev);
             emit signalTextToStatusBar(1, text);
-        } else if (atrname == "gram2") {
-            *reinterpret_cast<quint32 *>(&gram2_) = data;
-            plotScales_->writeData(2, gram2_);
-            plotScales_->writeData(3, gram0_ + gram1_ + gram2_);
+        } else if (atrname == "gram2flt") {
+            *reinterpret_cast<quint32 *>(&gram2flt_) = data;
+            plotScales_->writeData(1, gram2flt_);
         }
     } else if (objname == "soil0") {
         if (atrname == "moisture") {
