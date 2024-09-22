@@ -188,6 +188,10 @@ bool ManagementClass::isDrainEnd() {
         // 240 sec * 22 = 5280 grams watchdog
         return true;
     }
+    if (!isPeriodExpired(WEIGHT_PERIOD_LENGTH)) {
+        // minimal drain timeout to make any decision
+        return false;
+    }
     if (mix_gram_ < 5000.0f) {
         // minimal full tank volume
         return false;
@@ -207,6 +211,10 @@ bool ManagementClass::isWateringEnd() {
     if (isPeriodExpired(read_uint16("usrset", "WateringDuration"))) {
         // 240 sec * 14 = 3360 grams of water
         return true;
+    }
+    if (!isPeriodExpired(WEIGHT_PERIOD_LENGTH)) {
+        // minimal drain timeout to make any decision
+        return false;
     }
     if (mix_gram_ > 2000.0f) {
         // minimal safe tank volume

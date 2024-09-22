@@ -60,7 +60,7 @@ void TabScales::slotResponseAttribute(const QString &objname, const QString &atr
             plotScales_->writeData(0, gram2_);
 
             // Show delta mix grams in the status bar
-            QString text = QString::asprintf("%.1f", gram1_ - prev);
+            QString text = QString::asprintf("%.1f", gram2_ - prev);
             emit signalTextToStatusBar(1, text);
         } else if (atrname == "gram2flt") {
             *reinterpret_cast<quint32 *>(&gram2flt_) = data;
