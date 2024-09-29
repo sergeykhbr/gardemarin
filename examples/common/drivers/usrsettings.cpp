@@ -32,7 +32,7 @@ UserSettings::UserSettings(const char *name) : FwObject(name),
     dayStart_("DayStart", "[sec] time of day"),
     dayEnd_("DayEnd", "[sec] time of day"),
     dayDuty0_("DayDuty0", "pwm: 0..100 (blue)"),
-    dayDuty1_("DayDuty1", "pwm: 0..100 (unused)"),
+    dayDuty1_("DayDuty1", "pwm: 0..100 (ventilation)"),
     dayDuty2_("DayDuty2", "pwm: 0..100 (white)"),
     dayDuty3_("DayDuty3", "pwm: 0..100 (red/blue)"),
     state_("State", "Management task state: "
@@ -49,14 +49,14 @@ UserSettings::UserSettings(const char *name) : FwObject(name),
     lastServiceTime_.make_uint32(0);
     requestToService_.make_int8(0);
     wateringPerDrain_.make_int8(2);
-    wateringInterval_.make_uint16(720);
-    wateringDuration_.make_uint16(45);
+    wateringInterval_.make_uint16(540);
+    wateringDuration_.make_uint16(30);
     lastWatering_.make_uint32(0);
     oxygenSaturationInterval_.make_uint16(60);
     dayStart_.make_uint32(6*3600);   // 6:00 AM
     dayEnd_.make_uint32(22*3600);   // 22:00
     dayDuty0_.make_int8(0);        // blue
-    dayDuty1_.make_int8(0);
+    dayDuty1_.make_int8(100);      // ventilation
     dayDuty2_.make_int8(0);        // white
     dayDuty3_.make_int8(0);        // red
     state_.make_int8(0);

@@ -200,7 +200,7 @@ bool ManagementClass::isDrainEnd() {
         deltaGram += plastGram_[i];
     }
     // Drain speed ~22 gram/sec
-    if (deltaGram < 10) {
+    if (deltaGram < 14) {
         return true;
     }
     return false;
@@ -281,7 +281,7 @@ void ManagementClass::setDayLights(uint32_t tow) {
     uint32_t dayEnd = read_uint32("usrset", "DayEnd");
     if (tow < dayStart || tow > dayEnd) {
         write_int8("ledrbw", "duty0", 0);   // blue
-        write_int8("ledrbw", "duty1", 0);   // unused
+        write_int8("ledrbw", "duty1", 0);   // ventilation
         write_int8("ledrbw", "duty2", 0);   // white
         write_int8("ledrbw", "duty3", 0);   // red/blue
         disableRelaisLight();
@@ -290,8 +290,8 @@ void ManagementClass::setDayLights(uint32_t tow) {
         float dt = static_cast<float>(tow - dayStart)/ 1800.0f;
         write_int8("ledrbw", "duty0", 
             static_cast<int8_t>(dt * read_int8("usrset", "DayDuty0")));   // blue
-        write_int8("ledrbw", "duty1",
-            static_cast<int8_t>(dt * read_int8("usrset", "DayDuty1")));   // unused
+        //write_int8("ledrbw", "duty1",
+        //    static_cast<int8_t>(dt * read_int8("usrset", "DayDuty1")));   // unused
         write_int8("ledrbw", "duty2",
             static_cast<int8_t>(dt * 90));   // white
         write_int8("ledrbw", "duty3",
@@ -301,8 +301,8 @@ void ManagementClass::setDayLights(uint32_t tow) {
         float dt = 1.0f - static_cast<float>(tow - (dayEnd - 1800))/ 1800.0f;
         write_int8("ledrbw", "duty0", 
             static_cast<int8_t>(dt * read_int8("usrset", "DayDuty0")));   // blue
-        write_int8("ledrbw", "duty1",
-            static_cast<int8_t>(dt * read_int8("usrset", "DayDuty1")));   // unused
+        //write_int8("ledrbw", "duty1",
+        //    static_cast<int8_t>(dt * read_int8("usrset", "DayDuty1")));   // unused
         write_int8("ledrbw", "duty2",
             static_cast<int8_t>(dt * 90));   // white
         write_int8("ledrbw", "duty3",
@@ -310,7 +310,7 @@ void ManagementClass::setDayLights(uint32_t tow) {
         disableRelaisLight();
     } else {
         write_int8("ledrbw", "duty0", read_int8("usrset", "DayDuty0"));   // blue
-        write_int8("ledrbw", "duty1", read_int8("usrset", "DayDuty1"));   // unused
+        write_int8("ledrbw", "duty1", read_int8("usrset", "DayDuty1"));   // ventilation
         write_int8("ledrbw", "duty2", read_int8("usrset", "DayDuty2"));   // white
         write_int8("ledrbw", "duty3", read_int8("usrset", "DayDuty3"));   // red/blue
         enableRelaisLight();
