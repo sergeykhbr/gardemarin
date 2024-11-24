@@ -97,7 +97,7 @@ class ManagementClass : public FwObject,
     EState  estate_;
     static const char *STATES_NAMES[States_Total];
 
-    static const int WEIGHT_PERIOD_LENGTH = 3;
+    static const int WEIGHT_PERIOD_LENGTH = 6;
     int lastGram_[2*WEIGHT_PERIOD_LENGTH];
     int *plastGram_;
 

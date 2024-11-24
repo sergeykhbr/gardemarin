@@ -199,8 +199,9 @@ bool ManagementClass::isDrainEnd() {
     for (int i = 0; i < WEIGHT_PERIOD_LENGTH; i++) {
         deltaGram += plastGram_[i];
     }
+    uart_printf("[%d] DeltaGram=%d %d\r\n", xTaskGetTickCount(), deltaGram, plastGram_[0]);
     // Drain speed ~22 gram/sec
-    if (deltaGram < 14) {
+    if (deltaGram < 5*WEIGHT_PERIOD_LENGTH) {
         return true;
     }
     return false;

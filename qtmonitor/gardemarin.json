@@ -165,6 +165,24 @@
             'Violet Mix':{'NH2':0.0, 'NO3':3.4, 'NH4':15.6, 'P2O5':6.0, 'K2O':6.0, 'Ca':0.0, 'Mg':0.0, 'S':16.0, 'Fe':0.07, 'Cu':0.01, 'Mn':0.04, 'Zn':0.025, 'B':0.025, 'Mo':0.004},
         },
         'Receipts':[
+           {'Comment':'5 Oct 2024: pH=5.75 EC=1835',
+            'Weight':7000.0,
+            'Components':{
+                   'Ammonium nitrate phosphate':0.0,
+                   'Potassium nitrate':2.0,
+                   'Calcium nitrate':4.0,
+                   'Monopotassium phosphate':0.0,
+                   'Magnesium sulfate':0.0,
+                   'Carbomid':0.0,
+                   'Copper sulfate':0.0,
+                   'Iron sulfate':0.0
+                   'Boric acid':0,
+                   'Zinc sulfate':0,
+                   'Manganese sulfate':0,
+                   'Sodium molybdate':0,
+                   'Green Mix':3.0,
+                   'Violet Mix':4.0,
+               }},
            {'Comment':'15 Sep 2024: pH=6.35',
             'Weight':7000.0,
             'Components':{
