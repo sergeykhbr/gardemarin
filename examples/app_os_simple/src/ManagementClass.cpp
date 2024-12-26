@@ -19,6 +19,8 @@
 #include <FreeRTOS.h>
 #include "ManagementClass.h"
 
+#define SKIP_DRAIN
+
 const char *ManagementClass::STATES_NAMES[States_Total] = {
     "WaitInit",
     "CheckWateringInterval",
@@ -81,60 +83,23 @@ void ManagementClass::update() {
     switch (estate_) {
     case WaitInit:
         if (isPeriodExpired(60)) {
-            switchToState(DrainBefore);
-            enableDrainPump();
+            switchToState(Watering);
+            write_uint32("usrset", "LastWatering", read_uint32("rtc", "Time"));
+            enableOxyPump();
+            enableHighPressurePump();
         }
         break;
     case CheckWateringInterval:
         if (isPeriodExpired(read_uint16("usrset", "WateringInterval"))) {
-            if (read_int8("usrset", "WateringPerDrain") > 1) {
-                if (shortWateringCnt_ == 0) {
-                    switchToState(OxygenSaturation);
-                    enableOxyPump();
-                } else {
-                    switchToState(Watering);
-                    enableHighPressurePump();
-                }
-                // drain only after cycle is finished
-            } else {
-                switchToState(DrainBefore);
-                enableDrainPump();
-            }
-        }
-        break;
-    case DrainBefore:
-        // Drain speed ~22 gram/sec
-        if (isDrainEnd()) {
-            switchToState(OxygenSaturation);
-            disableDrainPump();
+            switchToState(Watering);
+            enableHighPressurePump();
             enableOxyPump();
         }
         break;
-    case OxygenSaturation:
-        if (isPeriodExpired(read_uint16("usrset", "OxygenSaturationInterval"))) {
-            switchToState(Watering);
-            write_uint32("usrset", "LastWatering", read_uint32("rtc", "Time"));
-            disableOxyPump();
-            enableHighPressurePump();
-        }
-        break;
     case Watering:
-        // Watering rate ~14 gram/sec
         if (isWateringEnd()) {
             disableHighPressurePump();
-            if (++shortWateringCnt_ >= read_int8("usrset", "WateringPerDrain")) {
-                switchToState(DrainAfter);
-                enableDrainPump();
-                shortWateringCnt_ = 0;
-            } else {
-                // skip drain
-                switchToState(AdjustLights);
-            }
-        }
-        break;
-    case DrainAfter:
-        if (isDrainEnd()) {
-            disableDrainPump();
+            disableOxyPump();
             switchToState(AdjustLights);
         }
         break;
@@ -184,6 +149,9 @@ void ManagementClass::updateMixWeight() {
 
 bool ManagementClass::isDrainEnd() {
     int deltaGram = 0;
+#ifdef SKIP_DRAIN
+    return true;
+#endif
     if (isPeriodExpired(240)) {
         // 240 sec * 22 = 5280 grams watchdog
         return true;
@@ -213,7 +181,7 @@ bool ManagementClass::isWateringEnd() {
         // 240 sec * 14 = 3360 grams of water
         return true;
     }
-    if (!isPeriodExpired(WEIGHT_PERIOD_LENGTH)) {
+/*    if (!isPeriodExpired(WEIGHT_PERIOD_LENGTH)) {
         // minimal drain timeout to make any decision
         return false;
     }
@@ -231,7 +199,7 @@ bool ManagementClass::isWateringEnd() {
         // to switch to DrainAfter state
         shortWateringCnt_ = read_int8("usrset", "WateringPerDrain");
         return true;
-    }
+    }*/
     return false;
 }
 
@@ -336,6 +304,9 @@ void ManagementClass::disableRelaisLight() {
 
 
 void ManagementClass::enableDrainPump() {
+#ifdef SKIP_DRAIN
+    return;
+#endif
     write_int8("hbrg0", "dc0_duty", 100);
 }
 
