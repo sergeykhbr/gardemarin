@@ -2,9 +2,18 @@ use <MCAD/boxes.scad>
 $fa=1.0;
 $fs=0.4;
 
+// Case formfactor
+CASE_WIDTH = 80;        // outter size
+CASE_LENGTH = 159;
+Thickness = 2.4;        // limited by board size and standard DIN case (2.4 max)
+
+bottom_height = 15;
+top_h_inclin = 1;
+top_height = 25 - top_h_inclin;    // without inclintation
+D_corner = 4;           // top rounding corners
+
 support_thick = 0.8;
-Thickness = 1.2;
-M4_diameter = 3.8;
+M4_diameter = 3.8;      // inner hole for M4 screw
 
 module din_rail(len=100) {
     // 1 mm thickness
@@ -29,7 +38,7 @@ module din_rail(len=100) {
 module din_slot(width = 10) {
     gap = 0.1;
     High = 4;
-    Low = 2.25;    // 4 mm is a maximum height of din = 0.5*(37-25)
+    Low = 2.0;    // 4 mm is a maximum height of din = 0.5*(37-25)
     Slide = 2.3;  // Slide + Low = 4 mm
     points = [
         [5, -gap - 5],
@@ -108,41 +117,58 @@ module enclose_bottom(x=100, y=20, z=20) {
 }
 
 module enclose_top_side(height=100, width=20, thick=1) {
-    D_corner = 4;
     linear_extrude(thick) {
-        hull() {
-            translate([height - D_corner/2, width - D_corner/2, 0]) circle(d=D_corner);
-            translate([height - D_corner/2, D_corner/2, 0]) circle(d=D_corner);
-            square([1, width]);
+        union() {
+            hull() {
+                translate([height - D_corner/2, width - D_corner/2, 0]) circle(d=D_corner);
+                translate([height - D_corner/2, D_corner/2, 0]) circle(d=D_corner);
+                square([1, width]);
+                translate([height, 0.5*(width - 45), 0]) square([top_h_inclin, 45]);
+            }
+            hull() {
+                translate([(height + top_h_inclin + 16) - D_corner/2, width - 0.5*(width - 45) - D_corner/2, 0]) circle(d=D_corner);
+                translate([(height + top_h_inclin + 16) - D_corner/2, 0.5*(width - 45) + D_corner/2, 0]) circle(d=D_corner);
+                translate([height + top_h_inclin - 0.001, 0.5*(width - 45), 0]) square([1, 45]);
+            }
         }
     }
 }
 
-module enclose_top(x=100, y=20, z=20) {
+module enclose_top(height=100, width=20, length=20) {
     
     // Right top side
-    translate([x,0,0]) rotate([0,-90,0]) {
-        enclose_top_side(height=x, width=y, thick=Thickness);
+    translate([0, 0,0]) rotate([0,90,0]) {
+        enclose_top_side(height=height, width=width, thick=Thickness);
         translate([-1.5, Thickness/2, Thickness/2 - 0.01]) {
-            enclose_top_side(height=(x + 1.5), width = (y - 2*Thickness), thick=Thickness/2 + 0.01);
+            enclose_top_side(height=(height + 1.5), width = (width - Thickness), thick=Thickness/2 + 0.01);
         }
     }
-    
-    /*difference() {
+    // Left top side
+    translate([length - Thickness, 0,0]) rotate([0,90,0]) {
+        enclose_top_side(height=height, width=width, thick=Thickness);
+        translate([-1.5, Thickness/2, 0]) 
+        {
+            enclose_top_side(height=(height + 1.5), width = (width - Thickness), thick=Thickness/2 + 0.01);
+        }
+    }
+
+    translate([Thickness/2, 0, 0]) rotate([0,90,0]) linear_extrude(length - Thickness) difference() {
         union() {
             hull() {
-                translate([x - D_corner/2, y - D_corner/2, 0]) circle(d=D_corner);
-                translate([x - D_corner/2, D_corner/2, 0]) circle(d=D_corner);
-                square([1, y]);
+                translate([height - D_corner/2, width - D_corner/2, 0]) circle(d=D_corner);
+                translate([height - D_corner/2, D_corner/2, 0]) circle(d=D_corner);
+                square([1, width]);
+                translate([height, 0.5*(width - 45), 0]) square([top_h_inclin, 45]);
             }
-            translate([-1.5, Thickness/2, 0]) square([1.501, y - Thickness]);
+            translate([-1.5, Thickness/2, 0]) square([1.501, width - Thickness]);
         }
         hull() {
-            translate([x - Thickness - D_corner/2, y - Thickness - D_corner/2, 0]) circle(d=D_corner);
-            translate([x - Thickness - D_corner/2, Thickness + D_corner/2, 0]) circle(d=D_corner);
-            translate([-1.501, Thickness, 0]) square([3, y - 2*Thickness]);
+            translate([height - Thickness - D_corner/2, width - Thickness - D_corner/2, 0]) circle(d=D_corner);
+            translate([height - Thickness - D_corner/2, Thickness + D_corner/2, 0]) circle(d=D_corner);
+            translate([-1.501, Thickness, 0]) square([3, width - 2*Thickness]);
+            translate([height - Thickness, 0.5*(width - 45), 0]) square([top_h_inclin, 45]);
         }
-    }*/
+    }
 }
 
 module stand(z=3, cut=0) {
@@ -156,12 +182,22 @@ module stand(z=3, cut=0) {
     }
 }
 
-module enclose_bottom_with_stands() {
-    rotate([0,-90,0]) color([0,1,1]) enclose_bottom(x=15, y=80, z=156);
-    translate([-37, 23.9, 0]) color([1,0,0]) stand(z=13.6);
-    translate([-37, 73.0, 0]) color([1,0,0]) stand(z=13.6, cut=1);
-    translate([-150, 73.0, 0]) color([1,0,0]) stand(z=13.6, cut=1);
-    translate([-150, 7.0, 0]) color([1,0,0]) stand(z=13.6);
+module enclose_bottom_with_stands(x=15, y=80, z=159) {
+    rotate([0,-90,0]) color([0,1,1]) enclose_bottom(x=x, y=y, z=z);
+    translate([-38.2, 23.9, 0]) color([1,0,0]) stand(z=13.6);
+    translate([-38.2, 73.0, 0]) color([1,0,0]) stand(z=13.6, cut=1);
+    translate([-151.2, 73.0, 0]) color([1,0,0]) stand(z=13.6, cut=1);
+    translate([-151.2, 7.0, 0]) color([1,0,0]) stand(z=13.6);
+}
+
+module enclose_top_with_stands(height, width, length) {
+    translate([0,0,bottom_height]) rotate([0,180,0]) {
+        color([0,0.8,1, 0.6]) enclose_top(height=height, width=width, length=length);
+    }
+    //translate([-38.2, 23.9, 0]) color([1,0,0]) stand(z=13.6);
+    //translate([-38.2, 73.0, 0]) color([1,0,0]) stand(z=13.6, cut=1);
+    //translate([-151.2, 73.0, 0]) color([1,0,0]) stand(z=13.6, cut=1);
+    //translate([-151.2, 7.0, 0]) color([1,0,0]) stand(z=13.6);
 }
 
 module support_cut_circle(x=60, r=6) {
@@ -215,8 +251,8 @@ module case_support() {
 }
 
 //din_rail(len=20);
-enclose_bottom_with_stands();
-translate([-192,-23,15]) color([0.5,1,0, 0.3]) import("main_board.stl",convexity=5);
-enclose_top(x=15, y=80, z=156);
+enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
+translate([-193.2,-23,15]) color([0.5,1,0, 0.3]) import("main_board.stl",convexity=5);
+enclose_top_with_stands(height=top_height, width=CASE_WIDTH, length=CASE_LENGTH);
 //case_support();
 
