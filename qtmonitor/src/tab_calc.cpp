@@ -69,7 +69,7 @@ TabCalculator::TabCalculator(QWidget *parent, AttributeType *cfg)
     boxWeight_ = new QDoubleSpinBox(this);
     boxWeight_->setDecimals(0);
     boxWeight_->setMinimum(1000);
-    boxWeight_->setMaximum(10000);
+    boxWeight_->setMaximum(50000);
     boxWeight_->setValue(weight_);
     layout->addWidget(new QLabel(tr("Weight, g:")), 1, 0);
     layout->addWidget(boxWeight_, 1, 1);
