@@ -261,6 +261,37 @@ module enclose_T1T2_frame() {
     }
 }
 
+module display_latch(H, L=3, W=4) {
+    platch = [
+        [0,0],
+        [2,0],
+        [2,H],
+        [2 + L, H],
+        [2 + L, H + 2],
+        [0,H + 2],
+    ];
+    rotate([90, 0, 0]) linear_extrude(W) polygon(platch);
+}
+
+module enclose_display_frame(w=24.2,h=24.2,l_off=20) {
+    // Frame and latches aligned with *_diff using lcd_test module()
+    // TODO: board size relative frame w,h
+    lcd_board_w = 28;
+    lcd_board_h = 39;
+    lcd_board_t = 3.6;
+    translate([2+l_off,-2+0.5*(CASE_WIDTH-w),-(top_height+top_ext_h)]) union() {
+        union() {
+            translate([0,0,Thickness-eps]) union() {
+                translate([h+10.3, 0.5*(lcd_board_w - 8), 0]) rotate([0, 0, 180]) display_latch(H=lcd_board_t, L=2, W=8);
+                translate([0.5*(lcd_board_h+10), lcd_board_w+2, 0]) rotate([0, 0, -90]) display_latch(H=lcd_board_t, L=2, W=20);
+                translate([0.5*(lcd_board_h-30), -2, 0]) rotate([0, 0, 90]) display_latch(H=lcd_board_t, L=3, W=20);
+            }
+        }
+        // Ucomment this for lcd_test()
+        //translate([-5,-5,0]) linear_extrude(Thickness) square([lcd_board_h+10, lcd_board_w+10]); // for test purposes
+    }
+}
+
 module enclose_display_diff(w=20, h=10, l_off=20) {
     frame_w = 3;
     translate([l_off, 0.5*(CASE_WIDTH - (h+2*frame_w)), -(top_height + top_h_inclin + top_ext_h - Thickness - 1) + eps]) // where 1 comes from?
@@ -272,6 +303,23 @@ module enclose_display_diff(w=20, h=10, l_off=20) {
     }
 }
 
+module btn_tunnel_diff(pos_l=25, pos_w=15, btn_sz=8, btn_depth=20) {
+    btn_h = 5;
+    stem_h = btn_depth - (btn_h + Thickness);
+    stem_d = 3;
+    translate([pos_l, pos_w, -(top_height)]) {
+        union() {
+            translate([0,0,-(top_h_inclin+eps)]) linear_extrude(btn_h+top_h_inclin+eps) square(btn_sz, center=true);
+            translate([0,0,btn_h-eps]) linear_extrude(stem_h+2*eps) circle(d=stem_d);
+            translate([0,0,btn_h+Thickness]) linear_extrude(stem_h+eps) circle(d=btn_sz);
+        }
+    }
+}
+module btn_tunnel_frame(pos_l=25, pos_w=15, btn_sz = 8, btn_depth = 20) {
+    translate([pos_l, pos_w, -(top_height)]) {
+        linear_extrude(btn_depth) square(btn_sz+2, center=true);
+    }
+}
 
 
 module enclose_top_side(height=100, width=20, thick=1) {
@@ -354,6 +402,8 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
             enclose_relais1_frame();
             enclose_relais2_frame();
             enclose_T1T2_frame();
+            btn_tunnel_frame(pos_l=23.8, pos_w=13.7, btn_sz=6, btn_depth=18);
+            btn_tunnel_frame(pos_l=23.8, pos_w=7.1, btn_sz=6, btn_depth=18);
             translate([38.2,73,-(top_height - 15 - eps)]) stand_screw_m4_frame(z=15, d=10);
             translate([151.2,7,-(top_height - 15 - eps)]) stand_screw_m4_frame(z=15, d=10);
         }
@@ -368,12 +418,16 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
             enclose_relais1_diff();
             enclose_relais2_diff();
             enclose_T1T2_diff();
-            enclose_display_diff(w=28, h=22, l_off=90);
+            enclose_display_diff(w=(26.4-2), h=(26.4-2), l_off=90);
+            btn_tunnel_diff(pos_l=23.8, pos_w=13.7, btn_sz=6, btn_depth=18);
+            btn_tunnel_diff(pos_l=23.8, pos_w=7.1, btn_sz=6, btn_depth=18);
             
             translate([38.2,73,-(top_height - 15 - eps)]) stand_screw_m4_diff(z=15, d=10);
             translate([151.2,7,-(top_height - 15 - eps)]) stand_screw_m4_diff(z=15, d=10);
         }
     }
+    // Add after everything subtracted
+    enclose_display_frame(w=(26.4-2), h=(26.4-2), l_off=90);
 }
 
 module stand(z=3, cut=0) {
@@ -454,11 +508,21 @@ module case_support() {
     }
 }
 
+
+module lcd_test() {
+    difference()
+    {
+        enclose_display_frame(w=(26.4-2), h=(26.4-2),l_off=90);
+        enclose_display_diff(w=(26.4-2), h=(26.4-2), l_off=90);  // acutal LCD size 26.4 but visible through frame is 24.4
+    }
+    translate([105.6,30,-4-(top_height+top_ext_h)]) color([0.5,1,0, 0.3]) import("screen.stl",convexity=5);
+}
+
 enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
 translate([-193.2,-23,15]) color([0.5,1,0, 0.3]) import("main_board.stl",convexity=5);
 enclose_top_with_stands(h=top_height, w=CASE_WIDTH, l=CASE_LENGTH);
 
 
+//lcd_test();
 //din_rail(len=20);
 //case_support();
-
