@@ -278,17 +278,17 @@ module enclose_display_frame(w=24.2,h=24.2,l_off=20) {
     // TODO: board size relative frame w,h
     lcd_board_w = 28;
     lcd_board_h = 39;
-    lcd_board_t = 3.6;
+    lcd_board_t = 3.5;
     translate([2+l_off,-2+0.5*(CASE_WIDTH-w),-(top_height+top_ext_h)]) union() {
         union() {
             translate([0,0,Thickness-eps]) union() {
-                translate([h+10.3, 0.5*(lcd_board_w - 8), 0]) rotate([0, 0, 180]) display_latch(H=lcd_board_t, L=2, W=8);
+                translate([h+12.8, 0.5*(lcd_board_w - 8), 0]) rotate([0, 0, 180]) display_latch(H=lcd_board_t, L=2, W=8);
                 translate([0.5*(lcd_board_h+10), lcd_board_w+2, 0]) rotate([0, 0, -90]) display_latch(H=lcd_board_t, L=2, W=20);
                 translate([0.5*(lcd_board_h-30), -2, 0]) rotate([0, 0, 90]) display_latch(H=lcd_board_t, L=3, W=20);
             }
         }
         // Ucomment this for lcd_test()
-        //translate([-5,-5,0]) linear_extrude(Thickness) square([lcd_board_h+10, lcd_board_w+10]); // for test purposes
+        translate([-5,-5,0]) linear_extrude(Thickness) square([lcd_board_h+10, lcd_board_w+10]); // for test purposes
     }
 }
 
@@ -518,11 +518,11 @@ module lcd_test() {
     translate([105.6,30,-4-(top_height+top_ext_h)]) color([0.5,1,0, 0.3]) import("screen.stl",convexity=5);
 }
 
-enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
-translate([-193.2,-23,15]) color([0.5,1,0, 0.3]) import("main_board.stl",convexity=5);
-enclose_top_with_stands(h=top_height, w=CASE_WIDTH, l=CASE_LENGTH);
+//enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
+//translate([-193.2,-23,15]) color([0.5,1,0, 0.3]) import("main_board.stl",convexity=5);
+//enclose_top_with_stands(h=top_height, w=CASE_WIDTH, l=CASE_LENGTH);
 
 
-//lcd_test();
+lcd_test();
 //din_rail(len=20);
 //case_support();
