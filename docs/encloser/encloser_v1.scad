@@ -288,7 +288,7 @@ module enclose_display_frame(w=24.2,h=24.2,l_off=20) {
             }
         }
         // Ucomment this for lcd_test()
-        translate([-5,-5,0]) linear_extrude(Thickness) square([lcd_board_h+10, lcd_board_w+10]); // for test purposes
+        //translate([-5,-5,0]) linear_extrude(Thickness) square([lcd_board_h+10, lcd_board_w+10]); // for test purposes
     }
 }
 
@@ -299,6 +299,66 @@ module enclose_display_diff(w=20, h=10, l_off=20) {
         hull() {
             linear_extrude(0.1) translate([frame_w, frame_w]) square([w,h]);
             translate([0,0,-(Thickness + 2*eps)]) linear_extrude(0.1) square([w + 2*frame_w, h + 2*frame_w]);
+        }
+    }
+}
+
+module enclose_jtag_frame(depth=20, w=40, l=8) {
+    D=16;
+    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin-depth)]) {
+        translate([0,0,-depth]) linear_extrude(depth) 
+        union() {
+            square([l,w], center=true);
+            hull() {
+                translate([-l/2, +4, 0]) circle(d=D);
+                translate([-l/2, -4, 0]) circle(d=D);
+                translate([l/2, +4, 0]) circle(d=D);
+                translate([l/2, -4, 0]) circle(d=D);
+            }
+        }
+    }
+}
+module enclose_jtag_diff(depth=20, w=40, l=8) {
+    th=1.2;
+    D=16;
+    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin-depth)]) {
+        union() {
+            translate([0,0,-depth-th-eps]) linear_extrude(depth+th+2*eps) {
+                square([l-2*th, w-2*th], center=true);
+            }
+            translate([0,0,-depth-th-eps]) linear_extrude(depth+eps) {
+                hull() {
+                    translate([-(l-th)/2, +4, 0]) circle(d=D-th);
+                    translate([-(l-th)/2, -4, 0]) circle(d=D-th);
+                    translate([(l-th)/2, +4, 0]) circle(d=D-th);
+                    translate([(l-th)/2, -4, 0]) circle(d=D-th);
+                }
+            }
+        }
+    }
+}
+
+module enclose_mosfet_frame(depth=16, w=0.5*(CASE_WIDTH-top_ext_w), l=14) {
+    dlt_h = w / (0.5*(CASE_WIDTH-top_ext_w));
+    translate([0, CASE_WIDTH-w, -top_height+depth+eps]) rotate([-90,0,0]) rotate([0,-90,0]) {
+        linear_extrude(l) {
+            hull() {
+                square([w, 1]);
+                square([1, depth+dlt_h]);
+                translate([w-top_corner/2, depth-top_corner/2, 0]) circle(d=top_corner);
+            }
+        }
+    }
+}
+module enclose_mosfet_diff(depth=16, w=0.5*(CASE_WIDTH-top_ext_w), l=14) {
+    th = Thickness;
+    translate([0, CASE_WIDTH-w, -top_height+depth+eps]) rotate([-90,0,0]) rotate([0,-90,0]) {
+        translate([0,0,th]) linear_extrude(l-2*th) {
+            hull() {
+                translate([top_corner/2 + th, depth - th -top_corner/2, 0]) circle(d=top_corner);
+                translate([th, -eps, 0]) square([w-th, 1]);
+                translate([th+w, -eps, 0]) square([1, depth-th]);
+            }
         }
     }
 }
@@ -388,6 +448,21 @@ module stand_screw_m4_diff(z=3, d=8) {
 
 
 module enclose_top_with_ext(h=100, w=20, l=20) {
+    mosfet_depth = 17;
+    mosfet_w = 22;
+    mosfet_l = 23;
+    mosfet_l_pos = 123;
+
+    scale1_depth = 17;
+    scale1_w = 13;
+    scale1_l = 18;
+    scale1_l_pos = 103;
+
+    scale2_depth = 17;
+    scale2_w = 13;
+    scale2_l = 18;
+    scale2_l_pos = 87.8;
+
     difference() 
     {
         union() {
@@ -402,8 +477,12 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
             enclose_relais1_frame();
             enclose_relais2_frame();
             enclose_T1T2_frame();
+            enclose_jtag_frame(depth=15, w=35, l=10);
             btn_tunnel_frame(pos_l=23.8, pos_w=13.7, btn_sz=6, btn_depth=18);
             btn_tunnel_frame(pos_l=23.8, pos_w=7.1, btn_sz=6, btn_depth=18);
+            translate([mosfet_l_pos, 0, 0]) enclose_mosfet_frame(depth=mosfet_depth, w=mosfet_w, l=mosfet_l);
+            translate([scale1_l_pos, 0, 0]) enclose_mosfet_frame(depth=scale1_depth, w=scale1_w, l=scale1_l);
+            translate([scale2_l_pos, 0, 0]) enclose_mosfet_frame(depth=scale2_depth, w=scale2_w, l=scale2_l);
             translate([38.2,73,-(top_height - 15 - eps)]) stand_screw_m4_frame(z=15, d=10);
             translate([151.2,7,-(top_height - 15 - eps)]) stand_screw_m4_frame(z=15, d=10);
         }
@@ -419,9 +498,12 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
             enclose_relais2_diff();
             enclose_T1T2_diff();
             enclose_display_diff(w=(26.4-2), h=(26.4-2), l_off=90);
+            enclose_jtag_diff(depth=15, w=35, l=10);
             btn_tunnel_diff(pos_l=23.8, pos_w=13.7, btn_sz=6, btn_depth=18);
             btn_tunnel_diff(pos_l=23.8, pos_w=7.1, btn_sz=6, btn_depth=18);
-            
+            translate([mosfet_l_pos, 0, 0]) enclose_mosfet_diff(depth=mosfet_depth, w=mosfet_w, l=mosfet_l);
+            translate([scale1_l_pos, 0, 0]) enclose_mosfet_diff(depth=scale1_depth, w=scale1_w, l=scale1_l);
+            translate([scale2_l_pos, 0, 0]) enclose_mosfet_diff(depth=scale2_depth, w=scale2_w, l=scale2_l);
             translate([38.2,73,-(top_height - 15 - eps)]) stand_screw_m4_diff(z=15, d=10);
             translate([151.2,7,-(top_height - 15 - eps)]) stand_screw_m4_diff(z=15, d=10);
         }
@@ -452,7 +534,7 @@ module enclose_bottom_with_stands(x=15, y=80, z=159) {
 }
 
 module enclose_top_with_stands(h, w, l) {
-    translate([0,0,bottom_height]) rotate([0,180,0])
+    //translate([0,0,bottom_height]) rotate([0,180,0])
     {
         color([0,0.8,1, 0.5]) enclose_top_with_ext(h=h, w=w, l=l);
     }
@@ -519,10 +601,74 @@ module lcd_test() {
 }
 
 //enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
-//translate([-193.2,-23,15]) color([0.5,1,0, 0.3]) import("main_board.stl",convexity=5);
-//enclose_top_with_stands(h=top_height, w=CASE_WIDTH, l=CASE_LENGTH);
+//translate([-193.2,-23,15]) color([0.5,1,0, 1.0]) import("main_board.stl",convexity=5);
+translate([-CASE_LENGTH + (CASE_LENGTH - top_ext_l_off - top_ext_l), 0, (top_height+top_ext_h)])
+    enclose_top_with_stands(h=top_height, w=CASE_WIDTH, l=CASE_LENGTH);
 
 
-lcd_test();
+//lcd_test();
 //din_rail(len=20);
 //case_support();
+
+min_support_h = 5;
+support_overlay = 0.2;
+module top_support_1() {
+    D = 0.4;
+    N = (top_ext_w - 0.2) / (D + 0.2);
+    translate([0, 0.5*(CASE_WIDTH-top_ext_w), 0]) {
+        rotate([0,45,0]) translate([-support_overlay,0,-0.5*support_thick]) linear_extrude(support_thick) {
+            difference() {
+                square([min_support_h+support_overlay, top_ext_w]);
+                union() {
+                    for (i = [0: N]) {
+                        translate([0, D/2+0.2+i*(D+0.2), 0]) circle(d=D);
+                    }
+                }
+            }
+        }
+    }
+}
+module top_support_2() {
+    D = 0.4;
+    length = top_ext_l + cos(45)*(2*min_support_h);
+    N = (length - 0.2) / (D + 0.2);
+    px = 0.5*(-top_ext_l + cos(45)*(2*min_support_h));
+    py = 0.5*(cos(45)*(2*min_support_h) - px);
+    points=[
+        [-top_ext_l, 0],
+        [cos(45)*(2*min_support_h), 0],
+        [px, -53],
+    ];
+    translate([0,CASE_WIDTH/2,0]) rotate([90,0,0]) {
+            //difference() 
+            {
+                polygon(points);
+                union() {
+                    for (i = [0: N]) {
+                        translate([-top_ext_l, D/2+0.2+i*(D+0.2), 0]) circle(d=D);
+                    }
+                }
+            }
+    }
+    /*translate([0, 0.5*(CASE_WIDTH-top_ext_w), 0]) {
+        rotate([0,45,0]) translate([-support_overlay,0,-0.5*support_thick]) linear_extrude(support_thick) {
+            difference() {
+                square([min_support_h+support_overlay, top_ext_w]);
+                union() {
+                    for (i = [0: N]) {
+                        translate([0, D/2+0.2+i*(D+0.2), 0]) circle(d=D);
+                    }
+                }
+            }
+        }
+    }*/
+}
+module top_support() {
+    off_x = cos(45)*(2*min_support_h);
+    translate([off_x-eps,0,0]) {
+        rotate([0,-45,0]) translate([0,0,-0.5*support_thick]) linear_extrude(support_thick) square([CASE_LENGTH, CASE_WIDTH], center=true);
+    }
+}
+top_support_1();
+top_support_2();
+top_support();
