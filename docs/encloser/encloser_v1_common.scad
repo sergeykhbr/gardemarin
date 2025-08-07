@@ -26,3 +26,35 @@ support_thick = 0.8;
 M4_diameter = 3.8;                  // inner hole for M4 screw
 eps = 0.01;                         // remove z-fighting artifacts
 
+module circle_support(d=10, cut=6, nocut=0.2) {
+    L = 3.1415*d;
+    N = L/(cut + nocut);
+    difference() {
+        circle(d=d);
+        union() {
+            for (i = [0: 360/N : 360]) {
+                translate([d/2*cos(i), d/2*sin(i)]) circle(d=cut);
+            }
+        }
+    }
+}
+
+module square_support(w=10, h=10, cut=6, nocut=0.2) {
+    dlt = cut + nocut;
+    Nw = w/dlt;
+    Nh = h/dlt;
+    difference() {
+        square([w,h], center=true);
+        union() {
+            for (i = [0: Nw]) {
+                translate([-w/2 + i*dlt, -h/2]) circle(d=cut);
+                translate([-w/2 + i*dlt, h/2]) circle(d=cut);
+            }
+            for (i = [0: Nh]) {
+                translate([-w/2, -h/2 + i*dlt]) circle(d=cut);
+                translate([w/2 , -h/2 + i*dlt]) circle(d=cut);
+            }
+        }
+    }
+}
+

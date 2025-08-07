@@ -230,7 +230,7 @@ module enclose_display_diff(w=20, h=10, l_off=20) {
 
 module enclose_jtag_frame(depth=20, w=40, l=8) {
     D=16;
-    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin-depth)]) {
+    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin-depth-eps)]) {
         translate([0,0,-depth]) linear_extrude(depth) 
         union() {
             square([l,w], center=true);
@@ -246,7 +246,7 @@ module enclose_jtag_frame(depth=20, w=40, l=8) {
 module enclose_jtag_diff(depth=20, w=40, l=8) {
     th=1.2;
     D=16;
-    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin-depth)]) {
+    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin-depth-eps)]) {
         union() {
             translate([0,0,-depth-th-eps]) linear_extrude(depth+th+2*eps) {
                 square([l-2*th, w-2*th], center=true);
@@ -263,9 +263,35 @@ module enclose_jtag_diff(depth=20, w=40, l=8) {
     }
 }
 
+module enclose_jtag_support(depth=20, w=40, l=8) {
+    th=1.2;
+    D=16;
+    translate([32.5, CASE_WIDTH/2 + 3.4, -(top_height+top_h_inclin)]) 
+    {
+        union() {
+            linear_extrude(support_thick) {
+                square_support(w=l-2*th+2*eps, h=w-2*th+2*eps, cut=1.2, nocut=0.2);
+            }
+            linear_extrude(support_thick) {
+                hull() 
+                {
+                    translate([-(l-th)/2, +4, 0]) circle(d=D-th-1);
+                    translate([-(l-th)/2, -4, 0]) circle(d=D-th-1);
+                    translate([(l-th)/2, +4, 0]) circle(d=D-th-1);
+                    translate([(l-th)/2, -4, 0]) circle(d=D-th-1);
+                }
+                translate([-(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
+                translate([-(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
+                translate([(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
+                translate([(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
+            }
+        }
+    }
+}
+
 module enclose_mosfet_frame(depth=16, w=0.5*(CASE_WIDTH-top_ext_w), l=14) {
     dlt_h = w / (0.5*(CASE_WIDTH-top_ext_w));
-    translate([0, CASE_WIDTH-w, -top_height+depth+eps]) rotate([-90,0,0]) rotate([0,-90,0]) {
+    translate([0, CASE_WIDTH-w, -top_height+depth+0.1]) rotate([-90,0,0]) rotate([0,-90,0]) {
         linear_extrude(l) {
             hull() {
                 square([w, 1]);
@@ -306,18 +332,21 @@ module btn_tunnel_frame(pos_l=25, pos_w=15, btn_sz = 8, btn_depth = 20) {
     }
 }
 
-module stand_screw_m4_frame(z=3, d=8) {
+module stand_screw_m4_frame(l=10, w=10, depth=3, d=8, d_screw=M4_diameter) {
     // thcikness of wall =0.8 (not equal to Thickness). +5 additional diff in encloser inclination
-    translate([0,0,-z]) difference() {
-        linear_extrude(z) circle(d=d + 1.6);
-        translate([0,0, -1]) linear_extrude(z+2) circle(d=M4_diameter);
+    translate([l, w, -(top_height - depth - eps)]) {
+        translate([0,0,-depth]) difference() {
+            linear_extrude(depth) circle(d=d + 1.6);
+            translate([0,0, -1]) linear_extrude(depth+2) circle(d=d_screw);
+        }
     }
-
 }
-module stand_screw_m4_diff(z=3, d=8) {
-    l = z + 5 + eps;
-    translate([0,0, -Thickness - l]) {
-        linear_extrude(l) circle(d=d);
+module stand_screw_m4_diff(l=10, w=10, depth=3, d=8) {
+    depth_full = depth + 5 + eps;
+    translate([l, w, -(top_height - depth - eps)]) {
+        translate([0,0, -Thickness - depth_full]) {
+            linear_extrude(depth_full) circle(d=d);
+        }
     }
 }
 
@@ -406,7 +435,7 @@ module top_support_5() {
         }
     }
 }
-module top_support_6() {
+/*module top_support_6() {
     jtag_w = 35;
     D = 1.4;
     dlt=0.2;
@@ -423,7 +452,7 @@ module top_support_6() {
             }
         }
     }
-}
+}*/
 module enclose_top_support() {
     translate([-(-CASE_LENGTH + (CASE_LENGTH - top_ext_l_off - top_ext_l)),
                0,
@@ -433,7 +462,7 @@ module enclose_top_support() {
         top_support_3();
         top_support_4();
         top_support_5();
-        top_support_6();
+        //top_support_6();
     }
 }
 
@@ -454,6 +483,11 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
     scale2_l = 18;
     scale2_l_pos = 87.8;
 
+    scale3_depth = 17;
+    scale3_w = 13;
+    scale3_l = 18;
+    scale3_l_pos = 72.6;
+
     difference() 
     {
         union() {
@@ -468,14 +502,21 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
             enclose_relais1_frame();
             enclose_relais2_frame();
             enclose_T1T2_frame();
-            enclose_jtag_frame(depth=15, w=35, l=10);
+            enclose_jtag_frame(depth=15, w=35, l=11.5);
             btn_tunnel_frame(pos_l=23.8, pos_w=13.7, btn_sz=6, btn_depth=18);
             btn_tunnel_frame(pos_l=23.8, pos_w=7.1, btn_sz=6, btn_depth=18);
             translate([mosfet_l_pos, 0, 0]) enclose_mosfet_frame(depth=mosfet_depth, w=mosfet_w, l=mosfet_l);
             translate([scale1_l_pos, 0, 0]) enclose_mosfet_frame(depth=scale1_depth, w=scale1_w, l=scale1_l);
             translate([scale2_l_pos, 0, 0]) enclose_mosfet_frame(depth=scale2_depth, w=scale2_w, l=scale2_l);
-            translate([38.2,73,-(top_height - 15 - eps)]) stand_screw_m4_frame(z=15, d=8);
-            translate([151.2,7,-(top_height - 15 - eps)]) stand_screw_m4_frame(z=15, d=8);
+            translate([scale3_l_pos, 0, 0]) enclose_mosfet_frame(depth=scale3_depth, w=scale3_w, l=scale3_l);
+            stand_screw_m4_frame(l=38.2, w=73, depth=15, d=8, d_screw=M4_diameter);
+            stand_screw_m4_frame(l=151.2, w=7, depth=15, d=8, d_screw=M4_diameter);
+            stand_screw_m4_frame(l=150.6, w=64.7, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_frame(l=150.6, w=59.5, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_frame(l=150.6, w=51.5, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_frame(l=150.6, w=46.3, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_frame(l=150.6, w=34.9, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_frame(l=150.6, w=29.7, depth=7, d=4.5, d_screw=4.5);
         }
         union() {
             enclose_top_ext_diff();
@@ -489,20 +530,28 @@ module enclose_top_with_ext(h=100, w=20, l=20) {
             enclose_relais2_diff();
             enclose_T1T2_diff();
             enclose_display_diff(w=(26.4-2), h=(26.4-2), l_off=90);
-            enclose_jtag_diff(depth=15, w=35, l=10);
+            enclose_jtag_diff(depth=15, w=35, l=11.5);
             btn_tunnel_diff(pos_l=23.8, pos_w=13.7, btn_sz=6, btn_depth=18);
             btn_tunnel_diff(pos_l=23.8, pos_w=7.1, btn_sz=6, btn_depth=18);
             translate([mosfet_l_pos, 0, 0]) enclose_mosfet_diff(depth=mosfet_depth, w=mosfet_w, l=mosfet_l);
             translate([scale1_l_pos, 0, 0]) enclose_mosfet_diff(depth=scale1_depth, w=scale1_w, l=scale1_l);
             translate([scale2_l_pos, 0, 0]) enclose_mosfet_diff(depth=scale2_depth, w=scale2_w, l=scale2_l);
-            translate([38.2,73,-(top_height - 15 - eps)]) stand_screw_m4_diff(z=15, d=8);
-            translate([151.2,7,-(top_height - 15 - eps)]) stand_screw_m4_diff(z=15, d=8);
+            translate([scale3_l_pos, 0, 0]) enclose_mosfet_diff(depth=scale3_depth, w=scale3_w, l=scale3_l);
+            stand_screw_m4_diff(l=38.2, w=73, depth=15, d=8);
+            stand_screw_m4_diff(l=151.2, w=7, depth=15, d=8);
+            stand_screw_m4_diff(l=150.6, w=64.7, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_diff(l=150.6, w=59.5, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_diff(l=150.6, w=51.5, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_diff(l=150.6, w=46.3, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_diff(l=150.6, w=34.9, depth=7, d=4.5, d_screw=4.5);
+            stand_screw_m4_diff(l=150.6, w=29.7, depth=7, d=4.5, d_screw=4.5);
             // Hole for LED blinking:
             translate([32, Thickness-eps, -2]) rotate([90,0,0]) linear_extrude(Thickness+2*eps) circle(d=2);
         }
     }
     // Add after everything subtracted
     enclose_display_frame(w=(26.4-2), h=(26.4-2), l_off=90);
+    enclose_jtag_support(depth=15, w=35, l=11.5);
     enclose_top_support();
 }
 
@@ -513,5 +562,5 @@ module enclose_top_with_stands(h, w, l) {
     }
 }
 
-rotate([0,45,0])
+//rotate([0,45,0])
 enclose_top_with_stands(h=top_height, w=CASE_WIDTH, l=CASE_LENGTH);
