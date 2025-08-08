@@ -30,7 +30,7 @@ module circle_support(d=10, cut=6, nocut=0.2) {
     L = 3.1415*d;
     N = L/(cut + nocut);
     difference() {
-        circle(d=d);
+        circle(d=(d + 2*eps));
         union() {
             for (i = [0: 360/N : 360]) {
                 translate([d/2*cos(i), d/2*sin(i)]) circle(d=cut);
@@ -44,7 +44,7 @@ module square_support(w=10, h=10, cut=6, nocut=0.2) {
     Nw = w/dlt;
     Nh = h/dlt;
     difference() {
-        square([w,h], center=true);
+        square([w+2*eps,h+2*eps], center=true);
         union() {
             for (i = [0: Nw]) {
                 translate([-w/2 + i*dlt, -h/2]) circle(d=cut);
