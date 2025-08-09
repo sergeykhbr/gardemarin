@@ -356,10 +356,11 @@ module enclose_jtag_support(depth=20, w=40, l=8) {
                     translate([(l-th)/2, +4, 0]) circle(d=D-th-1);
                     translate([(l-th)/2, -4, 0]) circle(d=D-th-1);
                 }
-                translate([-(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
-                translate([-(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
-                translate([(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
-                translate([(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.2);
+                translate([-(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
+                translate([-(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
+                translate([(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
+                translate([(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
+                translate([-(l-th)/2, 0, 0]) circle_support(d=D-th+eps+0.3, cut=1.0, nocut=0.2);
             }
         }
     }
@@ -545,24 +546,6 @@ module top_support_5() {
         }
     }
 }
-/*module top_support_6() {
-    jtag_w = 35;
-    D = 1.4;
-    dlt=0.2;
-    N = (jtag_w - dlt) / (D + dlt);
-    translate([-116.2, 0.5*CASE_WIDTH, 14.9]) {
-        rotate([0,45,0]) translate([-support_overlay,0,-0.5*support_thick]) linear_extrude(support_thick) {
-            difference() {
-                polygon([[0, -0.38*jtag_w], [2*jtag_w, 0], [0, 0.56*jtag_w]]);
-                union() {
-                    for (i = [0: N]) {
-                        translate([0, -0.38*jtag_w +i*(D+dlt), 0]) circle(d=D);
-                    }
-                }
-            }
-        }
-    }
-}*/
 module enclose_top_support() {
     translate([-(-CASE_LENGTH + (CASE_LENGTH - top_ext_l_off - top_ext_l)),
                0,
@@ -572,7 +555,6 @@ module enclose_top_support() {
         top_support_3();
         top_support_4();
         top_support_5();
-        //top_support_6();
     }
 }
 

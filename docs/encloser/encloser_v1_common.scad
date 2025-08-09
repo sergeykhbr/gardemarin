@@ -58,3 +58,40 @@ module square_support(w=10, h=10, cut=6, nocut=0.2) {
     }
 }
 
+module polygon_support(points, cut=1, nocut=0.4, off=0) {
+    Lx = (points[1].x - points[0].x);
+    Ly = (points[1].y - points[0].y);
+    alpha = atan(Ly/Lx);
+    Length = sqrt(Lx*Lx + Ly*Ly) - 0*cut;
+    N = round(Length / (cut + nocut));
+    dx = Lx / N;
+    dy = Ly / N;
+    x0 = points[0].x;
+    y0 = points[0].y;
+    cut_adjust = (Length / N) - nocut;
+    d_max = 1.0;
+    translate([0,0,-support_thick/2]) linear_extrude(support_thick) difference() {
+        polygon(points);
+        if (cut_adjust <= d_max) {
+            union() {
+                for (i = [0: N]) {
+                    translate([-0*cos(alpha)*(0.5*cut_adjust) + i*dx + x0,
+                              -0*sin(alpha)*(0.5*cut_adjust) + i*dy + y0, 0]) {
+                          circle(d=cut_adjust);
+                    }
+                }
+            }
+        } else {
+            union() {
+                for (i = [0: N]) {
+                    translate([-cos(alpha)*(0.5*cut_adjust + off) + i*dx + x0,
+                               -sin(alpha)*(0.5*cut_adjust + off) + i*dy + y0, 0]) hull() {
+                        circle(d=d_max);
+                        translate([cos(alpha)*(cut_adjust-d_max), sin(alpha)*(cut_adjust-d_max), 0]) circle(d=d_max);
+                    }
+                }
+            }
+        }
+    }
+}
+

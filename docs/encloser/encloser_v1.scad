@@ -32,9 +32,7 @@ module lcd_test() {
     translate([105.6,30,-4-(top_height+top_ext_h)]) color([0.5,1,0, 0.3]) import("screen.stl",convexity=5);
 }
 
-enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
 translate([-193.2,-23,15]) color([0.5,1,0, 1.0]) import("main_board.stl",convexity=5);
 
 
 //lcd_test();
-//case_support();
