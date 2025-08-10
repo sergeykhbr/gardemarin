@@ -77,8 +77,11 @@ module enclose_bottom(x=100, y=20, z=20) {
     translate([0,0,z - thick]) linear_extrude(thick) polygon(points_side_brd);
     translate([0,0,z - 0.5 * thick]) linear_extrude(0.5 * thick) polygon(points_side);
     
-    translate([eps, y/2, 0]) din_slot(width=CASE_LENGTH);
-    //translate([eps, y/2, z - 6 - 4]) din_slot(width=6);
+    if (DIN_LEFTSIDE) {
+        translate([eps, y/2, 0]) din_slot(width=CASE_LENGTH);
+    } else {
+        translate([eps, y/2, z]) rotate([180, 00, 0]) din_slot(width=CASE_LENGTH);
+    }
 }
 
 module stand(z=3, cut=0) {
@@ -144,18 +147,35 @@ module bottom_support_6() {
     x1 = -2.0;
     x2 = 2.0;
     h = 3.2;
-    translate([-0.1, -22.5+CASE_WIDTH/2, -7.5]) rotate([0,45,0]) 
-    {
-        rotate([-27,0,0]) polygon_support(points=[[-1.2,x1], [0.7, x2], [h,x2], [h,x1]], cut=1.2, nocut=0.3, off=0);
+    if (DIN_LEFTSIDE) {
+        translate([-0.1, -22.5+CASE_WIDTH/2, -7.5]) rotate([0,45,0]) 
+        {
+            rotate([-27,0,0]) polygon_support(points=[[-1.2,x1], [0.7, x2], [h,x2], [h,x1]], cut=1.2, nocut=0.3, off=0);
+        }
+    } else {
+        translate([-0.1, 22.5+CASE_WIDTH/2, -7.5]) rotate([0,45,0]) 
+        {
+            rotate([180+27,0,0]) {
+                polygon_support(points=[[-1.2,x1], [0.7, x2], [h,x2], [h,x1]], cut=1.2, nocut=0.3, off=0);
+            }
+        }
+
     }
 }
 module bottom_support_7() {
     x1 = -2.0;
     x2 = 2.0;
     h = 3.2;
-    translate([-0.1, 22.1+CASE_WIDTH/2, -7.7]) rotate([0,45,0]) 
-    {
-        rotate([18,0,0]) polygon_support(points=[[0.8,x1], [-0.4, x2], [h,x2], [h,x1]], cut=1.2, nocut=0.3, off=0);
+    if (DIN_LEFTSIDE) {
+        translate([-0.1, 22.1+CASE_WIDTH/2, -7.7]) rotate([0,45,0]) 
+        {
+            rotate([18,0,0]) polygon_support(points=[[0.8,x1], [-0.4, x2], [h,x2], [h,x1]], cut=1.2, nocut=0.3, off=0);
+        }
+    } else {
+        translate([-0.1, -22.1+CASE_WIDTH/2, -7.7]) rotate([0,45,0]) 
+        {
+            rotate([180-18,0,0]) polygon_support(points=[[0.8,x1], [-0.4, x2], [h,x2], [h,x1]], cut=1.2, nocut=0.3, off=0);
+        }
     }
 }
 module bottom_support_base() {

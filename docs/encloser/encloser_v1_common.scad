@@ -5,6 +5,7 @@ $fs=0.1;    // minimum size
 // Case formfactor
 CASE_WIDTH = 80;        // outter size
 CASE_LENGTH = 159;
+DIN_LEFTSIDE = 0;       // rotate DIN connector up-down
 Thickness = 2.4;        // limited by board size and standard DIN case (2.4 max)
 
 //       ___45__

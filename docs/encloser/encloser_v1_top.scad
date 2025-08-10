@@ -360,7 +360,7 @@ module enclose_jtag_support(depth=20, w=40, l=8) {
                 translate([-(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
                 translate([(l-th)/2, +4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
                 translate([(l-th)/2, -4, 0]) circle_support(d=D-th+eps, cut=2.0, nocut=0.4);
-                translate([-(l-th)/2, 0, 0]) circle_support(d=D-th+eps+0.3, cut=1.0, nocut=0.2);
+                translate([-(l-th)/2, 0, 0]) circle_support(d=D-th+eps+0.4, cut=3.35, nocut=0.4);
             }
         }
     }
