@@ -80,9 +80,10 @@ SOURCES = isr_vector \
 	fwapi \
 	fwattribute \
 	fwobject \
-	fwkernel \
+	fwkernelgen \
 	fwfifo \
 	dbc \
+	app_fwkernel \
 	ManagementClass \
 	task1ms \
 	taskEpoch \

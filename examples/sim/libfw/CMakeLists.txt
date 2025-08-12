@@ -13,7 +13,8 @@ endif()
 
 set(CMAKE_BUILD_TYPE Debug)
 
-set(_fw_root "./../../app_os_simple")
+#set(_fw_root "./../../app_os_simple")
+set(_fw_root "./../../canmonitor")
 
 include_directories(
     ${_fw_root}/../common/include

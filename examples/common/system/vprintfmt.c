@@ -158,7 +158,7 @@ process_precision:
                 p = "(null)";
             }
             if (width > 0 && padc != '-') {
-                for (width -= strnlen(p, precision); width > 0; width--) {
+                for (width -= (int)strnlen(p, precision); width > 0; width--) {
                     putch(padc, putdat);
                 }
             }

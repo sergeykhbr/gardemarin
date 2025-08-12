@@ -18,13 +18,13 @@
 #include <fwobject.h>
 #include <RawInterface.h>
 #include <fwapi.h>
-#include <fwkernel.h>
 #include <string.h>
 #include <stdio.h>
-#include <new>
 #include <uart.h>
 
 FwList *objlist_ = 0;
+
+extern "C" void kernel_init();   // Must be defined on application level
 
 extern "C" void fw_init() {
     FwList *p;
@@ -32,7 +32,7 @@ extern "C" void fw_init() {
 
     fw_malloc_init();
 
-    new (fw_malloc(sizeof(KernelClass))) KernelClass("kernel");
+    kernel_init();
 
     // It is possible to create JSON-configration file and platoform loading here
     p = fw_get_objects_list();
