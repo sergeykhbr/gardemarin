@@ -20,6 +20,7 @@
 #include "can_drv.h"
 #include "user_led.h"
 #include "user_btn.h"
+#include "display_spi.h"
 
 class AppKernelClass : public KernelClassGeneric {
  public:
@@ -34,4 +35,5 @@ class AppKernelClass : public KernelClassGeneric {
     CanDriver can2_;
     UserLedDriver uled0_;
     UserButtonDriver ubtn0_;
+    DisplaySPI disp0_;
 };

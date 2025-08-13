@@ -28,7 +28,8 @@ AppKernelClass::AppKernelClass(const char *name) : KernelClassGeneric(name),
     can1_("can1", 0),
     can2_("can2", 1),
     uled0_("uled0"),
-    ubtn0_("ubtn0")
+    ubtn0_("ubtn0"),
+    disp0_("disp0")
 {
     version_.make_uint32(0x20250812);
     output_.make_int32(0);

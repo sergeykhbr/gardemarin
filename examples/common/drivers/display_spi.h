@@ -34,8 +34,9 @@ class DisplaySPI : public FwObject,
 
     // FwObject interface:
     virtual void Init() override;
+    virtual void PostInit() override;
 
-    // IrqHandlerInterface
+    // IrqHandlerInterface: SPI tx is empty
     virtual void handleInterrupt(int *argv) override;
 
     // TimerListenerInterface
@@ -43,6 +44,12 @@ class DisplaySPI : public FwObject,
     virtual void callbackTimer(uint64_t tickcnt) override {}
 
  protected:
+    virtual void write_cmd_poll(uint16_t cmd);
+    virtual void write_data_poll(uint16_t data);
+
+ protected:
+    static const uint16_t ROWS = 240;
+    static const uint16_t COLS = 240;
 
     enum EState {
         Idle,
@@ -54,5 +61,6 @@ class DisplaySPI : public FwObject,
         Sleep
     } estate_;
     int8_t bitCnt_;
+    uint8_t buffer_[4096];
 };
 

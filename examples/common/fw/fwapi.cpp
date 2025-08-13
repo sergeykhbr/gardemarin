@@ -34,7 +34,7 @@ extern "C" void fw_init() {
 
     kernel_init();
 
-    // It is possible to create JSON-configration file and platoform loading here
+    // It is possible to create JSON-configration file and platform loading here
     p = fw_get_objects_list();
     while (p) {
         obj = reinterpret_cast<FwObject *>(fwlist_get_payload(p));
