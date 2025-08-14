@@ -112,18 +112,18 @@ extern "C" void TIM5_irq_handler() {
         drivers_->handleInterrupt(&nsec);
     }
     // Convert nsec to timescale is 100 ns
-    if (nsec) {
+    /*if (nsec) {
         nsec /= 100;
         if (nsec == 0) {
             nsec = 1;       // minimum 100 nsec interval
         }
-    }
+    }*/
 
     write16(&TIM5->SR, 0);  // clear all pending bits
     nvic_irq_clear(50);
-    if (nsec) {
+    /*if (nsec) {
         startCounter(TIM5, nsec);
-    }
+    }*/
 }
 
 

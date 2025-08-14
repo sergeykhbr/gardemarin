@@ -44,12 +44,17 @@ class DisplaySPI : public FwObject,
     virtual void callbackTimer(uint64_t tickcnt) override {}
 
  protected:
+    virtual void starCounter(void *dev, int usec);  // resolution 100 ns
     virtual void write_cmd_poll(uint16_t cmd);
     virtual void write_data_poll(uint16_t data);
 
  protected:
     static const uint16_t ROWS = 240;
     static const uint16_t COLS = 240;
+
+    virtual uint8_t draw_point(uint16_t x, uint16_t y, uint32_t color);
+    virtual uint8_t show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint32_t color);
+    virtual uint8_t show_string(uint16_t x, uint16_t y, char *str, uint16_t len, uint32_t color);
 
     enum EState {
         Idle,
