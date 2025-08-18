@@ -40,6 +40,16 @@ extern "C" void CAN1_FIFO1_irq_handler() {
     nvic_irq_clear(21);
 }
 
+extern "C" void CAN1_SCE_irq_handler() {
+    /*IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("can1", "IrqHandlerInterface"));
+    if (iface) {
+        int fifoid = 1;
+        iface->handleInterrupt(&fifoid);
+    }*/
+    nvic_irq_clear(22);
+}
+
 extern "C" void CAN2_FIFO0_irq_handler() {
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can2", "IrqHandlerInterface"));
@@ -59,11 +69,22 @@ extern "C" void CAN2_FIFO1_irq_handler() {
     }
     nvic_irq_clear(65);
 }
+extern "C" void CAN2_SCE_irq_handler() {
+    /*IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
+            fw_get_object_interface("can1", "IrqHandlerInterface"));
+    if (iface) {
+        int fifoid = 1;
+        iface->handleInterrupt(&fifoid);
+    }*/
+    nvic_irq_clear(66);
+}
 
 
 CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
     baudrate_("baudrate"),
     mode_("mode"),
+    rxcnt_("rxcnt"),
+    errcnt_("errcnt"),
     test1_("test1"),
     busid_(busid) {
     rxframe_rcnt = 0;
@@ -113,9 +134,11 @@ CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
     if (busid == 0) {
         nvic_irq_enable(20, 3);   // CAN1_RX0
         nvic_irq_enable(21, 3);   // CAN1_RX1
+        nvic_irq_enable(22, 3);   // CAN1_SCE
     } else {
         nvic_irq_enable(64, 3);   // CAN2_RX0
         nvic_irq_enable(65, 3);   // CAN2_RX1
+        nvic_irq_enable(66, 3);   // CAN2_SCE
     }
     StartListenerMode();
 }
@@ -126,6 +149,8 @@ void CanDriver::Init() {
     RegisterInterface(static_cast<IrqHandlerInterface *>(this));
     RegisterAttribute(&baudrate_);
     RegisterAttribute(&mode_);
+    RegisterAttribute(&rxcnt_);
+    RegisterAttribute(&errcnt_);
     RegisterAttribute(&test1_);
 }
 
@@ -203,6 +228,7 @@ void CanDriver::handleInterrupt(int *argv) {
         write32(&dev_->RF[fifoidx].val, rf.val);
 
         rf.val = read32(&dev_->RF[fifoidx].val);
+        rxcnt_.make_uint32(rxcnt_.to_uint32() + 1);
     } while (rf.b.FMP != 0);
 }
 

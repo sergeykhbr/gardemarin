@@ -222,3 +222,30 @@ signed_number:
         }
     }
 }
+
+typedef struct string_buffer_type {
+    char *pstr;
+    int len;
+    int pos;
+} string_buffer_type;
+
+int str_putchar(int ch, void *putdat) {
+    string_buffer_type *p = (string_buffer_type *)putdat;
+    if (p->pos < p->len) {
+        p->pstr[p->pos++] = (char)ch;
+        p->pstr[p->pos] = 0;
+    }
+    return 0;
+}
+
+void snprintf_lib(char *buf, int len, const char *fmt, ...) {
+    string_buffer_type s;
+    va_list ap;
+    va_start(ap, fmt);
+    buf[0] = 0;
+    s.pstr = buf;
+    s.len = (int)len;
+    s.pos = 0;
+    vprintfmt_lib((f_putch)str_putchar, &s, fmt, ap);
+    va_end(ap);
+}

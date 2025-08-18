@@ -30,6 +30,7 @@
 #include "adcsim.h"
 #include "timsim.h"
 #include "rtcsim.h"
+#include "spisim.h"
 
 typedef unsigned (__stdcall* fw_thread_type)(void *args);
 
@@ -39,6 +40,7 @@ ST32F4xxSim::ST32F4xxSim(const char *name) :
     devlist_.push_back(new SysTickSim("stck", SysTick_BASE, sizeof(SysTick_registers_type)));
     devlist_.push_back(new CANSim("can1", CAN1_BASE, sizeof(CAN_registers_type)));
     devlist_.push_back(new CANSim("can2", CAN2_BASE, sizeof(CAN_registers_type)));
+    devlist_.push_back(new SpiSim("spi3", SPI3_BASE, sizeof(SPI_registers_type), 51));
     devlist_.push_back(new GPIOSim("pa", GPIOA_BASE, sizeof(GPIO_registers_type)));
     devlist_.push_back(new GPIOSim("pb", GPIOB_BASE, sizeof(GPIO_registers_type)));
     devlist_.push_back(new GPIOSim("pc", GPIOC_BASE, sizeof(GPIO_registers_type)));

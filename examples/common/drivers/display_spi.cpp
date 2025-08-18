@@ -124,10 +124,10 @@ DisplaySPI::DisplaySPI(const char *name) : FwObject(name) {
 
 void DisplaySPI::Init() {
     RegisterInterface(static_cast<IrqHandlerInterface *>(this));
-    RegisterInterface(static_cast<TimerListenerInterface *>(this));
+    RegisterInterface(static_cast<DisplayInterface *>(this));
 }
 
-void init_systick() {
+static void init_systick() {
     SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
     uint32_t t1;
 
@@ -136,14 +136,9 @@ void init_systick() {
     write32(&systick->CVR, t1);        // current value
 
     t1 = (1 << 2)      // CLKSOURCE: SysTick uses CPU clock (default 1)
-       | (1 << 1)       // TICKINT: enable interrupt
+       | (0 << 1)       // TICKINT: enable interrupt
        | 1;            // ENABLE:
     write32(&systick->CSR, t1);
-}
-
-void deinit_systick() {
-    SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
-    write32(&systick->CSR, read32(&systick->CSR) & ~0x1);
 }
 
 void DisplaySPI::PostInit() {
@@ -154,7 +149,7 @@ void DisplaySPI::PostInit() {
 
     uart_printk("LCD: resetting...\r\n");
     gpio_pin_clear(&DISPLAY_RES);   // reset: active LOW
-    system_delay_ns(25000);         // > 10 us
+    system_delay_ns(20000000);         // > 10 us
     gpio_pin_set(&DISPLAY_RES);   // reset: active LOW
     uart_printk("LCD: reset done\r\n");
 
@@ -177,22 +172,13 @@ void DisplaySPI::PostInit() {
     write_data_poll(0x1);           // 0x1 = g2.2 gamma curve
 
     // 0x36 memory data access control command
-#if 1
-    t1 = 0 << 7             // [7] 0=top to bottom; 1=bottom to top
-       | 1 << 6             // [6] 0=left to right; 1=right to left
-       | 1 << 5             // [5] 0=column normal mode; 1=reverse mode
-       | 0 << 4             // [4] 0=lcd refresh top to bottom; 1=bottom to top
-       | 0 << 3             // [3] 0=rgb; 1=bgr
-       | 0 << 2;            // [2] 0=lcd refresh left to right; 1=right to left
-#else
     t1 = 0 << 7             // [7] 0=top to bottom; 1=bottom to top
        | 0 << 6             // [6] 0=left to right; 1=right to left
        | 0 << 5             // [5] 0=column normal mode; 1=reverse mode
        | 0 << 4             // [4] 0=lcd refresh top to bottom; 1=bottom to top
        | 0 << 3             // [3] 0=rgb; 1=bgr
        | 0 << 2;            // [2] 0=lcd refresh left to right; 1=right to left
-#endif
-    write_cmd_poll(0x36);
+    write_cmd_poll(0x36);   // MADCTL
     write_data_poll(t1);
 
     // 0x3A interface pixel format command
@@ -432,46 +418,12 @@ void DisplaySPI::PostInit() {
     // 0x29 display on command
     write_cmd_poll(0x29);
 
+    clearScreen();
 
-    // Clear screen
-    write_cmd_poll(0x2A);                       // column address set command
-    write_data_poll((0x00 >> 8) & 0xFF);        // start address msb
-    write_data_poll((0x00 >> 0) & 0xFF);        // start address lsb
-    write_data_poll(((COLS - 1) >> 8) & 0xFF);   // end address msb
-    write_data_poll(((COLS - 1) >> 0) & 0xFF);   // end address lsb
-
-    write_cmd_poll(0x2B);                       // row address set command
-    write_data_poll((0x00 >> 8) & 0xFF);        // start address msb
-    write_data_poll((0x00 >> 0) & 0xFF);        // start address lsb
-    write_data_poll(((ROWS - 1) >> 8) & 0xFF);   // end address msb
-    write_data_poll(((ROWS - 1) >> 0) & 0xFF);   // end address lsb
-
-    write_cmd_poll(0x2C);                       // memory write command
-
-    memset(buffer_, 0x0, sizeof(buffer_));
-
-    size_t m = static_cast<size_t>(ROWS) * COLS * 2 / sizeof(buffer_);     // total times
-    size_t n = static_cast<size_t>(ROWS) * COLS * 2 % sizeof(buffer_);     // the last
-    for (size_t i = 0; i < m; i++) {
-        for (size_t ii = 0; ii < sizeof(buffer_); ii++) {
-            write_data_poll(buffer_[ii]);
-        }
-    }
-    if (n != 0) {
-        for (size_t ii = 0; ii < n; ii++) {
-            write_data_poll(buffer_[ii]);
-        }
-    }
-    deinit_systick();
-
-    show_string(0, 0, "Hello", 5, 0xf833);
-    show_string(0, 30, "CAN0", 4, 0xf844);
-    show_string(0, 60, "CAN1", 4, 0xf855);
-    show_string(0, 90, "Line4", 5, 0xffff);
-    show_string(0, 120, "Line5", 5, 0xf00f);
-    show_string(0, 150, "Line6", 5, 0xf800);
-    show_string(0, 180, "Line7", 5, 0x07E0);
-    show_string(0, 210, "Line8", 5, 0x07E0);
+    outputText24Line("    CAN_Monitor    ", 3, 0, 0x07E0, 0x7813);
+    outputText24Line("     developed     ", 5, 0, 0xffff, 0x0000);
+    outputText24Line("         by        ", 6, 0, 0xffff, 0x0000);
+    outputText24Line("     sergeykhbr    ", 7, 0, 0xffff, 0x0000);
 }
 
 void DisplaySPI::handleInterrupt(int *argv) {
@@ -615,19 +567,28 @@ static const uint8_t gsc_st7789_ascii_2412[95][36] =
 };
 
 uint8_t DisplaySPI::draw_point(uint16_t x, uint16_t y, uint32_t color) {
+    uint16_t Xc, Yc;
     // 0x2A  column address set command
     write_cmd_poll(0x2A);
-    write_data_poll((x >> 8) & 0xFF);       // start address msb
-    write_data_poll((x >> 0) & 0xFF);       // start address lsb
-    write_data_poll((x >> 8) & 0xFF);       // end address msb
-    write_data_poll((x >> 0) & 0xFF);       // end address lsb
+    // Vertical (up/down) switch
+#if 1
+    Xc = 0 + y;         // x in range 0..239
+    Yc = 319 - x;       // y in range 0..319
+#else
+    Xc = x;
+    Yc = y;
+#endif
+    write_data_poll((Xc >> 8) & 0xFF);       // start address msb
+    write_data_poll((Xc >> 0) & 0xFF);       // start address lsb
+    write_data_poll((Xc >> 8) & 0xFF);       // end address msb
+    write_data_poll((Xc >> 0) & 0xFF);       // end address lsb
 
     // 0x2B row address set command
     write_cmd_poll(0x2B);
-    write_data_poll((y >> 8) & 0xFF);       // start address msb
-    write_data_poll((y >> 0) & 0xFF);       // start address lsb
-    write_data_poll((y >> 8) & 0xFF);       // end address msb
-    write_data_poll((y >> 0) & 0xFF);       // end address lsb
+    write_data_poll((Yc >> 8) & 0xFF);       // start address msb
+    write_data_poll((Yc >> 0) & 0xFF);       // start address lsb
+    write_data_poll((Yc >> 8) & 0xFF);       // end address msb
+    write_data_poll((Yc >> 0) & 0xFF);       // end address lsb
 
     // 0x2C memory write command 
     write_cmd_poll(0x2C);
@@ -636,7 +597,7 @@ uint8_t DisplaySPI::draw_point(uint16_t x, uint16_t y, uint32_t color) {
     return 0;
 }
 
-uint8_t DisplaySPI::show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint32_t color) {
+uint8_t DisplaySPI::show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint32_t clr, uint32_t bkgclr) {
     uint8_t temp, t, t1;
     uint16_t y0 = y;
     uint8_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size / 2);                 /* get size */
@@ -647,7 +608,9 @@ uint8_t DisplaySPI::show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size,
         for (t1 = 0; t1 < 8; t1++)                                                  /* write one line */
         {
             if ((temp & 0x80) != 0) {
-                draw_point(x, y, color);
+                draw_point(x, y, clr);
+            } else {
+                draw_point(x, y, bkgclr);
             }
             temp <<= 1;                                                             /* left shift 1 */
             y++;
@@ -664,26 +627,64 @@ uint8_t DisplaySPI::show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size,
     return 0;                                                                       /* success return 0 */
 }
 
-uint8_t DisplaySPI::show_string(uint16_t x, uint16_t y, char *str, uint16_t len, uint32_t color)
-{
-    uint8_t font = 24; // font 24
-    while ((len != 0) && (*str <= '~') && (*str >= ' '))                     /* write all string */
-    {
-        if (x >= (COLS - (font / 2)))                              /* check x point */
-        {
-            x = 0;                                                           /* set x */
-            y += (uint8_t)font;                                              /* set next row */
-        }
-        if (y >= (ROWS - font))                                       /* check y pont */
-        {
-            y = x = 0;                                                       /* reset to 0 */
-        }
-        show_char(x, y, *str, font, color);
-        x += (uint8_t)(font / 2);                                            /* x + font/2 */
-        str++;                                                               /* str address++ */
-        len--;                                                               /* str length-- */
-    }
+void DisplaySPI::clearScreen() {
+    size_t m = 240 * 320 * 2 / sizeof(buffer_);     // total times
+    size_t n = 240 * 320 * 2 % sizeof(buffer_);     // the last
+    memset(buffer_, 0x0, sizeof(buffer_));
 
-    return 0;                                                                /* success return 0 */
+    // ST7789. COLS 240; ROWS = 320
+    write_cmd_poll(0x2A);                       // column address set command
+    write_data_poll((0x00 >> 8) & 0xFF);        // start address msb
+    write_data_poll((0x00 >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((240 - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((240 - 1) >> 0) & 0xFF);   // end address lsb
+
+    write_cmd_poll(0x2B);                       // row address set command
+    write_data_poll((0x00 >> 8) & 0xFF);        // start address msb
+    write_data_poll((0x00 >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((320 - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((320 - 1) >> 0) & 0xFF);   // end address lsb
+    write_cmd_poll(0x2C);                       // memory write command
+    for (size_t i = 0; i < m; i++) {
+        for (size_t ii = 0; ii < sizeof(buffer_); ii++) {
+            write_data_poll(buffer_[ii]);
+        }
+    }
+    if (n != 0) {
+        for (size_t ii = 0; ii < n; ii++) {
+            write_data_poll(buffer_[ii]);
+        }
+    }
 }
 
+void DisplaySPI::outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) {
+    uint8_t font = 24; // font 24
+    uint16_t len = static_cast<uint16_t>(strlen(str));
+    uint16_t x = 0;
+    uint16_t y = 0;
+#if 1
+    // visible orientation
+    uint16_t ROWS = 240;
+    uint16_t COLS = 320;
+    x = 80 + symbpos * 12;
+    y = 30 * linepos;
+#else
+    uint16_t ROWS = 320;//240;
+    uint16_t COLS = 240;
+#endif
+
+    while ((len != 0) && (*str <= '~') && (*str >= ' ')) {
+        if (x >= (COLS - (font / 2))) {
+            x = 0;
+            y += (uint8_t)font;
+        }
+        if (y >= (ROWS - font)) {
+            y = x = 0;
+        }
+
+        show_char(x, y, *str, font, clr, bkgclr);
+        x += (uint8_t)(font / 2);
+        str++;
+        len--;
+    }
+}

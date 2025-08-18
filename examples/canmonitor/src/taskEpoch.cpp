@@ -21,13 +21,9 @@
 #include "app_tasks.h"
 #include "ManagementClass.h"
 
-// current task is 50 Hz
-#define SERVICE_SEC_TO_COUNT(sec) (50 * sec)
-
 portTASK_FUNCTION(taskEpoch, args)
 {
     TaskHandle_t taskHandle = xTaskGetCurrentTaskHandle();
-    const TickType_t delay_ms = 1000 / portTICK_PERIOD_MS;
 
     ManagementClass *epochClass_ = 
         new (fw_malloc(sizeof(ManagementClass))) ManagementClass(taskHandle);
@@ -39,7 +35,7 @@ portTASK_FUNCTION(taskEpoch, args)
         // do something
         epochClass_->update();
 
-        vTaskDelay(pdMS_TO_TICKS(delay_ms));
+        vTaskDelay(pdMS_TO_TICKS(1000));        // 1 Hz update
     }
 }
 

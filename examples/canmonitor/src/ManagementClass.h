@@ -18,6 +18,7 @@
 #include <fwobject.h>
 #include <fwattribute.h>
 #include <KeyInterface.h>
+#include <DisplayInterface.h>
 #include <task.h>
 
 class ManagementClass : public FwObject,
@@ -64,7 +65,12 @@ class ManagementClass : public FwObject,
 
  private:
     TaskHandle_t taskHandle_;
+    DisplayInterface *disp0_;
     bool btnClick_;
-    uint32_t epochCnt_;
-    uint32_t epochMarker_;
+    uint32_t updateCnt_;
+
+    enum EState {
+        State_SplashScreen,
+        State_CanListener
+    } estate_;
 };
