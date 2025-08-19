@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Sergey Khabarov, sergeykhbr@gmail.com
+ *  Copyright 2025 Sergey Khabarov, sergeykhbr@gmail.com
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,29 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 #pragma once
 
-#include <stdarg.h>
+#include "CommonInterface.h"
 
-#if defined(__cplusplus)
-extern "C"
-{
-#endif
+class DisplayInterface : public CommonInterface {
+ public:
+    DisplayInterface() : CommonInterface("DisplayInterface") {}
 
-/**
- */
-typedef void (*f_putch)(int, void *);
-
-
-void vprintfmt_lib(f_putch putch,
-                   void *putdat,
-                   const char *fmt,
-                   va_list ap);
-
-
-void snprintf_lib(char *buf, int len, const char *fmt, ...);
-
-#if defined(__cplusplus)
-}  // extern "C"
-#endif
+    virtual void clearScreen() = 0;
+    // Font Size 24, total 8 lines, 19 symbols per line
+    virtual void outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) = 0;
+};

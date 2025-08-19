@@ -56,6 +56,8 @@ class CanDriver : public FwObject,
  protected:
     FwAttribute baudrate_;
     FwAttribute mode_;
+    FwAttribute rxcnt_;
+    FwAttribute errcnt_;
     FwAttribute test1_;
 
     static const int CAN_RX_FRAMES_MAX = 4;

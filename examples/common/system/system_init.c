@@ -39,14 +39,33 @@ void system_delay_ns(int nsec) {
     uint32_t curval = read32(&systick->CVR);        // current value
     uint32_t curval_z = curval;
     uint32_t accval = 0;
+    uint32_t us = (uint32_t)nsec / 1000;
+    uint32_t ns = (uint32_t)(nsec / 7 ) % 1000;
+    uint32_t one_us = system_clock_hz() / 1000000;
 
-    while (accval < (uint32_t)nsec / 7) {
+    while (us) {
+        while (accval < one_us) {
+            curval = read32(&systick->CVR);
+            if (curval < curval_z) {
+                accval += curval_z - curval;
+                //uart_printk("1[%d]=%d\r\n", us, accval);
+            } else {
+                accval += curval_z + (read32(&systick->RVR) - curval); // reload value
+                //uart_printk("2[%d]=%d\r\n", us, accval);
+            }
+            curval_z = curval;
+        }
+        accval = 0;
+        us--;
+    }
+    while (accval < ns) {
         curval = read32(&systick->CVR);
         if (curval < curval_z) {
             accval += curval_z - curval;
         } else {
             accval += curval_z + (read32(&systick->RVR) - curval); // reload value
         }
+        curval_z = curval;
     }
 }
 

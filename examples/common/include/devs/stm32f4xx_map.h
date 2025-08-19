@@ -30,6 +30,7 @@
 #include <dma.h>
 #include <tim.h>
 #include <rtc.h>
+#include <spi.h>
 
 /* System Control Space memory map */
 #define SCS_BASE              ((addr_t)0xE000E000)

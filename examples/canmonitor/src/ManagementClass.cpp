@@ -18,14 +18,16 @@
 #include <uart.h>
 #include <FreeRTOS.h>
 #include "ManagementClass.h"
+#include <vprintfmt.h>
 
 
 ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     : FwObject("man"),
     taskHandle_(taskHandle) {
+    disp0_ = 0;
     btnClick_ = false;
-    epochCnt_ = 0;
-    epochMarker_ = 0;
+    updateCnt_ = 0;
+    estate_ = State_SplashScreen;
 }
 
 void ManagementClass::Init() {
@@ -38,16 +40,48 @@ void ManagementClass::PostInit() {
         iface->registerKeyListener(
             static_cast<KeyListenerInterface *>(this));
     }
+
+    disp0_ = reinterpret_cast<DisplayInterface *>(
+        fw_get_object_interface("disp0", "DisplayInterface"));
 }
 
 
 void ManagementClass::update() {
+    uint32_t t1;
     int btnClick = btnClick_;
     btnClick_ = 0;
 
-    epochCnt_++;
 
+    //uint32_t can2_rxcnt = read_uint32("can2", "rxcnt");
+    switch (estate_) {
+    case State_SplashScreen:
+        if (++updateCnt_ >= 5) {
+            estate_ = State_CanListener;
+            if (disp0_) {
+                disp0_->clearScreen();
+                disp0_->outputText24Line("CAN0 Rx: -", 0, 0, 0xBFE6, 0x0000);
+                disp0_->outputText24Line(" ErrCnt: -", 1, 0, 0xFAAA, 0x0000);
+                disp0_->outputText24Line("   Mode: -", 2, 0, 0xFAAA, 0x0000);
+                disp0_->outputText24Line("CAN1 Rx: -", 4, 0, 0xBFE6, 0x0000);
+                disp0_->outputText24Line(" ErrCnt: -", 5, 0, 0xFAAA, 0x0000);
+                disp0_->outputText24Line("   Mode: -", 6, 0, 0xFAAA, 0x0000);
+            }
+        }
+        break;
+    case State_CanListener:
+        if (disp0_) {
+            char tstr[20];
+            t1 = read_uint32("can1", "rxcnt");
+            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
+            disp0_->outputText24Line(tstr, 0, 9, 0xffff, 0x0000);
 
+            t1 = read_uint32("can1", "errcnt");
+            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
+            disp0_->outputText24Line(tstr, 1, 9, 0xFAAA, 0x0000);
+        }
+        break;
+    default:;
+    }
 
 }
 
