@@ -205,6 +205,27 @@ module enclose_bottom_with_stands(x=15, y=80, z=159) {
     bottom_support_base();
 }
 
-rotate([0,45,0])
-enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
+module mft_hooks() {
+    points = [
+        [0, 0],
+        [-10, 10],
+        [-6, 20],
+        [15, 20],
+        [20, 10],
+        [15, 10],
+        [12, 15],
+        [-2, 15],
+        [-4, 10],
+        [6, 0],
+    ];
+    translate([-CASE_LENGTH, CASE_WIDTH-0.2, 5]) linear_extrude(10) union() {
+        polygon(points);
+        translate([CASE_LENGTH - 6, 0, 0]) polygon(points);
+    }
+}
+
+rotate([0,45,0]) {
+    mft_hooks();
+    enclose_bottom_with_stands(x=bottom_height, y=CASE_WIDTH, z=CASE_LENGTH);
+}
 
