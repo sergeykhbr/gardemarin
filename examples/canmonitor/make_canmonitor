@@ -68,6 +68,7 @@ SOURCES = isr_vector \
 	rtc_drv \
 	display_st7789 \
 	display_spi \
+	can_injector \
 	fwmem \
 	fwapi \
 	fwattribute \

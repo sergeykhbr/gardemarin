@@ -32,7 +32,7 @@ class ManagementClass : public FwObject,
 
     // KeyListenerInterface
     virtual void keyPressed() override;
-    virtual void keyReleased() override {}
+    virtual void keyReleased() override;
     virtual void keyClick() override {}
     virtual void keyDoubleClick() override {}
     virtual void keyLongClick() override {}

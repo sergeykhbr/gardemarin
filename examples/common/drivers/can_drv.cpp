@@ -20,7 +20,12 @@
 #include <uart.h>
 #include "can_drv.h"
 
+// Defined in CAN injector (TODO: change on interface or attribute)
+extern "C" void CAN_SOF_set_wait_sync();
+
 extern "C" void CAN1_FIFO0_irq_handler() {
+    CAN_SOF_set_wait_sync();
+
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can1", "IrqHandlerInterface"));
     if (iface) {
@@ -31,6 +36,8 @@ extern "C" void CAN1_FIFO0_irq_handler() {
 }
 
 extern "C" void CAN1_FIFO1_irq_handler() {
+    CAN_SOF_set_wait_sync();
+
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can1", "IrqHandlerInterface"));
     if (iface) {
@@ -236,20 +243,25 @@ void CanDriver::handleInterrupt(int *argv) {
 void CanDriver::StartListenerMode() {
     uint32_t t1;
 
-    // [13:8] CAN2FSB: 0=no assigned filters to CAN1, 28=all filters assigned to CAN1
-    // [0] FINIT
-    write32(&dev_->FMR, (14 << 8) | 1);          // Assign filters[0..13] to CAN1; [14..27] to CAN2
-    write32(&dev_->FM1R, 0);                     // all filters in Mask mode=0; 1=List mode
-    write32(&dev_->FFA1R, 0x3f80 << (14*busid_)); // 0 Filleter assigned to FIFO0; 1 assigned to FIFO1
+    // Registers 0x200... exist only in CAN1
+    if (busid_ == 0) {
+        // [13:8] CAN2FSB: 0=no assigned filters to CAN1, 28=all filters assigned to CAN1
+        // [0] FINIT
+        write32(&dev_->FMR, (14 << 8) | 1);          // Assign filters[0..13] to CAN1; [14..27] to CAN2
+        write32(&dev_->FM1R, 0);                     // all filters in Mask mode=0; 1=List mode
+        write32(&dev_->FFA1R, 0x3f80 | (0x3f80 << 14));               // 0 Fillter assigned to FIFO0; 1 assigned to FIFO1
 
-    write32(&dev_->sFilterRegister[14*busid_].FR1, 0);   // identifier
-    write32(&dev_->sFilterRegister[14*busid_].FR2, 0);   // mask in mask mode
+        write32(&dev_->sFilterRegister[0].FR1, 0);   // identifier
+        write32(&dev_->sFilterRegister[0].FR2, 0);   // mask in mask mode
+        write32(&dev_->sFilterRegister[14].FR1, 0);   // identifier
+        write32(&dev_->sFilterRegister[14].FR2, 0);   // mask in mask mode
 
-    write32(&dev_->FA1R, 1 << (14*busid_));   // [0] FACT0: activate filter 0 (or 14 for CAN1)
+        write32(&dev_->FA1R, (1 << 0) | (1 << 14));   // [0] FACT0: activate filter 0 (or 14 for CAN1)
 
-    t1 = read32(&dev_->FMR);
-    t1 &= ~1;   // FINIT = 0
-    write32(&dev_->FMR, t1);
+        t1 = read32(&dev_->FMR);
+        t1 &= ~1;   // FINIT = 0
+        write32(&dev_->FMR, t1);
+    }
 
 
     // Enable Rx interrupts in FIFO0 and FIFO1

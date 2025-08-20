@@ -71,9 +71,9 @@ UserButtonDriver::UserButtonDriver(const char *name)
     write32(&SYSCFG->EXTICR[3], t1);
 
 
-    write32(&EXTI->IMR, 1 << ubtn_pin.pinidx);     // Interrupt mask: 0 line is masked; 1=unmasked
-    write32(&EXTI->RTSR, 1 << ubtn_pin.pinidx);    // Rising trigger selection
-    write32(&EXTI->FTSR, 1 << ubtn_pin.pinidx);    // Falling trigger selection
+    write32(&EXTI->RTSR, read32(&EXTI->RTSR) | (1 << ubtn_pin.pinidx));    // Rising trigger selection
+    write32(&EXTI->FTSR, read32(&EXTI->FTSR) | (1 << ubtn_pin.pinidx));    // Falling trigger selection
+    write32(&EXTI->IMR, read32(&EXTI->IMR) | (1 << ubtn_pin.pinidx));     // Interrupt mask: 0 line is masked; 1=unmasked
 
     write32(&EXTI->PR, 1 << ubtn_pin.pinidx);   // Pending register, cleared by programming it to 1
 
@@ -120,6 +120,15 @@ if ((tickcnt % 5000) == 4999) {
         while (p) {
             iface = reinterpret_cast<KeyListenerInterface *>(fwlist_get_payload(p));
             iface->keyPressed();
+            p = p->next;
+        }
+    }
+    if (ev & BTN_EVENT_RELEASED) {
+        FwList *p = listener_;
+        KeyListenerInterface *iface;
+        while (p) {
+            iface = reinterpret_cast<KeyListenerInterface *>(fwlist_get_payload(p));
+            iface->keyReleased();
             p = p->next;
         }
     }

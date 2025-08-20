@@ -18,6 +18,7 @@
 
 #include <fwkernelgen.h>
 #include "can_drv.h"
+#include "can_injector.h"
 #include "user_led.h"
 #include "user_btn.h"
 #include "display_spi.h"
@@ -33,6 +34,7 @@ class AppKernelClass : public KernelClassGeneric {
     /** @brief Kernel Version attribute */
     CanDriver can1_;
     CanDriver can2_;
+    CanInjectorDriver injector0_;
     UserLedDriver uled0_;
     UserButtonDriver ubtn0_;
     DisplaySPI disp0_;

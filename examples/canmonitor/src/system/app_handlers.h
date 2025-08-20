@@ -21,6 +21,7 @@ extern "C"
 {
 #endif
 
+extern void EXTI3_CanSofListener_IRQHandler();
 extern void Btn_IRQHandler();
 extern void CAN1_FIFO0_irq_handler();
 extern void CAN1_FIFO1_irq_handler();
@@ -41,7 +42,7 @@ extern void CanMonitor_SPI3_irq_handler();
 #define EXTI0_IRQHandler DefaultISR
 #define EXTI1_IRQHandler DefaultISR
 #define EXTI2_IRQHandler DefaultISR
-#define EXTI3_IRQHandler DefaultISR
+#define EXTI3_IRQHandler EXTI3_CanSofListener_IRQHandler
 #define EXTI4_IRQHandler DefaultISR
 #define DMA1_Stream0_IRQHandler DefaultISR
 #define DMA1_Stream1_IRQHandler DefaultISR

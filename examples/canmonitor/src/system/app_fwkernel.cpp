@@ -27,6 +27,7 @@
 AppKernelClass::AppKernelClass(const char *name) : KernelClassGeneric(name),
     can1_("can1", 0),
     can2_("can2", 1),
+    injector0_("inj0"),
     uled0_("uled0"),
     ubtn0_("ubtn0"),
     disp0_("disp0")
