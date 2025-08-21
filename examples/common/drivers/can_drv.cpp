@@ -48,12 +48,25 @@ extern "C" void CAN1_FIFO1_irq_handler() {
 }
 
 extern "C" void CAN1_SCE_irq_handler() {
-    /*IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
-            fw_get_object_interface("can1", "IrqHandlerInterface"));
-    if (iface) {
-        int fifoid = 1;
-        iface->handleInterrupt(&fifoid);
-    }*/
+    CAN_registers_type *dev = (CAN_registers_type *)CAN1_BASE;
+    // [6:4] LEC. Last Error Code
+    //      000 No error
+    //      001 Stuff error
+    //      010 Form error
+    //      011 Ack error
+    //      100 Bit recessive error
+    //      101 Bit dominant error
+    //      110 CRC error
+    //      11 Set by software
+    FwAttribute *atr = reinterpret_cast<FwAttribute *>(
+                fw_get_object_attribute("can1", "errcnt"));
+    if (atr) {
+        atr->make_uint32(atr->to_uint32() + 1);
+    } else {
+        uart_printk("err %d\r\n", __LINE__);
+    }
+    // [2] ERRI error interrupt.
+    write32(&dev->MCR.val, 1 << 2);
     nvic_irq_clear(22);
 }
 
@@ -77,12 +90,16 @@ extern "C" void CAN2_FIFO1_irq_handler() {
     nvic_irq_clear(65);
 }
 extern "C" void CAN2_SCE_irq_handler() {
-    /*IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
-            fw_get_object_interface("can1", "IrqHandlerInterface"));
-    if (iface) {
-        int fifoid = 1;
-        iface->handleInterrupt(&fifoid);
-    }*/
+    CAN_registers_type *dev = (CAN_registers_type *)CAN2_BASE;
+    FwAttribute *atr = reinterpret_cast<FwAttribute *>(
+                fw_get_object_attribute("can2", "errcnt"));
+    if (atr) {
+        atr->make_uint32(atr->to_uint32() + 1);
+    } else {
+        uart_printk("err %d\r\n", __LINE__);
+    }
+    // [2] ERRI error interrupt.
+    write32(&dev->MCR.val, 1 << 2);
     nvic_irq_clear(66);
 }
 
@@ -236,6 +253,17 @@ void CanDriver::handleInterrupt(int *argv) {
 
         rf.val = read32(&dev_->RF[fifoidx].val);
         rxcnt_.make_uint32(rxcnt_.to_uint32() + 1);
+#if 0
+if (busid_ == 0) {
+    //          static const uint32 ID =  (uint32) (0x1F00601FUL | Utilities::BRC_NR | (static_cast<uint32>(Utilities::COM5008_DEVICE)<<5));
+    //if ((f->id & 0x1f00001f) == 0x1f00001f)
+    {
+        // 1d441147 = 1_1101_0100_0100_0001_0001_0100_0111
+        //                                          0_
+        uart_printk("%08x\r\n", f->id);
+    }
+}
+#endif
     } while (rf.b.FMP != 0);
 }
 
@@ -276,6 +304,7 @@ void CanDriver::setRun() {
     ier.val = 0;
     ier.b.FMPIE0 = 1;
     ier.b.FMPIE1 = 1;
+    ier.b.ERRIE = 1;
     write32(&dev_->IER.val, ier.val);
 }
 

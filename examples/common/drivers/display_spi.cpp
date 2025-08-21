@@ -23,9 +23,6 @@
 #include <spi.h>
 #include "display_spi.h"
 
-#define USE_TIM5
-
-
 
 // PD[7] = DISPLAY_RES AF0 output
 // PC[12] = SPI3_MOSI  AF6 -> AF0 output
@@ -42,7 +39,6 @@ volatile char timeout_flag_ = 0;
 
 DisplaySPI::DisplaySPI(const char *name) : FwObject(name) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
-    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
     SPI_registers_type *SPI3 = (SPI_registers_type *)SPI3_BASE;
 
     estate_ = Idle;
@@ -78,7 +74,6 @@ DisplaySPI::DisplaySPI(const char *name) : FwObject(name) {
     // adc clock on APB1 = 144/4 = 36 MHz
     uint32_t t1 = read32(&RCC->APB1ENR);
     t1 |= (1 << 15);            // APB1[15] SPI3EN
-    t1 |= (1 << 3);             // APB1[3] TIM5EN
     write32(&RCC->APB1ENR, t1);
 
     // SPI3 master, transmit-only
@@ -111,14 +106,7 @@ DisplaySPI::DisplaySPI(const char *name) : FwObject(name) {
     t2 |= (1 << 6);     // [6] SPE: SPI enable
     write16(&SPI3->CR1, t2);
 
-    // TIM5 (unused for now)
-    write32(&TIM5->CR1.val, 0);         // stop counter
-    // time scale 100 nsec
-    write16(&TIM5->PSC, system_clock_hz() / 2 / 10000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
-    write16(&TIM5->DIER, 1);            // [0] UIE - update interrupt enabled
-
     // prio: 0 highest; 7 is lowest
-    nvic_irq_enable(50, 5); // 50 TIM5
     //nvic_irq_enable(51, 6); // 51 SPI3
 }
 

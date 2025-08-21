@@ -215,7 +215,7 @@ typedef struct CAN_registers_type
     CAN_TSR_type TSR;                 /*!< CAN transmit status register,        Address offset: 0x08          */
     CAN_RF_type RF[2];                /*!< CAN receive FIFO 0/1 register,         Address offset: 0x0C/0x10          */
     CAN_IER_type IER;                 /*!< CAN interrupt enable register,       Address offset: 0x14          */
-    CAN_ESR_bits_type ESR;                 /*!< CAN error status register,           Address offset: 0x18          */
+    CAN_ESR_type ESR;                 /*!< CAN error status register,           Address offset: 0x18          */
     CAN_BTR_type BTR;                 /*!< CAN bit timing register,             Address offset: 0x1C          */
     uint32_t RESERVED0[88];       /*!< Reserved, 0x020 - 0x17F                                            */
     CAN_txmailbox_type sTxMailBox[3];       /*!< CAN Tx MailBox,                      Address offset: 0x180 - 0x1AC */

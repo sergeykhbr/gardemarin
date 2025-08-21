@@ -24,6 +24,7 @@
 #include <display_spi.h>
 
 extern IrqHandlerInterface *drv_display_spi_tx_;
+extern IrqHandlerInterface *drv_can_injector_tim_;
 
 extern "C" void CanMonitor_SPI3_irq_handler() {
     /*SPI_registers_type *SPI3 = (SPI_registers_type *)SPI3_BASE;
@@ -34,9 +35,8 @@ extern "C" void CanMonitor_SPI3_irq_handler() {
 
 extern "C" void CanMonitor_TIM5_irq_handler() {
     TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
-    int nsec = 0;
-    if (drv_display_spi_tx_) {
-        drv_display_spi_tx_->handleInterrupt(&nsec);
+    if (drv_can_injector_tim_) {
+        drv_can_injector_tim_->handleInterrupt(0);
     }
 
     write16(&TIM5->SR, 0);  // clear all pending bits

@@ -58,12 +58,13 @@ void ManagementClass::update() {
             estate_ = State_CanListener;
             if (disp0_) {
                 disp0_->clearScreen();
-                disp0_->outputText24Line("CAN0 Rx: -", 0, 0, 0xBFE6, 0x0000);
-                disp0_->outputText24Line(" ErrCnt: -", 1, 0, 0xFAAA, 0x0000);
-                disp0_->outputText24Line("   Mode: -", 2, 0, 0x13F6, 0x0000);
-                disp0_->outputText24Line("CAN1 Rx: -", 4, 0, 0xBFE6, 0x0000);
-                disp0_->outputText24Line(" ErrCnt: -", 5, 0, 0xFAAA, 0x0000);
-                disp0_->outputText24Line("   Mode: -", 6, 0, 0x13F6, 0x0000);
+                disp0_->outputText24Line("PGM:     -         ", 0, 0, 0xFFFF, 0x61d0);
+                disp0_->outputText24Line("CAN0 Rx: -", 1, 0, 0xBFE6, 0x0000);
+                disp0_->outputText24Line(" ErrCnt: -", 2, 0, 0xFAAA, 0x0000);
+                disp0_->outputText24Line("   Mode: -", 3, 0, 0x13F6, 0x0000);
+                disp0_->outputText24Line("CAN1 Rx: -", 5, 0, 0xBFE6, 0x0000);
+                disp0_->outputText24Line(" ErrCnt: -", 6, 0, 0xFAAA, 0x0000);
+                disp0_->outputText24Line("   Mode: -", 7, 0, 0x13F6, 0x0000);
             }
         }
         break;
@@ -72,39 +73,44 @@ void ManagementClass::update() {
             char tstr[20];
             t1 = read_uint32("can1", "rxcnt");
             snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 0, 9, 0xffff, 0x0000);
+            disp0_->outputText24Line(tstr, 1, 9, 0xffff, 0x0000);
 
             t1 = read_uint32("can1", "errcnt");
             snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 1, 9, 0xFAAA, 0x0000);
+            disp0_->outputText24Line(tstr, 2, 9, 0xFAAA, 0x0000);
 
             t1 = read_uint32("can1", "mode");
             if (t1 == 0) {
-                disp0_->outputText24Line("OFF", 2, 9, 0xF7E7, 0x0000);
+                disp0_->outputText24Line("OFF", 3, 9, 0xF7E7, 0x0000);
             } else if (t1 == 2) {
-                disp0_->outputText24Line("listen", 2, 9, 0x47EB, 0x0000);
-            } else if (t1 == 3) {
-                disp0_->outputText24Line("injecting", 2, 9, 0xFBBB, 0x0000);
+                t1 = static_cast<uint8_t>(read_int8("inj0", "state"));
+                if (t1 == 0) {
+                    disp0_->outputText24Line("listen     ", 3, 9, 0x47EB, 0x0000);
+                } else {
+                    t1 = read_uint32("inj0", "cnt");
+                    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "inject_%d", t1);
+                    disp0_->outputText24Line(tstr, 3, 9, 0xFBBB, 0xAC00);
+                }
             } else {
-                disp0_->outputText24Line("-", 2, 9, 0x6B6D, 0x0000);
+                disp0_->outputText24Line("-", 3, 9, 0x6B6D, 0x0000);
             }
 
 
             t1 = read_uint32("can2", "rxcnt");
             snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 4, 9, 0xffff, 0x0000);
+            disp0_->outputText24Line(tstr, 5, 9, 0xffff, 0x0000);
 
             t1 = read_uint32("can2", "errcnt");
             snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 5, 9, 0xFAAA, 0x0000);
+            disp0_->outputText24Line(tstr, 6, 9, 0xFAAA, 0x0000);
 
             t1 = read_uint32("can2", "mode");
             if (t1 == 0) {
-                disp0_->outputText24Line("OFF", 6, 9, 0xF7E7, 0x0000);
+                disp0_->outputText24Line("OFF", 7, 9, 0xF7E7, 0x0000);
             } else if (t1 == 2) {
-                disp0_->outputText24Line("listen", 6, 9, 0x47EB, 0x0000);
+                disp0_->outputText24Line("listen", 7, 9, 0x47EB, 0x0000);
             } else {
-                disp0_->outputText24Line("-", 6, 9, 0x6B6D, 0x0000);
+                disp0_->outputText24Line("-", 7, 9, 0x6B6D, 0x0000);
             }
         }
         break;
