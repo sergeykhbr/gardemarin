@@ -26,6 +26,9 @@
 #define BTN_EVENT_PRESSED  0x01
 #define BTN_EVENT_RELEASED 0x02
 
+#define BTN_POS_PRESSED true
+#define BTN_POS_RELEASED false
+
 class UserButtonDriver : public FwObject,
                          public IrqHandlerInterface,
                          public TimerListenerInterface,
@@ -49,6 +52,8 @@ class UserButtonDriver : public FwObject,
  protected:
     uint32_t event_;
     uint64_t ms_cnt_;
-    uint64_t ms_pressed_;
+    bool keyPosition_;
+    bool keyPositionPrev_;
+    uint64_t keyPositionChangedMs_;
     FwList *listener_;
 };

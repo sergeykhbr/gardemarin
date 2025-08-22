@@ -27,6 +27,8 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     disp0_ = 0;
     btnClick_ = false;
     updateCnt_ = 0;
+    errCntBus0_ = 0;
+    errCntBus1_ = 0;
     estate_ = State_SplashScreen;
 }
 
@@ -61,38 +63,75 @@ void ManagementClass::update() {
                 disp0_->outputText24Line("PGM:     -         ", 0, 0, 0xFFFF, 0x61d0);
                 disp0_->outputText24Line("CAN0 Rx: -", 1, 0, 0xBFE6, 0x0000);
                 disp0_->outputText24Line(" ErrCnt: -", 2, 0, 0xFAAA, 0x0000);
-                disp0_->outputText24Line("   Mode: -", 3, 0, 0x13F6, 0x0000);
+                //disp0_->outputText24Line("   Mode: -", 3, 0, 0x13F6, 0x0000);
                 disp0_->outputText24Line("CAN1 Rx: -", 5, 0, 0xBFE6, 0x0000);
                 disp0_->outputText24Line(" ErrCnt: -", 6, 0, 0xFAAA, 0x0000);
-                disp0_->outputText24Line("   Mode: -", 7, 0, 0x13F6, 0x0000);
+                //disp0_->outputText24Line("   Mode: -", 7, 0, 0x13F6, 0x0000);
             }
         }
         break;
     case State_CanListener:
         if (disp0_) {
             char tstr[20];
+            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d  ",
+                        read_int8("can1", "pgm"));
+            disp0_->outputText24Line(tstr, 0, 9, 0xFFFF, 0x61d0);
+
             t1 = read_uint32("can1", "rxcnt");
             snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
             disp0_->outputText24Line(tstr, 1, 9, 0xffff, 0x0000);
 
             t1 = read_uint32("can1", "errcnt");
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 2, 9, 0xFAAA, 0x0000);
+            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d          ", t1);
+            tstr[12] = 0;
+            if (t1 != errCntBus0_) {
+                disp0_->outputText24Line(tstr, 2, 9, 0xEF3B, 0x9186);
+            } else {
+                disp0_->outputText24Line(tstr, 2, 9, 0xFAAA, 0x0000);
+            }
+            errCntBus0_ = t1;
 
             t1 = read_uint32("can1", "mode");
             if (t1 == 0) {
-                disp0_->outputText24Line("OFF", 3, 9, 0xF7E7, 0x0000);
+                disp0_->outputText24Line("Bus OFF           ", 3, 1, 0xF7E7, 0x0000);
             } else if (t1 == 2) {
-                t1 = static_cast<uint8_t>(read_int8("inj0", "state"));
-                if (t1 == 0) {
-                    disp0_->outputText24Line("listen     ", 3, 9, 0x47EB, 0x0000);
-                } else {
-                    t1 = read_uint32("inj0", "cnt");
-                    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "inject_%d", t1);
-                    disp0_->outputText24Line(tstr, 3, 9, 0xFBBB, 0xAC00);
+                disp0_->outputText24Line("Bus Listener      ", 3, 1, 0x47EB, 0x0000);
+            } else if (t1 == 3) {
+                t1 = read_uint32("inj0", "cnt");
+                snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d         ", t1);
+                disp0_->outputText24Line("Inject: ", 3, 1, 0xFBBB, 0x0000);
+                disp0_->outputText24Line(tstr, 3, 9, 0xFBBB, 0xAC00);
+
+                // Show Last injected error code
+                t1 = read_uint32("can1", "lasterr");
+                // ESR[4:6] = LEC LAst error code
+                switch ((t1 >> 4) & 0x7) {
+                case 0:
+                    disp0_->outputText24Line("No Error         ", 4, 1, 0x13F6, 0x0000);
+                    break;
+                case 1:
+                    disp0_->outputText24Line("Stuff bit err    ", 4, 1, 0x13F6, 0x0000);
+                    break;
+                case 2:
+                    disp0_->outputText24Line("Form err         ", 4, 1, 0x13F6, 0x0000);
+                    break;
+                case 3:
+                    disp0_->outputText24Line("ACK err          ", 4, 1, 0x13F6, 0x0000);
+                    break;
+                case 4:
+                    disp0_->outputText24Line("Recessive bit err", 4, 1, 0x13F6, 0x0000);
+                    break;
+                case 5:
+                    disp0_->outputText24Line("Dominant bit err ", 4, 1, 0x13F6, 0x0000);
+                    break;
+                case 6:
+                    disp0_->outputText24Line("CRC err          ", 4, 1, 0x13F6, 0x0000);
+                    break;
+                default:
+                    disp0_->outputText24Line("Err set by SW    ", 4, 1, 0x13F6, 0x0000);
                 }
             } else {
-                disp0_->outputText24Line("-", 3, 9, 0x6B6D, 0x0000);
+                disp0_->outputText24Line("No Data           ", 3, 1, 0x6B6D, 0x0000);
             }
 
 
@@ -101,16 +140,22 @@ void ManagementClass::update() {
             disp0_->outputText24Line(tstr, 5, 9, 0xffff, 0x0000);
 
             t1 = read_uint32("can2", "errcnt");
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 6, 9, 0xFAAA, 0x0000);
+            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d          ", t1);
+            tstr[12] = 0;
+            if (t1 != errCntBus1_) {
+                disp0_->outputText24Line(tstr, 6, 9, 0xEF3B, 0x9186);
+            } else {
+                disp0_->outputText24Line(tstr, 6, 9, 0xFAAA, 0x0000);
+            }
+            errCntBus1_ = t1;
 
             t1 = read_uint32("can2", "mode");
             if (t1 == 0) {
-                disp0_->outputText24Line("OFF", 7, 9, 0xF7E7, 0x0000);
+                disp0_->outputText24Line("Bus OFF           ", 7, 1, 0xF7E7, 0x0000);
             } else if (t1 == 2) {
-                disp0_->outputText24Line("listen", 7, 9, 0x47EB, 0x0000);
+                disp0_->outputText24Line("Bus Listener      ", 7, 1, 0x47EB, 0x0000);
             } else {
-                disp0_->outputText24Line("-", 7, 9, 0x6B6D, 0x0000);
+                disp0_->outputText24Line("No Data           ", 8, 1, 0x6B6D, 0x0000);
             }
         }
         break;
@@ -125,11 +170,18 @@ void ManagementClass::keyPressed() {
                 eNoAction);
     btnClick_ = true;
 
-    write_uint32("inj0", "inject", 1);
+    uint32_t canmod = read_uint32("can1", "mode");
+    if (canmod == 2) {
+        write_uint32("can1", "mode", 3);
+        write_uint32("inj0", "inject", 1);
+    } else if (canmod == 3) {
+        write_uint32("can1", "mode", 2);
+        write_uint32("inj0", "inject", 0);
+    }
+
 }
 
 void ManagementClass::keyReleased() {
-    write_uint32("inj0", "inject", 0);
 }
 
 void ManagementClass::waitKeyPressed() {

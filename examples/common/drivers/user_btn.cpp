@@ -48,7 +48,9 @@ UserButtonDriver::UserButtonDriver(const char *name)
     : FwObject(name),
     event_(0),
     ms_cnt_(0),
-    ms_pressed_(0),
+    keyPosition_(0),
+    keyPositionPrev_(0),
+    keyPositionChangedMs_(0),
     listener_(0) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
@@ -91,13 +93,23 @@ void UserButtonDriver::Init() {
 void UserButtonDriver::handleInterrupt(int *state) {
     // inversed, if LOW btn is pressed
     if (*state == 0) {
-        if ((ms_cnt_ - ms_pressed_) >= 50) {
+        if (keyPosition_ == BTN_POS_PRESSED) {
+            event_ |= BTN_EVENT_RELEASED;
+            event_ |= BTN_EVENT_PRESSED;
+        } else {
             event_ |= BTN_EVENT_PRESSED;
         }
-        ms_pressed_ = ms_cnt_;
+        keyPosition_ = BTN_POS_PRESSED;
     } else {
-        event_ |= BTN_EVENT_RELEASED;
+        if (keyPosition_ == BTN_POS_RELEASED) {
+            event_ |= BTN_EVENT_PRESSED;
+            event_ |= BTN_EVENT_RELEASED;
+        } else {
+            event_ |= BTN_EVENT_RELEASED;
+        }
+        keyPosition_ = BTN_POS_RELEASED;
     }
+    keyPositionChangedMs_ = ms_cnt_;
 }
 
 void UserButtonDriver::registerKeyListener(KeyListenerInterface *iface) {
@@ -107,6 +119,11 @@ void UserButtonDriver::registerKeyListener(KeyListenerInterface *iface) {
 }
 
 void UserButtonDriver::callbackTimer(uint64_t tickcnt) {
+    ms_cnt_ = tickcnt;
+    if ((ms_cnt_ - keyPositionChangedMs_) < 5) {
+        return;
+    }
+
     uint32_t ev = event_;
     event_ ^= ev;
 #ifdef x_WIN32
@@ -132,5 +149,4 @@ if ((tickcnt % 5000) == 4999) {
             p = p->next;
         }
     }
-    ms_cnt_ = tickcnt;
 }

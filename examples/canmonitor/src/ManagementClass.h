@@ -68,6 +68,8 @@ class ManagementClass : public FwObject,
     DisplayInterface *disp0_;
     bool btnClick_;
     uint32_t updateCnt_;
+    uint32_t errCntBus0_;
+    uint32_t errCntBus1_;
 
     enum EState {
         State_SplashScreen,

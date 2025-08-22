@@ -23,7 +23,7 @@
 #include <gpio_drv.h>
 #include "can_injector.h"
 
-#define USE_UART2_TX_AS_INJECTOR
+//#define USE_UART2_TX_AS_INJECTOR
 
 // Error injector:
 //    26 PA3 ADC123_IN3 CAN SOF listener on 81 CAN1_RX (PA[3] mapped to EXTI3)
@@ -167,16 +167,16 @@ void CanInjectorDriver::TimerStrobHandler::handleInterrupt(int *arg) {
 
 void CanInjectorDriver::setInjectBit() {
     gpio_pin_as_output(&gpio_cfg_injector_,
-                        GPIO_OPEN_DRAIN,
+                        GPIO_NO_OPEN_DRAIN,
                         GPIO_FAST,
-                        GPIO_PULL_DOWN);
+                        GPIO_NO_PUSH_PULL);
     gpio_pin_clear(&gpio_cfg_injector_);
 
-    gpio_pin_as_output(&gpio_cfg_sof_,
+    /*gpio_pin_as_output(&gpio_cfg_sof_,
                         GPIO_OPEN_DRAIN,
                         GPIO_FAST,
                         GPIO_PULL_DOWN);
-    gpio_pin_clear(&gpio_cfg_sof_);
+    gpio_pin_clear(&gpio_cfg_sof_);*/
 }
 
 void CanInjectorDriver::releaseInjectBit() {
@@ -185,15 +185,15 @@ void CanInjectorDriver::releaseInjectBit() {
     // Test separate pin
     gpio_pin_as_input(&gpio_cfg_injector_,
                       GPIO_SLOW,
-                      GPIO_PULL_UP);
+                      GPIO_NO_PUSH_PULL);
 #else
     gpio_pin_as_alternate(&gpio_cfg_injector_, 9);
 #endif
 
-    gpio_pin_set(&gpio_cfg_sof_);
+    /*gpio_pin_set(&gpio_cfg_sof_);
     gpio_pin_as_input(&gpio_cfg_sof_,
                         GPIO_FAST,
-                        GPIO_NO_PUSH_PULL);
+                        GPIO_NO_PUSH_PULL);*/
 }
 
 void CanInjectorDriver::injectionEnable() {

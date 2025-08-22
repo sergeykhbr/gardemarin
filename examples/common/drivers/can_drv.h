@@ -50,15 +50,33 @@ class CanDriver : public FwObject,
     // IrqHandlerInterface
     virtual void handleInterrupt(int *argv) override;
 
+    // Common methods
+    virtual void triggerError();
+
  protected:
     virtual uint32_t hwid2canid(uint32_t hwid);
+
+    class ErrTriggerAttribute : public FwAttribute {
+     public:
+        ErrTriggerAttribute(CanDriver *parent, const char *name)
+            : FwAttribute(name) , parent_(parent) {}
+
+        virtual void post_write() override {
+            parent_->triggerError();
+        }
+     protected:
+        CanDriver *parent_;
+    };
+
 
  protected:
     FwAttribute baudrate_;
     FwAttribute mode_;
     FwAttribute rxcnt_;
+    FwAttribute pgm_;
     FwAttribute errcnt_;
-    FwAttribute test1_;
+    FwAttribute lasterr_;
+    ErrTriggerAttribute errTrigger_;
 
     static const int CAN_RX_FRAMES_MAX = 4;
 

@@ -49,6 +49,10 @@ extern "C" void CAN1_FIFO1_irq_handler() {
 
 extern "C" void CAN1_SCE_irq_handler() {
     CAN_registers_type *dev = (CAN_registers_type *)CAN1_BASE;
+    CAN_ESR_type esr;
+    char errmsg[5] = "e0\r\n";
+    FwAttribute *atr = reinterpret_cast<FwAttribute *>(
+                fw_get_object_attribute("can1", "errcnt"));
     // [6:4] LEC. Last Error Code
     //      000 No error
     //      001 Stuff error
@@ -57,16 +61,39 @@ extern "C" void CAN1_SCE_irq_handler() {
     //      100 Bit recessive error
     //      101 Bit dominant error
     //      110 CRC error
-    //      11 Set by software
-    FwAttribute *atr = reinterpret_cast<FwAttribute *>(
-                fw_get_object_attribute("can1", "errcnt"));
+    //      111 Set by software
+    // [2] BOFF. Bus off flag
+    // [1] EPVF. Error passive flag
+    // [0] EWGF. Error warning flag
     if (atr) {
         atr->make_uint32(atr->to_uint32() + 1);
     } else {
         uart_printk("err %d\r\n", __LINE__);
     }
+    esr.val = read32(&dev->ESR.val);
+    errmsg[1] += static_cast<char>(esr.b.LEC);
+
+    atr = reinterpret_cast<FwAttribute *>(
+                fw_get_object_attribute("can1", "lasterr"));
+    if (atr) {
+        atr->make_uint32(esr.val);
+    } else {
+        uart_printk("err %d\r\n", __LINE__);
+    }
+    /*uart_printk(errmsg);
+
+    if (esr.b.BOFF) {
+        uart_printk("err BOFF\r\n");
+    }
+    if (esr.b.EPVF) {
+        uart_printk("err EPVF\r\n");
+    }
+    if (esr.b.EWGF) {
+        uart_printk("err EWGF\r\n");
+    }*/
+
     // [2] ERRI error interrupt.
-    write32(&dev->MCR.val, 1 << 2);
+    write32(&dev->MSR.val, 1 << 2);
     nvic_irq_clear(22);
 }
 
@@ -99,7 +126,7 @@ extern "C" void CAN2_SCE_irq_handler() {
         uart_printk("err %d\r\n", __LINE__);
     }
     // [2] ERRI error interrupt.
-    write32(&dev->MCR.val, 1 << 2);
+    write32(&dev->MSR.val, 1 << 2);
     nvic_irq_clear(66);
 }
 
@@ -108,14 +135,16 @@ CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
     baudrate_("baudrate"),
     mode_("mode"),
     rxcnt_("rxcnt"),
+    pgm_("pgm"),
     errcnt_("errcnt"),
-    test1_("test1"),
+    lasterr_("lasterr"),
+    errTrigger_(this, "errTrigger"),
     busid_(busid) {
     rxframe_rcnt = 0;
     rxframe_wcnt = 1;
 
     mode_.make_int8(0);
-    test1_.make_uint32(0xcafef00d);
+    pgm_.make_int8(-1);
 
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     uint32_t t1;
@@ -174,11 +203,18 @@ void CanDriver::Init() {
     RegisterAttribute(&baudrate_);
     RegisterAttribute(&mode_);
     RegisterAttribute(&rxcnt_);
+    RegisterAttribute(&pgm_);
     RegisterAttribute(&errcnt_);
-    RegisterAttribute(&test1_);
+    RegisterAttribute(&lasterr_);
+    RegisterAttribute(&errTrigger_);
 }
 
 void CanDriver::PostInit() {
+}
+
+void CanDriver::triggerError() {
+    // [6:4] LEC. Last error code. It can be set to 111 by SW.
+    write32(&dev_->ESR.val, 0x7 << 4);
 }
 
 void CanDriver::SetBaudrated(uint32_t baud) {
@@ -217,8 +253,7 @@ void CanDriver::SetBaudrated(uint32_t baud) {
 }
 
 uint32_t CanDriver::hwid2canid(uint32_t hwid) {
-    uint32_t ret = (hwid >> 3) & 0x3FFFF;  // EXID[17:0]
-    ret = (ret << 11) | (hwid >> 18);
+    uint32_t ret = (hwid >> 3);
     return ret;
 }
 
@@ -253,16 +288,28 @@ void CanDriver::handleInterrupt(int *argv) {
 
         rf.val = read32(&dev_->RF[fifoidx].val);
         rxcnt_.make_uint32(rxcnt_.to_uint32() + 1);
-#if 0
-if (busid_ == 0) {
+#if 1
     //          static const uint32 ID =  (uint32) (0x1F00601FUL | Utilities::BRC_NR | (static_cast<uint32>(Utilities::COM5008_DEVICE)<<5));
-    //if ((f->id & 0x1f00001f) == 0x1f00001f)
+    if ((f->id & 0x1f00601f) == 0x1f00601f)
     {
-        // 1d441147 = 1_1101_0100_0100_0001_0001_0100_0111
-        //                                          0_
-        uart_printk("%08x\r\n", f->id);
+        // 1_1111_0000_0000_0110_0000_0001_1111
+        // hearbeat frame:
+        // [12:0]       = rsrv1         0_0000_0001_1111
+        // [14:13]      = frametype     11=heartbeat 01=targetframe; 00=BC-frame
+        // [19:15]      = rsrv2         0000_0
+        // [23:21]      = source        000
+        // [28:24]      = bctype        0=SBC-frame; 8=MBC-frame
+
+        // Data frame
+        // [28:25]      = channel       1_111
+        // {[24],[7:5]} = subchannel    1...1000
+        // [23,16]      = target        0000_0000
+        // [15:8]       = sender        0110_0000 (always const in heartbeat)
+        // [7:5] see subchann
+        // [4:0]        = counter       1_1111
+        //uart_printk("%d %02x %02x %02x\r\n", busid_, (f->id>>16) & 0xFF, f->data.u8[1]);
+        pgm_.make_int8(f->data.u8[1]);
     }
-}
 #endif
     } while (rf.b.FMP != 0);
 }
@@ -305,6 +352,10 @@ void CanDriver::setRun() {
     ier.b.FMPIE0 = 1;
     ier.b.FMPIE1 = 1;
     ier.b.ERRIE = 1;
+    ier.b.LECIE = 1;    // Last Error code interrupt
+    //ier.b.BOFIE = 1;    // Bus-off interrupt
+    //ier.b.EPVIE = 1;    // Error passive interrupt
+    //ier.b.EWGIE = 1;    // Error warning interrupt
     write32(&dev_->IER.val, ier.val);
 }
 
