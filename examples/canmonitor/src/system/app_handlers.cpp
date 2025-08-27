@@ -24,7 +24,8 @@
 #include <display_spi.h>
 
 extern IrqHandlerInterface *drv_display_spi_tx_;
-extern IrqHandlerInterface *drv_can_injector_tim_;
+extern IrqHandlerInterface *drv_can_injector_exti_;         // can1 sof
+extern IrqHandlerInterface *drv_can_injector_tim_;          // inject error bits
 
 extern "C" void CanMonitor_SPI3_irq_handler() {
     /*SPI_registers_type *SPI3 = (SPI_registers_type *)SPI3_BASE;
@@ -33,12 +34,20 @@ extern "C" void CanMonitor_SPI3_irq_handler() {
     }*/
 }
 
-extern "C" void CanMonitor_TIM5_irq_handler() {
-    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
+extern "C" void CanMonitor_TIM4_irq_handler() {
+    TIM_registers_type *TIM4 = (TIM_registers_type *)TIM4_BASE;
     if (drv_can_injector_tim_) {
         drv_can_injector_tim_->handleInterrupt(0);
     }
 
-    write16(&TIM5->SR, 0);  // clear all pending bits
-    nvic_irq_clear(50);
+    write16(&TIM4->SR, 0);  // clear all pending bits
+    nvic_irq_clear(30);
+}
+
+// Irq[9] EXTI3 (connectected to CAN1 Rx)
+extern "C" void EXTI3_CanSofListener_IRQHandler() {
+    if (drv_can_injector_exti_) {
+        drv_can_injector_exti_->handleInterrupt(0);
+    }
+    nvic_irq_disable(9);    // disable EXTI, must be re-enabled by CAN end-of-frame
 }

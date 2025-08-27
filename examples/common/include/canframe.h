@@ -53,3 +53,14 @@ typedef struct can_frame_type {
     uint8_t busid;
     can_payload_type data;
 } can_frame_type;
+
+/**
+    Debug purpose only
+ */
+static const int CAN_MSG_HISTORY_LENGTH = 8;
+
+typedef struct can_msg_history_type {
+    char buf[CAN_MSG_HISTORY_LENGTH][64];
+    int pos;
+    int total;
+} can_msg_history_type;

@@ -18,8 +18,15 @@
 #include <uart.h>
 #include <FreeRTOS.h>
 #include "ManagementClass.h"
+#include <canframe.h>
 #include <vprintfmt.h>
 
+extern can_msg_history_type msg_history_;
+
+static const char *CAN_NAMES[CAN_Total] = {"can1", "can2"};
+static const uint16_t RGB16_GRAY_BKG = 0x4207;
+static const uint16_t RGB16_BLACK = 0x0000;
+static const uint16_t RGB16_WHITE = 0xffff;
 
 ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     : FwObject("man"),
@@ -27,8 +34,10 @@ ManagementClass::ManagementClass(TaskHandle_t taskHandle)
     disp0_ = 0;
     btnClick_ = false;
     updateCnt_ = 0;
-    errCntBus0_ = 0;
-    errCntBus1_ = 0;
+    errCnt_[CAN1] = 0;
+    errCnt_[CAN2] = 0;
+    history_total_prev_ = 0;
+    last_errcode_ = ~0ul;
     estate_ = State_SplashScreen;
 }
 
@@ -49,119 +58,215 @@ void ManagementClass::PostInit() {
 
 
 void ManagementClass::update() {
-    uint32_t t1;
     int btnClick = btnClick_;
+    bool updErrCode = false;
     btnClick_ = 0;
 
-    //uint32_t can2_rxcnt = read_uint32("can2", "rxcnt");
+    if (!disp0_) {
+        uart_printf("%d: err no display");
+        return;
+    }
+
     switch (estate_) {
     case State_SplashScreen:
         if (++updateCnt_ >= 5) {
             estate_ = State_CanListener;
-            if (disp0_) {
-                disp0_->clearScreen();
-                disp0_->outputText24Line("PGM:     -         ", 0, 0, 0xFFFF, 0x61d0);
-                disp0_->outputText24Line("CAN0 Rx: -", 1, 0, 0xBFE6, 0x0000);
-                disp0_->outputText24Line(" ErrCnt: -", 2, 0, 0xFAAA, 0x0000);
-                //disp0_->outputText24Line("   Mode: -", 3, 0, 0x13F6, 0x0000);
-                disp0_->outputText24Line("CAN1 Rx: -", 5, 0, 0xBFE6, 0x0000);
-                disp0_->outputText24Line(" ErrCnt: -", 6, 0, 0xFAAA, 0x0000);
-                //disp0_->outputText24Line("   Mode: -", 7, 0, 0x13F6, 0x0000);
-            }
+            disp0_->clearScreen();
+            disp0_->outputText24Line("PGM:     -         ", 0, 0, 0xFFFF, 0x61d0);
+            disp0_->outputText24Line("CAN0 Rx: -", 1, 0, 0xBFE6, 0x0000);
+            disp0_->outputText24Line(" ErrCnt: -", 2, 0, 0xFAAA, 0x0000);
+            disp0_->outputText24Line("CAN1 Rx: -", 5, 0, 0xBFE6, 0x0000);
+            disp0_->outputText24Line(" ErrCnt: -", 6, 0, 0xFAAA, 0x0000);
         }
         break;
     case State_CanListener:
-        if (disp0_) {
-            char tstr[20];
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d  ",
-                        read_int8("can1", "pgm"));
-            disp0_->outputText24Line(tstr, 0, 9, 0xFFFF, 0x61d0);
-
-            t1 = read_uint32("can1", "rxcnt");
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 1, 9, 0xffff, 0x0000);
-
-            t1 = read_uint32("can1", "errcnt");
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d          ", t1);
-            tstr[12] = 0;
-            if (t1 != errCntBus0_) {
-                disp0_->outputText24Line(tstr, 2, 9, 0xEF3B, 0x9186);
-            } else {
-                disp0_->outputText24Line(tstr, 2, 9, 0xFAAA, 0x0000);
+        drawPgmValue(0, CAN1);
+        drawCan1ListenerMode();
+        drawErrorCodeLine(4, CAN1);
+        if (read_uint32("can1", "mode") == 3) {
+            disp0_->clearLines(150, 90, RGB16_GRAY_BKG);
+            disp0_->clearLines(151, 1, RGB16_WHITE);
+            estate_ = State_CanInjector;
+        } else if (history_total_prev_ != msg_history_.total) {
+            disp0_->clearLines(150, 90, RGB16_GRAY_BKG);
+            disp0_->clearLines(151, 1, RGB16_WHITE);
+            estate_ = State_CanListenerWithLog;
+            updateCnt_ = 0;
+        } else {
+            drawCan2ListenerMode();
+        }
+        break;
+    case State_CanListenerWithLog:
+        drawPgmValue(0, CAN1);
+        drawCan1ListenerMode();
+        drawErrorCodeLine(4, CAN1);
+        drawDebugLog();
+        if (read_uint32("can1", "mode") == 3) {
+            estate_ = State_CanInjector;
+        } else if (history_total_prev_ != msg_history_.total) {
+            updateCnt_ = 0;
+        } else {
+            if (++updateCnt_ >= 20) {
+                disp0_->clearLines(150, 90, RGB16_BLACK);
+                disp0_->outputText24Line("CAN1 Rx:", 5, 0, 0xBFE6, 0x0000);
+                disp0_->outputText24Line(" ErrCnt:", 6, 0, 0xFAAA, 0x0000);
+                estate_ = State_CanListener;
             }
-            errCntBus0_ = t1;
-
-            t1 = read_uint32("can1", "mode");
-            if (t1 == 0) {
-                disp0_->outputText24Line("Bus OFF           ", 3, 1, 0xF7E7, 0x0000);
-            } else if (t1 == 2) {
-                disp0_->outputText24Line("Bus Listener      ", 3, 1, 0x47EB, 0x0000);
-            } else if (t1 == 3) {
-                t1 = read_uint32("inj0", "cnt");
-                snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d         ", t1);
-                disp0_->outputText24Line("Inject: ", 3, 1, 0xFBBB, 0x0000);
-                disp0_->outputText24Line(tstr, 3, 9, 0xFBBB, 0xAC00);
-
-                // Show Last injected error code
-                t1 = read_uint32("can1", "lasterr");
-                // ESR[4:6] = LEC LAst error code
-                switch ((t1 >> 4) & 0x7) {
-                case 0:
-                    disp0_->outputText24Line("No Error         ", 4, 1, 0x13F6, 0x0000);
-                    break;
-                case 1:
-                    disp0_->outputText24Line("Stuff bit err    ", 4, 1, 0x13F6, 0x0000);
-                    break;
-                case 2:
-                    disp0_->outputText24Line("Form err         ", 4, 1, 0x13F6, 0x0000);
-                    break;
-                case 3:
-                    disp0_->outputText24Line("ACK err          ", 4, 1, 0x13F6, 0x0000);
-                    break;
-                case 4:
-                    disp0_->outputText24Line("Recessive bit err", 4, 1, 0x13F6, 0x0000);
-                    break;
-                case 5:
-                    disp0_->outputText24Line("Dominant bit err ", 4, 1, 0x13F6, 0x0000);
-                    break;
-                case 6:
-                    disp0_->outputText24Line("CRC err          ", 4, 1, 0x13F6, 0x0000);
-                    break;
-                default:
-                    disp0_->outputText24Line("Err set by SW    ", 4, 1, 0x13F6, 0x0000);
-                }
-            } else {
-                disp0_->outputText24Line("No Data           ", 3, 1, 0x6B6D, 0x0000);
-            }
-
-
-            t1 = read_uint32("can2", "rxcnt");
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d", t1);
-            disp0_->outputText24Line(tstr, 5, 9, 0xffff, 0x0000);
-
-            t1 = read_uint32("can2", "errcnt");
-            snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d          ", t1);
-            tstr[12] = 0;
-            if (t1 != errCntBus1_) {
-                disp0_->outputText24Line(tstr, 6, 9, 0xEF3B, 0x9186);
-            } else {
-                disp0_->outputText24Line(tstr, 6, 9, 0xFAAA, 0x0000);
-            }
-            errCntBus1_ = t1;
-
-            t1 = read_uint32("can2", "mode");
-            if (t1 == 0) {
-                disp0_->outputText24Line("Bus OFF           ", 7, 1, 0xF7E7, 0x0000);
-            } else if (t1 == 2) {
-                disp0_->outputText24Line("Bus Listener      ", 7, 1, 0x47EB, 0x0000);
-            } else {
-                disp0_->outputText24Line("No Data           ", 8, 1, 0x6B6D, 0x0000);
-            }
+        }
+        break;
+    case State_CanInjector:
+        drawPgmValue(0, CAN1);
+        drawCan1InjectorMode();
+        drawErrorCodeLine(4, CAN1);
+        drawDebugLog();
+        if (read_uint32("can1", "mode") != 3) {
+            disp0_->clearLines(150, 90, RGB16_BLACK);
+            disp0_->outputText24Line("CAN1 Rx:", 5, 0, 0xBFE6, 0x0000);
+            disp0_->outputText24Line(" ErrCnt:", 6, 0, 0xFAAA, 0x0000);
+            estate_ = State_CanListener;
         }
         break;
     default:;
     }
 
+}
+
+void ManagementClass::drawCan1ListenerMode() {
+    uint32_t t1, t2;
+    char tstr[20];
+
+    t2 = static_cast<uint32_t>(100.0f*read_float32("inj0", "can1_util") + 0.5f); // 2 points precision
+
+    t1 = read_uint32("can1", "rxcnt");
+    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d.%02d/%d    ",
+                t2/100, t2%100, t1);
+    tstr[12] = 0;
+    disp0_->outputText24Line(tstr, 1, 9, 0xffff, 0x0000);
+
+    drawErrorCntValue(2, CAN1);
+
+    t1 = read_uint32("can1", "mode");
+    if (t1 == 0) {
+        disp0_->outputText24Line("Bus OFF           ", 3, 1, 0xF7E7, 0x0000);
+    } else if (t1 == 2) {
+        disp0_->outputText24Line("Bus Listener      ", 3, 1, 0x47EB, 0x0000);
+    } else if (t1 == 3) {
+        disp0_->outputText24Line("Bus Injector      ", 3, 1, 0x47EB, 0x0000);
+    } else {
+        disp0_->outputText24Line("No Data           ", 3, 1, 0x6B6D, 0x0000);
+    }
+}
+
+void ManagementClass::drawCan1InjectorMode() {
+    uint32_t t1, t2;
+    char tstr[20];
+
+    t2 = static_cast<uint32_t>(100.0f*read_float32("inj0", "can1_util") + 0.5f); // 2 points precision
+    t1 = read_uint32("can1", "rxcnt");
+    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d.%02d/%d    ",
+                t2/100, t2%100, t1);
+    tstr[12] = 0;
+    disp0_->outputText24Line(tstr, 1, 9, 0xffff, 0x0000);
+
+    drawErrorCntValue(2, CAN1);
+
+    t1 = read_uint32("inj0", "cnt");
+    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d         ", t1);
+    disp0_->outputText24Line("Inj98/1: ", 3, 1, 0xFBBB, 0x0000);
+    disp0_->outputText24Line(tstr, 3, 9, 0xFBBB, 0xAC00);
+
+}
+
+void ManagementClass::drawCan2ListenerMode() {
+    uint32_t t1;
+    char tstr[20];
+
+    t1 = read_uint32("can2", "rxcnt");
+    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d      ", t1);
+    disp0_->outputText24Line(tstr, 5, 9, 0xffff, 0x0000);
+
+    drawErrorCntValue(6, CAN2);
+
+    t1 = read_uint32("can2", "mode");
+    if (t1 == 0) {
+        disp0_->outputText24Line("Bus OFF           ", 7, 1, 0xF7E7, 0x0000);
+    } else if (t1 == 2) {
+        disp0_->outputText24Line("Bus Listener      ", 7, 1, 0x47EB, 0x0000);
+    } else {
+        disp0_->outputText24Line("No Data           ", 7, 1, 0x6B6D, 0x0000);
+    }
+}
+
+void ManagementClass::drawDebugLog() {
+    int pos = msg_history_.pos - 1;
+    int tot = msg_history_.total;
+    if (tot > 4) {
+        tot = 4;
+    }
+
+    for (int i = 0; i < tot; i++) {
+        if (pos < 0) {
+            pos += CAN_MSG_HISTORY_LENGTH;
+        }
+        disp0_->outputText16Line(msg_history_.buf[pos], 11 - i, 0, 0xDF1B, RGB16_GRAY_BKG);
+        pos--;
+    }
+    history_total_prev_ = msg_history_.total;
+}
+
+void ManagementClass::drawPgmValue(int lineidx, int canidx) {
+    char tstr[20];
+    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d  ",
+                read_int8(CAN_NAMES[canidx], "pgm"));
+    disp0_->outputText24Line(tstr, lineidx, 9, 0xFFFF, 0x61d0);
+}
+
+void ManagementClass::drawErrorCntValue(int lineidx, int canidx) {
+    char tstr[20];
+    uint32_t t1 = read_uint32(CAN_NAMES[canidx], "errcnt");
+    snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d          ", t1);
+    tstr[12] = 0;
+    if (t1 != errCnt_[canidx]) {
+        disp0_->outputText24Line(tstr, lineidx, 9, 0xEF3B, 0x9186);
+    } else {
+        disp0_->outputText24Line(tstr, lineidx, 9, 0xFAAA, 0x0000);
+    }
+    errCnt_[canidx] = t1;
+}
+
+void ManagementClass::drawErrorCodeLine(int lineidx, int canidx) {
+    // Show Last injected error code
+    uint32_t t1 = read_uint32(CAN_NAMES[canidx], "lasterr");
+    if (last_errcode_ == t1) {
+        return;
+    }
+    // ESR[4:6] = LEC LAst error code
+    switch ((t1 >> 4) & 0x7) {
+    case 0:
+        disp0_->outputText24Line("No Error         ", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    case 1:
+        disp0_->outputText24Line("Stuff bit err    ", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    case 2:
+        disp0_->outputText24Line("Form err         ", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    case 3:
+        disp0_->outputText24Line("ACK err          ", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    case 4:
+        disp0_->outputText24Line("Recessive bit err", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    case 5:
+        disp0_->outputText24Line("Dominant bit err ", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    case 6:
+        disp0_->outputText24Line("CRC err          ", lineidx, 1, 0x13F6, 0x0000);
+        break;
+    default:
+        disp0_->outputText24Line("Err set by SW    ", lineidx, 1, 0x13F6, 0x0000);
+    }
+    last_errcode_ = t1;
 }
 
 void ManagementClass::keyPressed() {

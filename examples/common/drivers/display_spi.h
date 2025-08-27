@@ -40,9 +40,15 @@ class DisplaySPI : public FwObject,
 
     // IDisplayInterface
     virtual void clearScreen();
+    virtual void clearLines(int start, int total, uint16_t clr);
     virtual void outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
+    virtual void outputText16Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
 
  protected:
+    virtual void outputTextLine(const uint8_t *arr, uint8_t fontsz,
+                                char *str, int linepos,
+                                int symbpos,
+                                uint32_t clr, uint32_t bkgclr);
     virtual void starCounter(void *dev, int usec);  // resolution 100 ns
     virtual void write_cmd_poll(uint16_t cmd);
     virtual void write_data_poll(uint16_t data);
@@ -50,7 +56,7 @@ class DisplaySPI : public FwObject,
  protected:
 
     virtual uint8_t draw_point(uint16_t x, uint16_t y, uint32_t clr);
-    virtual uint8_t show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint32_t clr, uint32_t bkgclr);
+    virtual uint8_t show_char(const uint8_t *arr, uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint32_t clr, uint32_t bkgclr);
     //virtual uint8_t show_string(uint16_t x, uint16_t y, char *str, uint16_t len, uint32_t clr, uint32_t bkgclr);
 
     enum EState {

@@ -20,11 +20,17 @@
 #include <uart.h>
 #include "can_drv.h"
 
+/** Instead of using interface, use this gloval var. Bad, but is is faster.
+ */
+can_msg_history_type msg_history_;
+
+
 // Defined in CAN injector (TODO: change on interface or attribute)
-extern "C" void CAN_SOF_set_wait_sync();
+extern "C" void CAN1_EndOfFrame();
+extern "C" void CAN2_EndOfFrame();
 
 extern "C" void CAN1_FIFO0_irq_handler() {
-    CAN_SOF_set_wait_sync();
+    CAN1_EndOfFrame();
 
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can1", "IrqHandlerInterface"));
@@ -36,7 +42,7 @@ extern "C" void CAN1_FIFO0_irq_handler() {
 }
 
 extern "C" void CAN1_FIFO1_irq_handler() {
-    CAN_SOF_set_wait_sync();
+    CAN1_EndOfFrame();
 
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can1", "IrqHandlerInterface"));
@@ -98,6 +104,7 @@ extern "C" void CAN1_SCE_irq_handler() {
 }
 
 extern "C" void CAN2_FIFO0_irq_handler() {
+    CAN2_EndOfFrame();
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can2", "IrqHandlerInterface"));
     if (iface) {
@@ -108,6 +115,7 @@ extern "C" void CAN2_FIFO0_irq_handler() {
 }
 
 extern "C" void CAN2_FIFO1_irq_handler() {
+    CAN2_EndOfFrame();
     IrqHandlerInterface *iface = reinterpret_cast<IrqHandlerInterface *>(
             fw_get_object_interface("can2", "IrqHandlerInterface"));
     if (iface) {
@@ -142,6 +150,37 @@ CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
     busid_(busid) {
     rxframe_rcnt = 0;
     rxframe_wcnt = 1;
+    
+    for (int i = 0; i < CPU_Total; i++) {
+        dbgmsg_[i].buf[2] = ':';
+        dbgmsg_[i].buf[3] = 0;
+        dbgmsg_[i].cnt = 3;
+    }
+    dbgmsg_[CPU_Unknown].buf[0] = '-';
+    dbgmsg_[CPU_Unknown].buf[1] = '-';
+    dbgmsg_[CPU_M1].buf[0] = 'M';
+    dbgmsg_[CPU_M1].buf[1] = '1';
+    dbgmsg_[CPU_M2].buf[0] = 'M';
+    dbgmsg_[CPU_M2].buf[1] = '2';
+    dbgmsg_[CPU_A1].buf[0] = 'A';
+    dbgmsg_[CPU_A1].buf[1] = '1';
+    dbgmsg_[CPU_A2].buf[0] = 'A';
+    dbgmsg_[CPU_A2].buf[1] = '2';
+    dbgmsg_[CPU_D1].buf[0] = 'D';
+    dbgmsg_[CPU_D1].buf[1] = '1';
+
+    msg_history_.pos = 0;
+    msg_history_.total = 0;
+    /*msg_history_.pos = 3;
+    msg_history_.total = 2;
+    for (int i = 0; i < 30; i++) {
+        msg_history_.buf[0][i] = 'A';
+        msg_history_.buf[1][i] = 'B';
+        msg_history_.buf[2][i] = 'C';
+    }
+    msg_history_.buf[0][30] = '\0';
+    msg_history_.buf[1][30] = '\0';
+    msg_history_.buf[2][30] = '\0';*/
 
     mode_.make_int8(0);
     pgm_.make_int8(-1);
@@ -287,30 +326,75 @@ void CanDriver::handleInterrupt(int *argv) {
         write32(&dev_->RF[fifoidx].val, rf.val);
 
         rf.val = read32(&dev_->RF[fifoidx].val);
-        rxcnt_.make_uint32(rxcnt_.to_uint32() + 1);
-#if 1
-    //          static const uint32 ID =  (uint32) (0x1F00601FUL | Utilities::BRC_NR | (static_cast<uint32>(Utilities::COM5008_DEVICE)<<5));
-    if ((f->id & 0x1f00601f) == 0x1f00601f)
-    {
-        // 1_1111_0000_0000_0110_0000_0001_1111
-        // hearbeat frame:
-        // [12:0]       = rsrv1         0_0000_0001_1111
-        // [14:13]      = frametype     11=heartbeat 01=targetframe; 00=BC-frame
-        // [19:15]      = rsrv2         0000_0
-        // [23:21]      = source        000
-        // [28:24]      = bctype        0=SBC-frame; 8=MBC-frame
+        rxcnt_.increment();
 
-        // Data frame
-        // [28:25]      = channel       1_111
-        // {[24],[7:5]} = subchannel    1...1000
-        // [23,16]      = target        0000_0000
-        // [15:8]       = sender        0110_0000 (always const in heartbeat)
-        // [7:5] see subchann
-        // [4:0]        = counter       1_1111
-        //uart_printk("%d %02x %02x %02x\r\n", busid_, (f->id>>16) & 0xFF, f->data.u8[1]);
-        pgm_.make_int8(f->data.u8[1]);
-    }
-#endif
+        // Detect and read PGM state
+        if ((f->id & 0x1f00601f) == 0x1f00601f)
+        {
+            // 1_1111_0000_0000_0110_0000_0001_1111
+            // hearbeat frame:
+            // [12:0]       = rsrv1         0_0000_0001_1111
+            // [14:13]      = frametype     11=heartbeat 01=targetframe; 00=BC-frame
+            // [19:15]      = rsrv2         0000_0
+            // [23:21]      = source        000
+            // [28:24]      = bctype        0=SBC-frame; 8=MBC-frame
+
+            // Data frame
+            // [28:25]      = channel       1_111
+            // {[24],[7:5]} = subchannel    1...1000
+            // [23,16]      = target        0000_0000
+            // [15:8]       = sender        0110_0000 (always const in heartbeat)
+            // [7:5] see subchann
+            // [4:0]        = counter       1_1111
+            //uart_printk("%d %02x %02x %02x\r\n", busid_, (f->id>>16) & 0xFF, f->data.u8[1]);
+            pgm_.make_int8(f->data.u8[1]);
+        } else if ((f->id & 0x1e000000) == 0x1a000000) {
+            int cpuidx = CPU_Unknown;
+            DebugMessageType *msg;
+            switch ((f->id >> 8) & 0xFF) {
+            case 0xA3:
+                cpuidx = CPU_M1;
+                break;
+            case 0x23:
+                cpuidx = CPU_M2;
+                break;
+            case 0xA5:
+                cpuidx = CPU_A1;
+                break;
+            case 0x25:
+                cpuidx = CPU_A2;
+                break;
+            case 0xA8:
+                cpuidx = CPU_D1;
+                break;
+            default:;
+            }
+            msg = &dbgmsg_[cpuidx];
+            for (uint8_t i = 0; i < f->dlc; i++) {
+                if (msg->cnt >= static_cast<int>(sizeof(msg->buf) - 1)) {
+                    continue;
+                }
+                msg->buf[msg->cnt++] = f->data.s8[i];
+                msg->buf[msg->cnt] = 0;
+            }
+            if ((f->id & 0x1f) == 0x1f) {
+                // the last msg in a sequence
+                char *tbuf = msg_history_.buf[msg_history_.pos++];
+                if (msg_history_.pos >= CAN_MSG_HISTORY_LENGTH) {
+                    msg_history_.pos = 0;
+                }
+                for (int i = 0; i <= msg->cnt; i++) {
+                    tbuf[i] = msg->buf[i];
+                }
+                for (int i = msg->cnt; i < 30; i++) {   // 20 symbols of 24; 30 of 16 and 40 of 12
+                    tbuf[i] = ' ';
+                }
+                tbuf[30] = 0;
+                msg_history_.total++;
+                msg->buf[3] = 0;
+                msg->cnt = 3;
+            }
+        }
     } while (rf.b.FMP != 0);
 }
 

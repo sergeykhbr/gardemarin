@@ -21,6 +21,12 @@
 #include <DisplayInterface.h>
 #include <task.h>
 
+enum CanNames {
+    CAN1,
+    CAN2,
+    CAN_Total
+};
+
 class ManagementClass : public FwObject,
                         public KeyListenerInterface {
  public:
@@ -39,6 +45,15 @@ class ManagementClass : public FwObject,
 
  public:
     void update();
+
+ private:
+    void drawCan1ListenerMode();
+    void drawCan1InjectorMode();
+    void drawCan2ListenerMode();
+    void drawDebugLog();
+    void drawPgmValue(int lineidx, int canidx);
+    void drawErrorCntValue(int lineidx, int canidx);
+    void drawErrorCodeLine(int lineidx, int canidx);
 
  protected:
     void waitKeyPressed();
@@ -68,11 +83,14 @@ class ManagementClass : public FwObject,
     DisplayInterface *disp0_;
     bool btnClick_;
     uint32_t updateCnt_;
-    uint32_t errCntBus0_;
-    uint32_t errCntBus1_;
+    uint32_t errCnt_[CAN_Total];
 
     enum EState {
         State_SplashScreen,
-        State_CanListener
+        State_CanListener,
+        State_CanListenerWithLog,
+        State_CanInjector
     } estate_;
+    int history_total_prev_;
+    uint32_t last_errcode_;
 };
