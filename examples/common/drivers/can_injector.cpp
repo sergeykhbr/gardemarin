@@ -44,25 +44,22 @@ static const gpio_pin_type gpio_cfg_injector_ = {
 
 
 // To reducde IRQ latency sue global variables instead of interface functions:
-IrqHandlerInterface *iinjector_irq_ = 0;
+CanInjectorDriver *iinjector_ = 0;
+IrqHandlerInterface *drv_can_injector_exti_ = 0;
 IrqHandlerInterface *drv_can_injector_tim_ = 0;
 
-// Irq[9] EXTI3
-extern "C" void EXTI3_CanSofListener_IRQHandler() {
-    EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
-    if (iinjector_irq_) {
-        iinjector_irq_->handleInterrupt(0);
+// Called from CAN1 driver Rx irq handler
+extern "C" void CAN1_EndOfFrame() {
+    if (iinjector_) {
+        iinjector_->CAN1_eof();
     }
-    nvic_irq_disable(9);
 }
 
-extern "C" void CAN_SOF_set_wait_sync() {
-    EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
-    write32(&EXTI->PR, 1 << gpio_cfg_sof_.pinidx);   // Pending register, cleared by programming it to 1
-    nvic_irq_clear(9);
-
-    // prio: 0 highest; 7 is lowest
-    nvic_irq_enable(9, 1);
+// Called from CAN2 driver Rx irq handler
+extern "C" void CAN2_EndOfFrame() {
+    if (iinjector_) {
+        iinjector_->CAN2_eof();
+    }
 }
 
 CanInjectorDriver::CanInjectorDriver(const char *name)
@@ -70,17 +67,22 @@ CanInjectorDriver::CanInjectorDriver(const char *name)
     injectAction_(this, "inject"),
     injectCnt_(this, "cnt"),
     injectState_(this, "state"),
+    baud_cnt_("baud_cnt"),
+    can1_util_(this, "can1_util"),
     timerStrobHandler_(this),
-    state_(0) {
+    state_(0),
+    can1_sof_time_(0) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
-    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
+    TIM_registers_type *TIM4 = (TIM_registers_type *)TIM4_BASE;     // 16-bit counter
+    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;   // 32-bit counter
     uint32_t t1;
 
     // adc clock on APB1 = 144/4 = 36 MHz
     t1 = read32(&RCC->APB1ENR);
     t1 |= (1 << 3);             // APB1[3] TIM5EN
+    t1 |= (1 << 2);             // APB1[2] TIM4EN
     write32(&RCC->APB1ENR, t1);
 
     t1 = read32(&RCC->APB2ENR);
@@ -106,46 +108,84 @@ CanInjectorDriver::CanInjectorDriver(const char *name)
 
     write32(&EXTI->PR, 1 << gpio_cfg_sof_.pinidx);   // Pending register, cleared by programming it to 1
 
-    // TIM5
-    write32(&TIM5->CR1.val, 0);         // stop counter
+    // TIM4: is used to form inject strob after SOF triggered
+    write32(&TIM4->CR1.val, 0);         // stop counter
     // time scale 100 nsec, CAN symbol 2 us = 20 ticks
-    write16(&TIM5->PSC, system_clock_hz() / 2 / 10000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
-    write16(&TIM5->DIER, 1);            // [0] UIE - update interrupt enabled
-    nvic_irq_enable(50, 1); // 50 TIM5
+    write16(&TIM4->PSC, system_clock_hz() / 2 / 10000000 - 1);             // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1))
+    write16(&TIM4->DIER, 1);            // [0] UIE - update interrupt enabled
+    nvic_irq_enable(30, 1); // 30 TIM4; 50 TIM5
+
+    // TIM5: is used to calculated Bus Utilization. 500 kHz.
+    write32(&TIM5->CR1.val, 0);         // stop counter
+    write16(&TIM5->PSC, 71);            // prescaler = 1: CK_CNT = (F_ck_psc/(PSC+1)). (36 MHz / 71+2) = 500 kHz
+    write16(&TIM5->DIER, 0);            // no interrupts
+    write32(&TIM5->CNT, 0);
+    tim_cr1_reg_type cr1;
+    cr1.val = 0;
+    cr1.bits.CEN = 1;
+    write32(&TIM5->CR1.val, cr1.val);   // upcounter, do not stop on event
 }
 
 void CanInjectorDriver::Init() {
-    RegisterInterface(static_cast<IrqHandlerInterface *>(this));
+    iinjector_ = this;
+    drv_can_injector_exti_ = static_cast<IrqHandlerInterface *>(this);
     drv_can_injector_tim_ = static_cast<IrqHandlerInterface *>(&timerStrobHandler_);
-    iinjector_irq_ = static_cast<IrqHandlerInterface *>(this);
+
     RegisterAttribute(&injectAction_);
     RegisterAttribute(&injectCnt_);
     RegisterAttribute(&injectState_);
+    RegisterAttribute(&baud_cnt_);
+    RegisterAttribute(&can1_util_);
 }
 
-// SOF interrupt handler
-void CanInjectorDriver::handleInterrupt(int *state) {
-    int tmp = 1;
-    timerStrobHandler_.handleInterrupt(&tmp);
+// Called from CAN driver on Rx interrupt
+void CanInjectorDriver::CAN1_eof() {
+    EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
+    write32(&EXTI->PR, 1 << gpio_cfg_sof_.pinidx);   // Pending register, cleared by programming it to 1
+    nvic_irq_clear(9);
+    // prio: 0 highest; 7 is lowest
+    nvic_irq_enable(9, 1);
+
+    timerStrobHandler_.injectRestart();
+
+    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
+    uint32_t cnt = read32(&TIM5->CNT);
+    can1_util_.setData(cnt - can1_sof_time_, cnt);
+    write32(&TIM5->CNT, 0);
 }
 
-void CanInjectorDriver::TimerStrobHandler::handleInterrupt(int *arg) {
-    TIM_registers_type *TIM = (TIM_registers_type *)TIM5_BASE;
+void CanInjectorDriver::CAN2_eof() {
+}
+
+// Called by EXTI: SOF interrupt handler
+void CanInjectorDriver::handleInterrupt(int *argv) {
+    TIM_registers_type *TIM5 = (TIM_registers_type *)TIM5_BASE;
+    if (argv == 0) {
+        timerStrobHandler_.handleInterrupt(0);
+        can1_sof_time_ = read32(&TIM5->CNT);
+    } else {
+        // todo: can2 support
+    }
+}
+
+// Called from TIM4 event
+void CanInjectorDriver::TimerStrobHandler::handleInterrupt(int *argv) {
+    TIM_registers_type *TIM = (TIM_registers_type *)TIM4_BASE;
     switch (state_) {
     case State_WaitSof:
         // Select 5 symbol to atack.
         //      Initial delay SOF -> here 1.2 us    (12 ticks)
         //      symbol_number * 20 = 200 (symbol_number = 40)
-        write32(&TIM->ARR, 812u);
-        write32(&TIM->CNT, 812u);
+        write32(&TIM->ARR, 1972u);               // TIM4: 16-bit; 812 = 40-th symbol
+        write32(&TIM->CNT, 1972u);               // TIM4: 16-bit; 812 = 40-th symbol
         write32(&TIM->CR1.val, cr1_run_.val);
         state_ = State_WaitCanSymbol;
         break;
     case State_WaitCanSymbol:
         // Corrupt 5 CAN symbols
         parent_->setInjectBit();
-        write32(&TIM->ARR, 100u);
-        write32(&TIM->CNT, 100u);
+        write32(&TIM->ARR, 20u);       // 100 = 5 corrupt symbols
+        write32(&TIM->CNT, 20u);       // 100 = 5 corrupt symbols
         write32(&TIM->CR1.val, cr1_run_.val);
         state_ = State_Injection;
         break;
@@ -165,18 +205,27 @@ void CanInjectorDriver::TimerStrobHandler::handleInterrupt(int *arg) {
     }
 }
 
+void CanInjectorDriver::TimerStrobHandler::injectEnable() {
+    inject_ena_ = true;
+    state_ = State_WaitSof;
+}
+
+void CanInjectorDriver::TimerStrobHandler::injectRestart() {
+    if (!inject_ena_ || state_ == State_WaitSof) {
+        return;
+    }
+    TIM_registers_type *TIM = (TIM_registers_type *)TIM4_BASE;
+    write32(&TIM->CR1.val, 0);         // stop counter
+    parent_->releaseInjectBit();
+    state_ = State_WaitSof;
+}
+
 void CanInjectorDriver::setInjectBit() {
     gpio_pin_as_output(&gpio_cfg_injector_,
                         GPIO_NO_OPEN_DRAIN,
                         GPIO_FAST,
                         GPIO_NO_PUSH_PULL);
     gpio_pin_clear(&gpio_cfg_injector_);
-
-    /*gpio_pin_as_output(&gpio_cfg_sof_,
-                        GPIO_OPEN_DRAIN,
-                        GPIO_FAST,
-                        GPIO_PULL_DOWN);
-    gpio_pin_clear(&gpio_cfg_sof_);*/
 }
 
 void CanInjectorDriver::releaseInjectBit() {
@@ -190,10 +239,6 @@ void CanInjectorDriver::releaseInjectBit() {
     gpio_pin_as_alternate(&gpio_cfg_injector_, 9);
 #endif
 
-    /*gpio_pin_set(&gpio_cfg_sof_);
-    gpio_pin_as_input(&gpio_cfg_sof_,
-                        GPIO_FAST,
-                        GPIO_NO_PUSH_PULL);*/
 }
 
 void CanInjectorDriver::injectionEnable() {
@@ -210,4 +255,13 @@ void CanInjectorDriver::InjectErrorAction::post_write() {
     } else {
         parent_->injectionDisable();
     }
+}
+
+void CanInjectorDriver::BusUtilizationAttribute::pre_read() {
+    if (total_) {
+        u_.f = 100.0f * static_cast<float>(busy_) / total_;
+    }
+    
+    busy_ = 0;
+    total_ = 0;
 }

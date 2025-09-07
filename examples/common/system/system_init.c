@@ -23,7 +23,7 @@ extern void uart_early_init();
 //   144 MHz 67 mA   - make sense to reduce frequency lower 150 MHz,
 //                     4 Flash wait states instead of 5 at 168 MHz
 // Voltage scaling is adjusted to Fhclk frequency:
-//   Scale 2 for F_HCLK <= 144 MHz
+//   Scale 2 for F_HCLK <= 144 MHz (APB1 = 36MHz, APB2 = 72MHz)
 //   Scale 1 for F_HCLK <= 168 MHz
 
 #ifdef __F103x

@@ -29,10 +29,12 @@ class CanInjectorDriver : public FwObject,
     // FwObject interface:
     virtual void Init() override;
 
-    // IrqHandlerInterface
-    virtual void handleInterrupt(int *argv) override;
+    //IrqHandlerInterface
+    virtual void handleInterrupt(int *argv);
 
     // Common methods:
+    virtual void CAN1_eof();
+    virtual void CAN2_eof();
     virtual void injectionEnable();
     virtual void injectionDisable();
     virtual void setInjectBit();
@@ -51,13 +53,10 @@ class CanInjectorDriver : public FwObject,
             cr1_run_.bits.DIR = 1;   // downcount
         }
 
-        // IrqHandlerInterface
-        virtual void handleInterrupt(int *argv) override;
+        virtual void handleInterrupt(int *argv);
         // Common methods:
-        virtual void injectEnable() {
-            inject_ena_ = true;
-            state_ = State_WaitSof;
-        }
+        virtual void injectEnable();
+        virtual void injectRestart();
         virtual void injectDisable() { inject_ena_ = false; }
         virtual uint32_t getInjectCnt() { return injectCnt_; }
         virtual uint32_t getState() { return static_cast<uint8_t>(state_); }
@@ -108,10 +107,29 @@ class CanInjectorDriver : public FwObject,
      protected:
         CanInjectorDriver *parent_;
     };
+
+    class BusUtilizationAttribute : public FwAttribute {
+     public:
+        BusUtilizationAttribute(CanInjectorDriver *parent, const char *name)
+            : FwAttribute(name) , parent_(parent), busy_(0), total_(0) {}
+
+        virtual void pre_read() override;
+        virtual void setData(uint32_t busy, uint32_t total) {
+            busy_ += busy;
+            total_ += total;
+        }
+     protected:
+        CanInjectorDriver *parent_;
+        uint32_t busy_;
+        uint32_t total_;
+    };
  protected:
     InjectErrorAction injectAction_;
     InjectErrorCounter injectCnt_;
     InjectState injectState_;
+    FwAttribute baud_cnt_;
+    BusUtilizationAttribute can1_util_;
     TimerStrobHandler timerStrobHandler_;
     bool state_;
+    uint32_t can1_sof_time_;
 };

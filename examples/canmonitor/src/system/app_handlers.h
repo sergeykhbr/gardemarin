@@ -30,7 +30,7 @@ extern void CAN2_FIFO0_irq_handler();
 extern void CAN2_FIFO1_irq_handler();
 extern void CAN2_SCE_irq_handler();
 extern void USART1_irq_handler();
-extern void CanMonitor_TIM5_irq_handler();
+extern void CanMonitor_TIM4_irq_handler();
 extern void CanMonitor_SPI3_irq_handler();
 
 #define WWDG_IRQHandler DefaultISR
@@ -63,7 +63,7 @@ extern void CanMonitor_SPI3_irq_handler();
 #define TIM1_CC_IRQHandler DefaultISR
 #define TIM2_IRQHandler DefaultISR
 #define TIM3_IRQHandler DefaultISR
-#define TIM4_IRQHandler DefaultISR
+#define TIM4_IRQHandler CanMonitor_TIM4_irq_handler
 #define I2C1_EV_IRQHandler DefaultISR
 #define I2C1_ER_IRQHandler DefaultISR
 #define I2C2_EV_IRQHandler DefaultISR
@@ -83,7 +83,7 @@ extern void CanMonitor_SPI3_irq_handler();
 #define DMA1_Stream7_IRQHandler DefaultISR
 #define FSMC_IRQHandler DefaultISR
 #define SDIO_IRQHandler DefaultISR
-#define TIM5_IRQHandler CanMonitor_TIM5_irq_handler
+#define TIM5_IRQHandler DefaultISR  //CanMonitor_TIM5_irq_handler
 #define SPI3_IRQHandler CanMonitor_SPI3_irq_handler
 #define UART4_IRQHandler DefaultISR
 #define UART5_IRQHandler DefaultISR

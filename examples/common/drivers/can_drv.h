@@ -68,11 +68,24 @@ class CanDriver : public FwObject,
         CanDriver *parent_;
     };
 
+    class RxCounterAttribute : public FwAttribute {
+     public:
+        RxCounterAttribute(const char *name) : FwAttribute(name), last_(0) {}
+
+        virtual void pre_read() override {
+            u_.u32 -= last_;
+            last_ = u_.u32;
+        }
+
+        void increment() { u_.u32++; }
+     protected:
+        uint32_t last_;
+    };
 
  protected:
     FwAttribute baudrate_;
     FwAttribute mode_;
-    FwAttribute rxcnt_;
+    RxCounterAttribute rxcnt_;
     FwAttribute pgm_;
     FwAttribute errcnt_;
     FwAttribute lasterr_;
@@ -88,4 +101,19 @@ class CanDriver : public FwObject,
     int rxframe_wcnt;
     int rxframe_rcnt;
     can_frame_type rxframes[CAN_RX_FRAMES_MAX];
+
+    enum CpuTypes {
+        CPU_Unknown,
+        CPU_M1,
+        CPU_M2,
+        CPU_A1,
+        CPU_A2,
+        CPU_D1,
+        CPU_Total
+    };
+    struct DebugMessageType {
+        char buf[64];
+        int cnt;
+    };
+    DebugMessageType dbgmsg_[CPU_Total];
 };
