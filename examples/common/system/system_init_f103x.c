@@ -18,26 +18,10 @@
 #include <mcu.h>
 
 extern void uart_early_init();
-// Typical power consumption at 25 C (STM32F407):
-//   168 MHz 87 mA
-//   144 MHz 67 mA   - make sense to reduce frequency lower 150 MHz,
-//                     4 Flash wait states instead of 5 at 168 MHz
-// Voltage scaling is adjusted to Fhclk frequency:
-//   Scale 2 for F_HCLK <= 144 MHz
-//   Scale 1 for F_HCLK <= 168 MHz
-
-#ifdef __F103x
 uint32_t SystemCoreClock = 72000000;
-#else
-uint32_t SystemCoreClock = 144000000;
-#endif
 
 int system_clock_hz() {
-#ifdef __F103x
-    int ret = 144000000;   // 144MHz, max is 168 MHz (higher power consumption +1 flash wait state)
-#else
     int ret = 72000000;   // 
-#endif
     return ret;
 }
 
@@ -94,20 +78,6 @@ void setup_nvic() {
     //write32(&SCB->VTOR, NVIC_VectTab | (Offset & (uint32_t)0x1FFFFF80);
 }
 
-#ifdef __F103x
-// USB_OTG_FS
-#else
-void setup_eth() {
-    // The mode, MII or RMII, is selected using the configuration bit 23, MII_RMII_SEL, in the
-    // SYSCFG_PMC register. The application has to set the MII/RMII mode while the Ethernet
-    // controller is under reset or before enabling the clocks.
-    SYSCFG_registers_type *SYSCFG = (SYSCFG_registers_type *)SYSCFG_BASE;
-    uint32_t t1 = read32(&SYSCFG->PMC);
-    t1 |= (1 << 23);    // RMII PHY selected
-    write32(&SYSCFG->PMC, t1);
-}
-#endif
-
 void system_init(void)
 {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
@@ -115,25 +85,20 @@ void system_init(void)
     FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
     uint32_t t1;
 
-    /* FPU settings */
-#ifdef __F103x
-#else
-    t1 = read32(&SCB->CPACR);    // Coprocessor Access Control Register
-    /* set bits [23:20] to enable CP10 and CP11 coprocessors */
-    t1 |= (3UL << 10*2)
-        | (3UL << 11*2);
-    write32(&SCB->CPACR, t1);
-#endif
-
 
     /* Reset the RCC clock configuration to the default reset state*/
     /* Set HSION bit */
     t1 = read32(&RCC->CR);
-    t1 |=  (1 << 0);            // [0] HSION (16 MHz F407 / 8 MHz F103)
+    t1 |=  (1 << 0);            // [0] HSION (8 MHz F103)
     write32(&RCC->CR, t1);
 
+    /* Configure Flash prefetch, Instruction cache, Data cache and wait state */
+    t1 = (1 << 4)      // [4] PRFTBE prefetch buffer is enable
+       | (0 << 3)      // [3] HLFCYA:half cycle access disabled (valid for HCLK < 24MHz)
+       | (2 << 0);     // [2:0] LATENCY: 2 wstates for 72 mhz
+    write32(&FLASH->ACR, t1);
+
     /* Reset CFGR register */
-#ifdef __F103x
     // [27:24] MCO: MCU clock output 1: 0xx=no clock; 100=sys clock; 101=HSI; 110HSE; 111=PLL/2
     // [22] USBPRE: USB prescaler: 0=PLL/1.5; 1=not divided
     // [21:18] PLLMUL: PLL multiplicator factor. PLL output < 72 MHz
@@ -146,20 +111,6 @@ void system_init(void)
     // [3:2] SWS: System clock swtich status: 00=HSI; 01=HSE; 10=PLL
     // [1:0] SW: System clock switch:  00=HSI; 01=HSE; 10=PLL used as SYSCLK
     write32(&RCC->CFGR, 0x00000000);
-#else
-    // [31:30] MCU clock output 2: 00=System clock (SYSCLK=HSI here); 01=PLLI2S; 10=HSE; 11=PLL
-    // [29:27] MCO2 prescale: 0=no division
-    // [26:24] MCO1 prescale: 0=no division
-    // [23] I2S clock
-    // [22:21] MCU clock output 1: 00=HSI
-    // [20:16] RTC clock: 0 = no clock (should be 1 MHz); HSE/8 = 1 MHz
-    // [15:13] APB2 clock = AHB clock not divided (MAX 90 MHz)
-    // [12:10] APB1 clock = AHB clock not divided (MAX 45 MHz)
-    // [7:4] AHB clock not divided (MAX 168 MHz)
-    // [3:2] clock is used: 00=HSI; 01=HSE; 10=PLL
-    // [1:0] selected as a system clock: 00=HSI; 01=HSE; 10=PLL (16 MHz)
-    write32(&RCC->CFGR, 0x00000000);
-#endif
 
     /* Reset HSEON, CSSON and PLLON bits */
     // [24] PLLON: 0=PLL OFF
@@ -169,7 +120,8 @@ void system_init(void)
     t1 &= 0xFEF6FFFF;
     write32(&RCC->CR, t1);
 
-#ifdef __F103x
+#if 0
+    // No  need PLL2/PLL3 for now
     // HSE 8 MHz -> PREDIV1=1 => PLLMUL=9 =>PLLCLK=72
     //              PREDIV2 => PLL2MUL => PLL2CLK to MCO (MCU clock output)
     //              PREDIV2 => PLL3MUL => PLL3VCO to I2S2/I2S3 interfaces
@@ -181,22 +133,8 @@ void system_init(void)
        | (0 << 17)  // [17] I2S2SRC: I2S2 clock source: 0=SYSCLK; 1=PLL3VCO
        | (0 << 18); // [18] I2S3SRC: I2S3 clock source: 0=SYSCLK; 1=PLL3VCO
     write32(&RCC->CFGR2, t1);
- 
-#else
-    /* Reset PLLCFGR register */
-    // [27:24] PLLQ: Divsion factor ofr USB OTG, SDIO and rnd, must be lower 48 MHz
-    // [22] PLLSRC: PLL source: 0=HSI; 1=HSE (8MHz)
-    // [17:16] PLLP: Main PLL division factor: 00=2; 01=4... Must be less than 168 MHz
-    // [14:6] PLLN: Multiplication factor of the main PLL. (16/PLLM)*PLLN must be in range [50, 432]
-    //              16 / 16 * 168 = 336 MHz (VCO input frequency)
-    // [5:0] PLLM: Division factor for the main PLL before VCO = 16. In range 1..2 MHz to limit jitter
-    t1 = (3 << 24)    // 144 / 3 = 48 MHz
-       | (1 << 22)    // HSE
-       | (0 << 16)    // PLL output = VCO/2
-       | (288 << 6)   // to form 144 MHz on PLL output
-       | (8 << 0);   // HSE /8 = 8 / 8 = 1MHz
-    write32(&RCC->PLLCFGR, t1); // 0x24003010);
 #endif
+ 
 
     /* Reset HSEBYP bit could be disabled only if HSE is OFF */
     // [18] HSEBYP: HSE clock bypass: 0=not bypassed
@@ -207,7 +145,6 @@ void system_init(void)
     /* Clock interrupt register: disable all clock status interrupts */
     write32(&RCC->CIR, 0x00000000);
 
-#ifdef __F103x
     // [27:24] MCO: MCU clock output 1: 0xx=no clock; 100=sys clock; 101=HSI; 110HSE; 111=PLL/2
     // [22] USBPRE: USB prescaler: 0=PLL/1.5; 1=not divided
     // [21:18] PLLMUL: PLL multiplicator factor. PLL output < 72 MHz
@@ -226,23 +163,6 @@ void system_init(void)
        | (0x0 << 11)     // APB2 = 72/1 = 72 MHz
        | (0x4 << 8)      // APB1 = 72/2 = 36 MHz
        | (0 << 4);       // AHB = PLL = 72 MHz
-#else
-    // [31:30] MCO2[1:0] MCU clock output 2: 00=System clock (SYSCLK=HSI here); 01=PLLI2S; 10=HSE; 11=PLL
-    // [29:27] MCO2PRE: MCO2 prescale: 0=no division
-    // [26:24] MCO1PRE: MCO1 prescale: 0=no division
-    // [23] I2SSRC: I2S clock
-    // [22:21] MCO1: MCU clock output 1: 00=HSI
-    // [20:16] RTCPRE: RTC clock: 0 = no clock (should be 1 MHz), HSE/8=1MHz
-    // [15:13] PPRE2: APB2 clock = AHB clock not divided (MAX 90 MHz): 0xx=1; 100=2; 101=4,..
-    // [12:10] PPRE1: APB1 clock = AHB clock not divided (MAX 45 MHz): 0xx=1; 100=2; 101=4,..
-    // [7:4] HPRE: AHB clock not divided (MAX 168 MHz)
-    // [3:2] SWS: clock is used: 00=HSI; 01=HSE; 10=PLL
-    // [1:0] SW: selected as a system clock: 00=HSI; 01=HSE; 10=PLL
-    t1 = (8 << 16)       // RTC clock = HSE/8 = 1 MHz
-       | (0x4 << 13)     // APB2 = 144/2 = 72 MHz
-       | (0x5 << 10)     // APB1 = 144/4 = 36 MHz
-       | (0 << 4);       // AHB = PLL = 144 MHz
-#endif
     write32(&RCC->CFGR, t1);
 
     /* Enable the HSE 8 MHz */
@@ -263,27 +183,6 @@ void system_init(void)
     // [25] PLLRDY: Main PLL clock ready flag
     while((read32(&RCC->CR) & (1 << 25)) == 0) {}
 
-    /* Configure Flash prefetch, Instruction cache, Data cache and wait state */
-#ifdef __F103x
-    t1 = (1 << 4)      // [4] PRFTBE prefetch buffer is enable
-       | (0 << 3)      // [3] HLFCYA:half cycle access disabled (valid for HCLK < 24MHz)
-       | (2 << 0);     // [2:0] LATENCY: 2 wstates for 72 mhz
-    write32(&FLASH->ACR, t1);
-#else
-    // at Vdd = 2.7 .. 3.6 V Max flash memorya ccess freq with no wait state = 30 MHz (see table 15, page 81)
-    // ART accelerator speed-up access. at 144MHz = 4 wait states, at 150-168 Mhz with 5 wait-states
-    // [12] DCRST: Data cache reset (only when cache disabled)
-    // [11] ICRST: Instruction cache reset (only when cache disabled)
-    // [10] DCEN: Data cache enable
-    // [9] ICEN: Data cache enable
-    // [8] PRFTEN: Prefetch enable
-    // [2:0] LATENCY: number of wait-states
-    t1 = (1 << 10)     // dcache ena
-       | (1 << 9)      // icache ena
-       | (0 << 8)      // prefetch disabled
-       | (4 << 0);     // 4 wstates for 144 mhz
-    write32(&FLASH->ACR, t1);
-#endif
 
     /* Select the main PLL as system clock source */
     // [31:30] MCO2[1:0] MCU clock output 2: 00=System clock (SYSCLK=HSI here); 01=PLLI2S; 10=HSE; 11=PLL
@@ -305,7 +204,6 @@ void system_init(void)
     /* Wait till the main PLL is used as system clock source */
     while (((read32(&RCC->CFGR) >> 2) & 0x3) != 0x2) {}
 
-#ifdef __F103x
     t1 = read32(&RCC->APB2ENR);
     t1 |= (1 << 6)     // PE
         | (1 << 5)     // PD
@@ -314,20 +212,7 @@ void system_init(void)
         | (1 << 2)     // PA
         | (1 << 0);    // [0] AFIOEN Alternate function I/O clock enable
     write32(&RCC->APB2ENR, t1);
-#else
-    t1 = read32(&RCC->AHB1ENR);
-    t1 |= (1 << 4)     // PE
-        | (1 << 3)     // PD
-        | (1 << 2)     // PC
-        | (1 << 1)     // PB
-        | (1 << 0);    // PA
-    write32(&RCC->AHB1ENR, t1);
-#endif
 
     setup_nvic();
     uart_early_init();
-#ifdef __F103x
-#else
-    setup_eth();
-#endif
 }

@@ -15,7 +15,7 @@
  */
 
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include "gpio_drv.h"
 
 void gpio_pin_as_input(const gpio_pin_type *p,

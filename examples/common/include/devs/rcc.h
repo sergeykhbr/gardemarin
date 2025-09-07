@@ -21,6 +21,27 @@
 /**
   Reset and Clock Control registers 
  */
+
+#ifdef __F103x
+
+typedef struct RCC_registers_type
+{
+    volatile uint32_t CR;            // 0x00 RCC clock control register
+    volatile uint32_t CFGR;          // 0x04 RCC clock configuration register
+    volatile uint32_t CIR;           // 0x08 RCC clock interrupt register
+    volatile uint32_t APB2RSTR;      // 0x0C RCC APB2 peripheral reset register
+    volatile uint32_t APB1RSTR;      // 0x10 RCC APB1 peripheral reset register
+    volatile uint32_t AHBENR;        // 0x14 RCC AHB peripheral clock register
+    volatile uint32_t APB2ENR;       // 0x18 RCC APB2 peripheral clock enable register
+    volatile uint32_t APB1ENR;       // 0x1C RCC APB1 peripheral clock enable register
+    volatile uint32_t BDCR;          // 0x20 RCC Backup domain control register
+    volatile uint32_t CSR;           // 0x24 RCC clock control & status register
+    volatile uint32_t AHBRSTR;       // 0x28 RCC AHB peripheral reset register
+    volatile uint32_t CFGR2;         // 0x2C RCC clock configuration register
+} RCC_registers_type;
+
+#else
+
 typedef struct RCC_registers_type
 {
     volatile uint32_t CR;            /*!< RCC clock control register,                                  Address offset: 0x00 */
@@ -55,3 +76,4 @@ typedef struct RCC_registers_type
     volatile uint32_t PLLI2SCFGR;    /*!< RCC PLLI2S configuration register,                           Address offset: 0x84 */
 } RCC_registers_type;
 
+#endif

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Sergey Khabarov, sergeykhbr@gmail.com
+ *  Copyright 2025 Sergey Khabarov, sergeykhbr@gmail.com
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,21 +16,10 @@
 
 #pragma once
 
-#include "prjtypes.h"
-#include <mcu.h>
-#include <stdarg.h>
-
-#if defined(__cplusplus)
-extern "C"
-{
+#ifdef __F103x
+    #include <stm32f103c8t6_map.h>
+#else
+    #include <stm32f4xx_map.h>
 #endif
 
-// unbuffered output
-void uart_printk(const char *fmt, ...);
 
-// buffered output. Do not use it from interrupts.
-void uart_printf(const char *fmt, ...);
-
-#if defined(__cplusplus)
-}  // extern "C"
-#endif

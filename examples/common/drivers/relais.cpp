@@ -17,7 +17,7 @@
 #include <prjtypes.h>
 #include <fwapi.h>
 #include <gardemarin.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include "relais.h"
 
 //    PD13 - relais 0

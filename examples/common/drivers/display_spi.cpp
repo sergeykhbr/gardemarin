@@ -15,7 +15,7 @@
  */
 
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include <fwapi.h>
 #include <new>
 #include <string.h>

@@ -16,7 +16,7 @@
 #pragma once
 
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include <gpio.h>
 
 #ifdef __cplusplus

@@ -5,10 +5,28 @@ CC=arm-none-eabi-gcc
 OBJDUMP=arm-none-eabi-objdump
 OBJCOPY=arm-none-eabi-objcopy
 
-CFLAGS= -c -g -static -std=gnu99 -O0 -mcpu=cortex-m4 -mfloat-abi=hard
+#
+# select target: Gardemarin STM32F407 or Nucleo STM32F103
+#
+STM32F10x=1
+
+ifeq ($(STM32F10x), 1)
+  MCU_CFLAGS = -mcpu=cortex-m3 -mfloat-abi=soft -D__F103x
+  MCU_LDFLAGS = -T ../common/system/stm32f10x.ld -mcpu=cortex-m3 -mfloat-abi=soft -D__F103x
+  MCU_SRC = stm32f10x_isr_vector \
+	    system_init_f103x
+else
+  MCU_CFLAGS = -mcpu=cortex-m4 -mfloat-abi=hard
+  MCU_LDFLAGS = -T ../common/system/stm32f4xx.ld -mcpu=cortex-m4 -mfloat-abi=hard
+  MCU_SRC = stm32f4xx_isr_vector \
+	    system_init
+endif
+
+
+CFLAGS= -c -g -static -std=gnu99 -O0 $(MCU_CFLAGS)
 CFLAGS+=-fno-common
 
-LDFLAGS=-T ../common/system/stm32f4xx.ld -nostartfiles -mcpu=cortex-m4 -mfloat-abi=hard
+LDFLAGS=$(MCU_LDFLAGS) -nostartfiles
 INCL_KEY=-I
 DIR_KEY=-B
 
@@ -34,9 +52,8 @@ LIB_NAMES = \
 
 VPATH = $(SRC_PATH)
 
-SOURCES = isr_vector \
+SOURCES = $(MCU_SRC) \
 	system_handlers \
-	system_init \
 	gcc_startup \
 	gcc_newlib \
 	vprintfmt \

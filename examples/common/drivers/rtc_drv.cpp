@@ -16,7 +16,7 @@
 
 #include <prjtypes.h>
 #include <stdio.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include <fwapi.h>
 #include <uart.h>
 #include "rtc_drv.h"

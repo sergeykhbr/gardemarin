@@ -1,1 +1,6 @@
-D:\soft\openocd-v0.12.0-i686-w64-mingw32\bin\openocd.exe -f stm32f4-gardemarin.cfg
+C:\tools\OpenOCD-20250710-0.12.0\bin\openocd.exe -f stm32f1xx-boot.cfg
+
+# start gdb:
+#   target remote localhost:3333
+#   add-symbol-file C:/Projects/gardemarin/examples/boot/bin/boot.elf
+#   print variable_name

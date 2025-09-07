@@ -15,7 +15,7 @@
  */
 
 #include <prjtypes.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include <fwapi.h>
 #include "ds18b20_drv.h"
 #include <uart.h>

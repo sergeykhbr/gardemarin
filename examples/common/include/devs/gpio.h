@@ -21,6 +21,22 @@
 /**
   GPIO registers 
  */
+#ifdef __F103x
+
+// No alternate function selector as in F4xx series.	
+typedef struct GPIO_registers_type
+{
+    volatile uint32_t CR[2];    // 0x00, 0x04 Control Reg: Mode/Function
+    volatile uint32_t IDR;      // 0x08 GPIO port input data register
+    volatile uint32_t ODR;      // 0x0C GPIO port output data register
+    volatile uint16_t BSRRL;    // 0x10 GPIO port bit set
+    volatile uint16_t BSRRH;    // 0x12 GPIO port bit reset
+    volatile uint32_t BRR;      // 0x14 GPIO port bit reset
+    volatile uint32_t LCKR;     // 0x18 GPIO port configuration lock register
+} GPIO_registers_type;
+
+#else
+
 typedef struct GPIO_registers_type
 {
     volatile uint32_t MODER;    /*!< GPIO port mode register,               Address offset: 0x00      */
@@ -35,3 +51,4 @@ typedef struct GPIO_registers_type
     volatile uint32_t AFR[2];   /*!< GPIO alternate function registers,     Address offset: 0x20-0x24 */
 } GPIO_registers_type;
 
+#endif

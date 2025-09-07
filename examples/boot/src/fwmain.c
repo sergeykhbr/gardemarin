@@ -16,30 +16,193 @@
 
 #include <prjtypes.h>
 #include <stdio.h>
-#include <stm32f4xx_map.h>
+#include <mcu.h>
 #include <uart.h>
+
+typedef struct gpio_pin_type {
+    GPIO_registers_type *port;
+    int pinidx;
+} gpio_pin_type;
 
 extern int system_clock_hz();
 
 int global_cnt = 100000;  // check global var initialization from flash
 int systick_cnt = 0;
 
+#ifdef __F103x
+//    PA10 USART1_RX  (USART1_REMAP=0); PB7 (USART1_REMAP=1);
+//    PA9 USART1_TX  (USART1_REMAP=0); PB6 (USART1_REMAP=1);
+static const gpio_pin_type CFG_PIN_UART1_RX = {
+    (GPIO_registers_type *)GPIOA_BASE, 10
+};
+
+static const gpio_pin_type CFG_PIN_UART1_TX = {
+    (GPIO_registers_type *)GPIOA_BASE, 9
+};
+
+// PC13 output
+static const gpio_pin_type CFG_PIN_LED1 = {
+    (GPIO_registers_type *)GPIOC_BASE, 13
+};
+#else
+//    PA10 USART1_RX = AF7
+//    PA9  USART1_TX = AF7
+static const gpio_pin_type CFG_PIN_UART1_RX = {
+    (GPIO_registers_type *)GPIOA_BASE, 10
+};
+
+static const gpio_pin_type CFG_PIN_UART1_TX = {
+    (GPIO_registers_type *)GPIOA_BASE, 9
+};
+// PE2 output
+static const gpio_pin_type CFG_PIN_LED1 = {
+    (GPIO_registers_type *)GPIOE_BASE, 2
+};
+#endif
+
+void gpio_pin_as_output(const gpio_pin_type *p,
+                        uint32_t odrain,
+                        uint32_t speed,
+                        uint32_t pushpull) {
+    uint32_t t1;
+
+#ifdef __F103x
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    // [3:2] = 00 General purpose output push-pull
+    // [1:0] = 01 Output mode, max speed 10 MHz
+    t1 |= (0x1 << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
+#else
+    // 00 input; 01 output; 10 alternate; 11 analog
+    t1 = read32(&p->port->MODER);
+    t1 &= ~(0x3 << 2*p->pinidx);
+    t1 |= (0x1 << 2*p->pinidx);
+    write32(&p->port->MODER, t1);
+
+    // [15:0] OTy: 0=push-pull output (reset state); 1=open drain output
+    t1 = read32(&p->port->OTYPER);
+    t1 &= ~(1 << p->pinidx);
+    t1 |= odrain << p->pinidx;
+    write32(&p->port->OTYPER, t1);
+
+    // [31:0] OSPEEDRy[1:0]: 00=LowSpeed; 01=Medium; 10=High; 11=VeryHigh
+    t1 = read32(&p->port->OSPEEDR);
+    t1 &= ~(0x3 << 2*p->pinidx);
+    t1 |= speed << 2*p->pinidx;
+    write32(&p->port->OSPEEDR, t1);
+
+    // [15:0] PUPDRy[1:0]: 00=no pull-up/down; 01=Pull-up; 10=pull-down; 11=reserved
+    t1 = read32(&p->port->PUPDR);
+    t1 &= ~(0x3 << 2*p->pinidx);
+    t1 |= pushpull << 2*p->pinidx;
+    write32(&p->port->PUPDR, t1);
+#endif
+}
+
+
+void gpio_pin_as_alternate(const gpio_pin_type *p,
+                           uint32_t ADx) {
+
+    uint32_t t1;
+
+#ifdef __F103x
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    // [3:2] = 10 Alternate push-pull
+    // [1:0] = 00  (alternate could be enabled only when = 00)
+    t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
+#else
+    // 00 input; 01 output; 10 alternate; 11 analog
+    t1 = read32(&p->port->MODER);
+    t1 &= ~(0x3 << 2*p->pinidx);
+    t1 |= (0x2 << 2*p->pinidx);
+    write32(&p->port->MODER, t1);
+
+    t1 = read32(&p->port->AFR[p->pinidx >> 3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    t1 |= (ADx << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->AFR[p->pinidx >> 3], t1);
+#endif
+}
+
+void gpio_pin_set(const gpio_pin_type *p) {
+    write16(&p->port->BSRRL, (1 << p->pinidx));
+}
+
+void gpio_pin_clear(const gpio_pin_type *p) {
+    //write16(&p->port->BSRRH, (1 << p->pinidx));
+    write32(&p->port->BRR, (1 << p->pinidx));
+}
+
+
+void uart_early_init() {
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    USART_registers_type *UART1  = (USART_registers_type *)USART1_BASE;
+    uint32_t t1;
+
+    t1 = read32(&RCC->APB2ENR);
+#ifdef __F103x
+    t1 |= (1 << 0)              // APB2[0] AFIO Alternate function
+       | (1 << 14);             // APB2[14] USART1
+#else
+    t1 |= 1 << 4;               // APB2[4] USART1
+#endif
+    write32(&RCC->APB2ENR, t1);
+
+    //    PA10 USART1_RX = AF7
+    //    PA9  USART1_TX = AF7
+    gpio_pin_as_alternate(&CFG_PIN_UART1_RX, 7);
+    gpio_pin_as_alternate(&CFG_PIN_UART1_TX, 7);
+
+    gpio_pin_as_output(&CFG_PIN_LED1, 0, 0, 0);
+
+    // UART1 on APB2 = 72 MHz
+    // 72000000/(16*115200) = 39.0625
+    // APB2 = HCLK / 2
+    uint32_t t2 = system_clock_hz() / 2 / 115200;
+    write16(&UART1->BRR, (uint16_t)t2);
+
+    // [15] OVER8: Oversampling: 0=16; 1=8
+    // [13] UE: USART enable (0=disabled)
+    // [12] M: word length: 0=8 data, 1=9 data
+    // [11] WAKE
+    // [10] PCE: Parity control en
+    // [9] PS: Parity selection
+    // [8] PEIE: PE irq ena
+    // [7] TXEIE: TXE irq ena
+    // [6] TCIE: Transmission complete irq en
+    // [5] RXNEIE: RX not empty irq ena
+    // [4] EDLEIE: IDLE irq ena
+    // [3] TE: transmitter ena
+    // [2] RE: receiver ena
+    // [1] RWU: Receiver wake-up
+    // [0] SBRK: send break
+    t1 = (1 << 13)
+       | (0 << 6)   // transmission complete
+       | (0 << 5)
+       | (1 << 3)
+       | (1 << 2);
+    write16(&UART1->CR1, t1);
+    write16(&UART1->CR2, 0);
+    write16(&UART1->CR3, 0);
+}
+
+
 void SysTick_Handler() {
     SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
 
     read32(&systick->CSR);     // Clear [16] COUNTFLAG
     if (++systick_cnt >= 100) {
-        GPIO_registers_type *PE = (GPIO_registers_type *)GPIOE_BASE;
         systick_cnt = 0;
         global_cnt++;
 
         // Switch User LED
         if (global_cnt & 0x1) {
-            // [15:0] BSy: set bit
-            write16(&PE->BSRRL, (1 << 2));
+            gpio_pin_set(&CFG_PIN_LED1);
         } else {
-            // [31:16] BRy: reset bit
-            write16(&PE->BSRRH, (1 << 2));
+            gpio_pin_clear(&CFG_PIN_LED1);
         }
     }
 }
@@ -61,25 +224,36 @@ void init_systick() {
 
 int fwmain(int argcnt, char *args[]) {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
-    FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
+    //FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
 
     int cnt_z = 0;
+    int cycle_cnt= 0;
     uint32_t t1;
+    int led = 0;
 
-    EnableIrqGlobal();
-    init_systick();
+    //EnableIrqGlobal();
+    //init_systick();
 
     while(1) {
         if (cnt_z != global_cnt) {
-            uart_printf("Hello World %d!\r\n", global_cnt);
+            //uart_printk("Hello World %d!\r\n", global_cnt);
             cnt_z = global_cnt;
 
             t1 = read32(&RCC->CR);
-            uart_printf("RCC_CR %08x\r\n", t1);
+            //uart_printk("RCC_CR %08x\r\n", t1);
 
-            t1 = read32(&FLASH->ACR);
-            uart_printf("FLASH_ACR %08x\r\n", t1);
-
+            //t1 = read32(&FLASH->ACR);
+            //uart_printk("FLASH_ACR %08x\r\n", t1);
+        }
+        if  (++cycle_cnt > 2000000) {
+            cycle_cnt = 0;
+            if (led) {
+                gpio_pin_set(&CFG_PIN_LED1);
+                led = 0;
+            } else {
+                gpio_pin_clear(&CFG_PIN_LED1);
+                led = 1;
+            }
         }
     }
     return 0;
