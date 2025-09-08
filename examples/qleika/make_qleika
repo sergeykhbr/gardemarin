@@ -14,7 +14,7 @@ MCU_SRC = stm32f10x_isr_vector \
 	    system_init_f103x
 
 
-CFLAGS= -c -g -static -std=gnu99 -O0 $(MCU_CFLAGS)
+CFLAGS= -c -g -static -O0 $(MCU_CFLAGS)
 CFLAGS+=-fno-common
 
 LDFLAGS=$(MCU_LDFLAGS) -nostartfiles
@@ -49,6 +49,7 @@ SOURCES = $(MCU_SRC) \
 	gcc_newlib \
 	vprintfmt \
 	uart \
+	gpio_drv \
 	fwmem \
 	fwmain
 
@@ -81,8 +82,8 @@ $(ELFFILE): $(OBJ_FILES)
 	$(CPP) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
 
 %.o: %.c
-	$(ECHO) $(CC) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
-	$(CC) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(ECHO) $(CC) $(CFLAGS) -std=gnu99 $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(CC) $(CFLAGS) -std=gnu99 $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
 
 %.o: %.s
 	$(ECHO) $(CC) $(CFLAGS) -D__ASSEMBLY__=1 $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
