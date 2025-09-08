@@ -1,0 +1,90 @@
+include util.mak
+
+CPP=arm-none-eabi-gcc
+CC=arm-none-eabi-gcc
+OBJDUMP=arm-none-eabi-objdump
+OBJCOPY=arm-none-eabi-objcopy
+
+#
+# select target:  Nucleo STM32F103
+#
+MCU_CFLAGS = -mcpu=cortex-m3 -mfloat-abi=soft -D__F103x
+MCU_LDFLAGS = -T ../common/system/stm32f10x.ld -mcpu=cortex-m3 -mfloat-abi=soft -D__F103x
+MCU_SRC = stm32f10x_isr_vector \
+	    system_init_f103x
+
+
+CFLAGS= -c -g -static -std=gnu99 -O0 $(MCU_CFLAGS)
+CFLAGS+=-fno-common
+
+LDFLAGS=$(MCU_LDFLAGS) -nostartfiles
+INCL_KEY=-I
+DIR_KEY=-B
+
+INCL_PATH = \
+	$(TOP_DIR)/../common/include \
+	$(TOP_DIR)/../common/include/devs \
+	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/fw \
+	$(TOP_DIR)/src/system \
+	$(TOP_DIR)/src
+
+# source files directories list:
+SRC_PATH = \
+	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/fw \
+	$(TOP_DIR)/src/system \
+	$(TOP_DIR)/src
+
+LIB_NAMES = \
+	gcc \
+	c \
+	m
+
+VPATH = $(SRC_PATH)
+
+SOURCES = $(MCU_SRC) \
+	system_handlers \
+	gcc_startup \
+	gcc_newlib \
+	vprintfmt \
+	uart \
+	fwmem \
+	fwmain
+
+OBJ_FILES = $(addsuffix .o,$(SOURCES))
+COMMONNAME = qleika
+ELFFILE = $(COMMONNAME).elf
+DUMPFILE = $(COMMONNAME).dump
+LSTFILE = $(COMMONNAME).lst
+BINFILE = $(COMMONNAME).bin
+
+all: qleika
+
+.PHONY: $(ELFFILE)
+
+qleika: $(ELFFILE) $(DUMPFILE)
+
+$(DUMPFILE): $(ELFFILE)
+	echo $(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)
+	$(OBJDUMP) --disassemble-all --disassemble-zeroes --section=.text --section=.text.isr_vector --section=.data $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$@)
+	$(OBJDUMP) -S $(addprefix $(ELF_DIR)/,$<) > $(addprefix $(ELF_DIR)/,$(LSTFILE))
+	$(OBJCOPY) -O binary $(addprefix $(ELF_DIR)/,$<) $(addprefix $(ELF_DIR)/,$(BINFILE))
+
+$(ELFFILE): $(OBJ_FILES)
+	$(ECHO) $(CPP) $(LDFLAGS) $(addprefix $(OBJ_DIR)/,$(OBJ_FILES)) -o $(addprefix $(ELF_DIR)/,$@) $(addprefix -l,$(LIB_NAMES))
+	$(CPP) $(LDFLAGS) $(addprefix $(OBJ_DIR)/,$(OBJ_FILES)) -o $(addprefix $(ELF_DIR)/,$@) $(addprefix -l,$(LIB_NAMES))
+	$(ECHO) "\n  ELF-file has been built successfully.\n"
+
+%.o: %.cpp
+	$(ECHO) $(CPP) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(CPP) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+
+%.o: %.c
+	$(ECHO) $(CC) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(CC) $(CFLAGS) $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+
+%.o: %.s
+	$(ECHO) $(CC) $(CFLAGS) -D__ASSEMBLY__=1 $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+	$(CC) $(CFLAGS) -D__ASSEMBLY__=1 $(addprefix $(INCL_KEY),$(INCL_PATH)) $< -o $(addprefix $(OBJ_DIR)/,$@)
+

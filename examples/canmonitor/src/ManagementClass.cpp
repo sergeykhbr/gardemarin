@@ -120,10 +120,8 @@ void ManagementClass::update() {
         drawErrorCodeLine(4, CAN1);
         drawDebugLog();
         if (read_uint32("can1", "mode") != 3) {
-            disp0_->clearLines(150, 90, RGB16_BLACK);
-            disp0_->outputText24Line("CAN1 Rx:", 5, 0, 0xBFE6, 0x0000);
-            disp0_->outputText24Line(" ErrCnt:", 6, 0, 0xFAAA, 0x0000);
-            estate_ = State_CanListener;
+            estate_ = State_CanListenerWithLog;
+            updateCnt_ = 0;
         }
         break;
     default:;
@@ -172,7 +170,7 @@ void ManagementClass::drawCan1InjectorMode() {
 
     t1 = read_uint32("inj0", "cnt");
     snprintf_lib(tstr, static_cast<int>(sizeof(tstr)), "%d         ", t1);
-    disp0_->outputText24Line("Inj98/1: ", 3, 1, 0xFBBB, 0x0000);
+    disp0_->outputText24Line("Inj98/1 ", 3, 1, 0xFBBB, 0x0000);
     disp0_->outputText24Line(tstr, 3, 9, 0xFBBB, 0xAC00);
 
 }

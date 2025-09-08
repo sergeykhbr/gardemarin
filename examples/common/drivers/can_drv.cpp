@@ -166,21 +166,17 @@ CanDriver::CanDriver(const char *name, int busid) : FwObject(name),
     dbgmsg_[CPU_A1].buf[1] = '1';
     dbgmsg_[CPU_A2].buf[0] = 'A';
     dbgmsg_[CPU_A2].buf[1] = '2';
+    dbgmsg_[CPU_B1].buf[0] = 'B';
+    dbgmsg_[CPU_B1].buf[1] = '1';
+    dbgmsg_[CPU_B2].buf[0] = 'B';
+    dbgmsg_[CPU_B2].buf[1] = '2';
     dbgmsg_[CPU_D1].buf[0] = 'D';
     dbgmsg_[CPU_D1].buf[1] = '1';
+    dbgmsg_[CPU_D2].buf[0] = 'D';
+    dbgmsg_[CPU_D2].buf[1] = '2';
 
     msg_history_.pos = 0;
     msg_history_.total = 0;
-    /*msg_history_.pos = 3;
-    msg_history_.total = 2;
-    for (int i = 0; i < 30; i++) {
-        msg_history_.buf[0][i] = 'A';
-        msg_history_.buf[1][i] = 'B';
-        msg_history_.buf[2][i] = 'C';
-    }
-    msg_history_.buf[0][30] = '\0';
-    msg_history_.buf[1][30] = '\0';
-    msg_history_.buf[2][30] = '\0';*/
 
     mode_.make_int8(0);
     pgm_.make_int8(-1);
@@ -364,15 +360,24 @@ void CanDriver::handleInterrupt(int *argv) {
             case 0x25:
                 cpuidx = CPU_A2;
                 break;
+            case 0xA6:
+                cpuidx = CPU_B1;
+                break;
+            case 0x26:
+                cpuidx = CPU_B2;
+                break;
             case 0xA8:
                 cpuidx = CPU_D1;
+                break;
+            case 0x28:
+                cpuidx = CPU_D2;
                 break;
             default:;
             }
             msg = &dbgmsg_[cpuidx];
             for (uint8_t i = 0; i < f->dlc; i++) {
                 if (msg->cnt >= static_cast<int>(sizeof(msg->buf) - 1)) {
-                    continue;
+                    break;
                 }
                 msg->buf[msg->cnt++] = f->data.s8[i];
                 msg->buf[msg->cnt] = 0;

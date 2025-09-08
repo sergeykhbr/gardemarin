@@ -108,11 +108,14 @@ class CanDriver : public FwObject,
         CPU_M2,
         CPU_A1,
         CPU_A2,
+        CPU_B1,
+        CPU_B2,
         CPU_D1,
+        CPU_D2,
         CPU_Total
     };
     struct DebugMessageType {
-        char buf[64];
+        char buf[32];
         int cnt;
     };
     DebugMessageType dbgmsg_[CPU_Total];
