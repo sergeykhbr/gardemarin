@@ -66,8 +66,8 @@ SOURCES = stm32f4xx_isr_vector \
 	uart_drv \
 	can_drv \
 	rtc_drv \
-	display_st7789 \
 	display_spi \
+	display_spi_f4xx \
 	can_injector \
 	fwmem \
 	fwapi \

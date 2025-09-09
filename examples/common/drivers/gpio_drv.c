@@ -23,6 +23,15 @@ void gpio_pin_as_input(const gpio_pin_type *p,
                         uint32_t pushpull) {
     uint32_t t1;
 
+#if __F103x
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    // [3:2] = 00 General purpose output push-pull
+    // [1:0] = 00 Input mode, max speed 10 MHz
+    t1 |= (0x0 << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
+
+#else
     // 00 input; 01 output; 10 alternate; 11 analog
     t1 = read32(&p->port->MODER);
     t1 &= ~(0x3 << 2*p->pinidx);
@@ -39,6 +48,7 @@ void gpio_pin_as_input(const gpio_pin_type *p,
     t1 &= ~(0x3 << 2*p->pinidx);
     t1 |= pushpull << 2*p->pinidx;
     write32(&p->port->PUPDR, t1);
+#endif
 }
 
 void gpio_pin_as_output(const gpio_pin_type *p,
@@ -47,6 +57,15 @@ void gpio_pin_as_output(const gpio_pin_type *p,
                         uint32_t pushpull) {
     uint32_t t1;
 
+#if __F103x
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    // [3:2] = 00 General purpose output push-pull
+    // [1:0] = 01 Output mode, max speed 10 MHz
+    t1 |= (0x1 << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
+
+#else
     // 00 input; 01 output; 10 alternate; 11 analog
     t1 = read32(&p->port->MODER);
     t1 &= ~(0x3 << 2*p->pinidx);
@@ -70,6 +89,7 @@ void gpio_pin_as_output(const gpio_pin_type *p,
     t1 &= ~(0x3 << 2*p->pinidx);
     t1 |= pushpull << 2*p->pinidx;
     write32(&p->port->PUPDR, t1);
+#endif
 }
 
 void gpio_pin_as_alternate(const gpio_pin_type *p,
@@ -77,6 +97,15 @@ void gpio_pin_as_alternate(const gpio_pin_type *p,
 
     uint32_t t1;
 
+#if __F103x
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    // [3:2] = 10 Alternate push-pull
+    // [1:0] = 00  (alternate could be enabled only when = 00)
+    t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
+
+#else
     // 00 input; 01 output; 10 alternate; 11 analog
     t1 = read32(&p->port->MODER);
     t1 &= ~(0x3 << 2*p->pinidx);
@@ -87,15 +116,19 @@ void gpio_pin_as_alternate(const gpio_pin_type *p,
     t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
     t1 |= (ADx << ((p->pinidx & 0x7) * 4));
     write32(&p->port->AFR[p->pinidx >> 3], t1);
+#endif
 }
 
 void gpio_pin_as_analog(const gpio_pin_type *p) {
     uint32_t t1;
 
+#if __F103x
+#else
     // 00 input; 01 output; 10 alternate; 11 analog
     t1 = read32(&p->port->MODER);
     t1 |= (0x3 << 2*p->pinidx);
     write32(&p->port->MODER, t1);
+#endif
 }
 
 void gpio_pin_set(const gpio_pin_type *p) {
@@ -103,7 +136,11 @@ void gpio_pin_set(const gpio_pin_type *p) {
 }
 
 void gpio_pin_clear(const gpio_pin_type *p) {
+#if __F103x
+    write32(&p->port->BRR, (1 << p->pinidx));
+#else
     write16(&p->port->BSRRH, (1 << p->pinidx));
+#endif
 }
 
 uint32_t gpio_pin_get(const gpio_pin_type *p) {

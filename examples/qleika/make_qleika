@@ -14,17 +14,19 @@ MCU_SRC = stm32f10x_isr_vector \
 	    system_init_f103x
 
 
-CFLAGS= -c -g -static -O0 $(MCU_CFLAGS)
+CFLAGS= -c -g -static -Os $(MCU_CFLAGS)
 CFLAGS+=-fno-common
 
 LDFLAGS=$(MCU_LDFLAGS) -nostartfiles
 INCL_KEY=-I
 DIR_KEY=-B
 
+
 INCL_PATH = \
 	$(TOP_DIR)/../common/include \
 	$(TOP_DIR)/../common/include/devs \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/drivers \
 	$(TOP_DIR)/../common/fw \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/src
@@ -32,12 +34,14 @@ INCL_PATH = \
 # source files directories list:
 SRC_PATH = \
 	$(TOP_DIR)/../common/system \
+	$(TOP_DIR)/../common/drivers \
 	$(TOP_DIR)/../common/fw \
 	$(TOP_DIR)/src/system \
 	$(TOP_DIR)/src
 
 LIB_NAMES = \
 	gcc \
+	stdc++ \
 	c \
 	m
 
@@ -50,7 +54,17 @@ SOURCES = $(MCU_SRC) \
 	vprintfmt \
 	uart \
 	gpio_drv \
+	display_spi \
+	display_spi_f10x \
 	fwmem \
+	fwapi \
+	fwattribute \
+	fwobject \
+	fwkernelgen \
+	fwfifo \
+	dbc \
+	app_handlers \
+	app_fwkernel \
 	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))

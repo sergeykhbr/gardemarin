@@ -18,8 +18,11 @@
 #include <stdio.h>
 #include <mcu.h>
 #include <uart.h>
+#include <fwapi.h>
+#include <vprintfmt.h>
 #include <gpio_drv.h>
 #include "gpio_cfg.h"
+#include <RawInterface.h>
 
 extern int system_clock_hz();
 
@@ -73,6 +76,27 @@ extern "C" void uart_early_init() {
     write16(&UART1->CR3, 0);
 }
 
+static void *iraw_ = 0;
+
+extern "C" int uartdrv_putchar(int ch, void *putdat) {
+    RawInterface *iraw = reinterpret_cast<RawInterface *>(putdat);
+    char tbuf[4] = {static_cast<char>(ch), 0};
+    if (iraw) {
+        iraw->WriteData(tbuf, 1);
+    }
+    return 0;
+}
+
+extern "C" void uart_printf(const char *fmt, ...) {
+    if (iraw_ == 0) {
+        iraw_ = fw_get_object_interface("uart1", "RawInterface");
+    }
+    va_list ap;
+    va_start(ap, fmt);
+    vprintfmt_lib((f_putch)uartdrv_putchar, iraw_, fmt, ap);
+    va_end(ap);
+}
+
 
 extern "C" void SysTick_Handler() {
     SysTick_registers_type *systick = (SysTick_registers_type *)SysTick_BASE;
@@ -108,9 +132,9 @@ void init_systick() {
 
 
 extern "C" int fwmain(int argcnt, char *args[]) {
-    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
-
     gpio_pin_as_output(&CFG_PIN_LED1, 0, 0, 0);
+
+    fw_init();
 
     int cnt_z = 0;
     int cycle_cnt= 0;
@@ -121,16 +145,6 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     init_systick();
 
     while(1) {
-        if (cnt_z != global_cnt) {
-            //uart_printk("Hello World %d!\r\n", global_cnt);
-            cnt_z = global_cnt;
-
-            t1 = read32(&RCC->CR);
-            //uart_printk("RCC_CR %08x\r\n", t1);
-
-            //t1 = read32(&FLASH->ACR);
-            //uart_printk("FLASH_ACR %08x\r\n", t1);
-        }
     }
     return 0;
 }

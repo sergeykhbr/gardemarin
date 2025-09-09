@@ -25,26 +25,11 @@
  *        as the first element in the single linked list of FwObjects.
  */
 AppKernelClass::AppKernelClass(const char *name) : KernelClassGeneric(name),
-    uart1_("uart1"),
-    rtc_("rtc"),
-    relais0_("relais0", 0),
-    relais1_("relais1", 1),
-    ledrbw_("ledrbw"),
-    can1_("can1", 0),
-    can2_("can2", 1),
-    scales_("scales"),
-    uled0_("uled0"),
-    ubtn0_("ubtn0"),
-    adc1_("adc1"),
-    hbrg0_("hbrg0", 0),
-    hbrg1_("hbrg1", 1),
-    hbrg2_("hbrg2", 2),
-    hbrg3_("hbrg3", 3),
-    temp0_("temp0"),
-    soil0_("soil0"),
-    settings_("usrset")
+    //uled0_("uled0"),
+    //ubtn0_("ubtn0"),
+    disp0_("disp0")
 {
-    version_.make_uint32(0x20240804);
+    version_.make_uint32(0x20250812);
     output_.make_int32(0);
 }
 

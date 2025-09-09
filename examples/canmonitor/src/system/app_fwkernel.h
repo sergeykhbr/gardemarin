@@ -21,7 +21,7 @@
 #include "can_injector.h"
 #include "user_led.h"
 #include "user_btn.h"
-#include "display_spi.h"
+#include <display_spi_f4xx.h>
 
 class AppKernelClass : public KernelClassGeneric {
  public:
@@ -32,10 +32,12 @@ class AppKernelClass : public KernelClassGeneric {
 
  private:
     /** @brief Kernel Version attribute */
+    UartDriver uart1_;
+    RtcDriver rtc_;
     CanDriver can1_;
     CanDriver can2_;
     CanInjectorDriver injector0_;
     UserLedDriver uled0_;
     UserButtonDriver ubtn0_;
-    DisplaySPI disp0_;
+    DisplaySPI_F4xx disp0_;
 };

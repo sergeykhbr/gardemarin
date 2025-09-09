@@ -81,7 +81,5 @@ class KernelClassGeneric : public FwObject {
     FwAttribute version_;
     OutputControlAttribute output_;    // enable/disable specific attribute periodic output
 
-    UartDriver uart1_;
-    RtcDriver rtc_;
     DbcConverter dbc_;        // CAN database converter
 };

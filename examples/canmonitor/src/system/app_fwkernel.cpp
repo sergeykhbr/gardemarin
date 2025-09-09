@@ -25,6 +25,8 @@
  *        as the first element in the single linked list of FwObjects.
  */
 AppKernelClass::AppKernelClass(const char *name) : KernelClassGeneric(name),
+    uart1_("uart1"),
+    rtc_("rtc"),
     can1_("can1", 0),
     can2_("can2", 1),
     injector0_("inj0"),

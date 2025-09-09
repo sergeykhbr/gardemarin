@@ -38,6 +38,8 @@ class AppKernelClass : public KernelClassGeneric {
 
  private:
     /** @brief Kernel Version attribute */
+    UartDriver uart1_;
+    RtcDriver rtc_;
     RelaisDriver relais0_;
     RelaisDriver relais1_;
     LedStripDriver ledrbw_;

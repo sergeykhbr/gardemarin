@@ -16,20 +16,21 @@
 
 #pragma once
 
-typedef struct gpio_pin_type {
-    GPIO_registers_type *port;
-    int pinidx;
-} gpio_pin_type;
+#include <fwkernelgen.h>
+#include "user_led.h"
+#include "user_btn.h"
+#include <display_spi_f10x.h>
 
+class AppKernelClass : public KernelClassGeneric {
+ public:
+    explicit AppKernelClass(const char *name);
 
-void gpio_pin_as_input(const gpio_pin_type *p,
-                        uint32_t speed,
-                        uint32_t pushpull);
-void gpio_pin_as_output(const gpio_pin_type *p,
-                        uint32_t odrain,
-                        uint32_t speed,
-                        uint32_t pushpull);
-void gpio_pin_as_alternate(const gpio_pin_type *p,
-                           uint32_t ADx);
-void gpio_pin_set(const gpio_pin_type *p);
-void gpio_pin_clear(const gpio_pin_type *p);
+    // FwObject interface:
+    //virtual void PostInit() override;
+
+ private:
+    /** @brief Kernel Version attribute */
+    //UserLedDriver uled0_;
+    //UserButtonDriver ubtn0_;
+    DisplaySPI_F10x disp0_;
+};

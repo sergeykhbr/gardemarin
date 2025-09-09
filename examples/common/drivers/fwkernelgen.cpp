@@ -27,8 +27,6 @@ KernelClassGeneric::KernelClassGeneric(const char *name) : FwObject(name),
     targetConfig_(this, "TargetConfig"),
     version_("Version"),
     output_(this, "Output"),
-    uart1_("uart1"),
-    rtc_("rtc"),
     dbc_("dbc")
 {
     version_.make_uint32(0x20240804);

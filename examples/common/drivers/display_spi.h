@@ -24,6 +24,7 @@
 #include <IrqInterface.h>
 #include <DisplayInterface.h>
 #include <gpio_drv.h>
+#include <spi.h>
 
 class DisplaySPI : public FwObject,
                    public IrqHandlerInterface,
@@ -43,6 +44,11 @@ class DisplaySPI : public FwObject,
     virtual void clearLines(int start, int total, uint16_t clr);
     virtual void outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
     virtual void outputText16Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
+
+ protected:
+    virtual void init_GPIO() = 0;
+    virtual void init_SPI() = 0;
+    virtual SPI_registers_type *spi_bar() = 0;
 
  protected:
     virtual void outputTextLine(const uint8_t *arr, uint8_t fontsz,
@@ -70,5 +76,10 @@ class DisplaySPI : public FwObject,
     } estate_;
     int8_t bitCnt_;
     uint8_t buffer_[4096];
-};
 
+ protected:
+    gpio_pin_type DISPLAY_RES;
+    gpio_pin_type DISPLAY_SCK;
+    gpio_pin_type DISPLAY_SDA;
+    gpio_pin_type DISPLAY_DC;
+};
