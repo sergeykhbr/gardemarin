@@ -15,52 +15,50 @@
  */
 
 #include "display_spi_f10x.h"
+#include "../gpio_cfg.h"
 
 void DisplaySPI_F10x::init_GPIO() {
-    // PD[7] = DISPLAY_RES AF0 output
-    // PC[12] = SPI3_MOSI  AF6 -> AF0 output
-    // PC[11] = SPI3_MISO  AF0      AF0 output: command/data control
-    // PC[10] = SPI3_SCK   AF6 -> AF0 output
-    DISPLAY_RES = {(GPIO_registers_type *)GPIOD_BASE, 7};  // 88 PD5_SPI_CS3 (error in name PD7_..)
-    DISPLAY_SCK = {(GPIO_registers_type *)GPIOC_BASE, 10}; // 78 SPI3_SCK
-    DISPLAY_SDA = {(GPIO_registers_type *)GPIOC_BASE, 12}; // 80 SPI3_MOSI
-    DISPLAY_DC = {(GPIO_registers_type *)GPIOC_BASE, 11};  // 79 SPI3_MISO. Data/command
+    AFIO_registers_type *afio = (AFIO_registers_type *)AFIO_BASE;
+    // Display SPI1
+    //     [PB5] SPI1 MOSI            (alternate)
+    //     [PB4] CMD_DATA (SPI1 MISO) (Output)
+    //     [PB3] SPI1_SCK             (alternate)
+    //     [PA15] RST (SPI_NSS)       (Output)
+    DISPLAY_RES = CFG_PIN_DISPLAY_RES;
+    DISPLAY_SCK = CFG_PIN_DISPLAY_SCK;
+    DISPLAY_SDA = CFG_PIN_DISPLAY_SDA;
+    DISPLAY_DC = CFG_PIN_DISPLAY_DC;
 
-
-    // Setup SPI interface. Use bitband instead of SPI3 controller because 
-    // non-standard 25-bits transactions:
-    //   PD[7]  = DISPLAY_RES/PD7_SPI_CS3   AF6 -> AF0 output
-    //   PC[12] = DISPLAY_SDA/SPI3_MOSI     AF6 -> AF0 output
-    //   PC[11] = DISPLAY_DC/SPI3_MISO      AF6 -> AF0 output: command/data control (disable SPI Rx if SPI controller is used)
-    //   PC[10] = DISPLAY_SCK/SPI3_SCK      AF6 -> AF0 output
     gpio_pin_as_output(&DISPLAY_RES,
                        GPIO_NO_OPEN_DRAIN,
                        GPIO_MEDIUM,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_set(&DISPLAY_RES);   // reset: active LOW
 
-    // SCK AF6 = SPI3
     gpio_pin_as_alternate(&DISPLAY_SCK, 6);
 
-    // Data/command:
     gpio_pin_as_output(&DISPLAY_DC,
                        GPIO_NO_OPEN_DRAIN,
                        GPIO_MEDIUM,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_set(&DISPLAY_DC);
 
-    // SDA AF6 = SPI3
     gpio_pin_as_alternate(&DISPLAY_SDA, 6);
+
+    // [PA7]SPI1_REMAP=0; [PB5] SPI1_REMAP=1
+    uint32_t t1 = read32(&afio->MAPR);
+    t1 |= (1 << 0);            // [0] SPI1rEMAP
+    write32(&afio->MAPR, t1);
 }
 
 void DisplaySPI_F10x::init_SPI() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
-    // SPI3 clock on APB1 = 144/4 = 36 MHz
-    uint32_t t1 = read32(&RCC->APB1ENR);
-    t1 |= (1 << 15);            // APB1[15] SPI3EN
-    write32(&RCC->APB1ENR, t1);
+    // SPI clock on APB2 = 72 MHz
+    uint32_t t1 = read32(&RCC->APB2ENR);
+    t1 |= (1 << 12);            // APB2[12] SPI1EN
+    write32(&RCC->APB2ENR, t1);
 
-    // SPI3 master, transmit-only
+    // SPI master, transmit-only
     uint16_t t2;
     t2 = (0 << 7)    // [7] TXEIE: Tx buffer empty IRQ
        | (0 << 6)    // [6] RXNEIE: Rx buffer not empty IRQ
@@ -81,7 +79,7 @@ void DisplaySPI_F10x::init_SPI() {
        | (1 << 8)     // [8] SSI: Internal Slave select
        | (0 << 7)     // [7] LSBFIRST: 0=MSB tranmit first, 1=LSB
        | (0 << 6)     // [6] SPE: SPI enable
-       | (4 << 3)     // [5:3] BR[2:0]: Baud rate control: 0-Fpclk/2, 1=Fpclk/4, 2=Fpclk/8, ...,4=Fpclk/32, ..,  7=Fpclk/256
+       | (5 << 3)     // [5:3] BR[2:0]: Baud rate control: 0-Fpclk/2, 1=Fpclk/4, 2=Fpclk/8, ...,4=Fpclk/32, ..,  7=Fpclk/256
        | (1 << 2)     // [2] MSTR: Master selection
        | (1 << 1)     // [1] CPOL: Clock polarity: 0=CK to 0 when idle, 1=when idle
        | (1 << 0);    // [0] CPHA: Clock phase: 0=the first clock transition is the first data capture edge

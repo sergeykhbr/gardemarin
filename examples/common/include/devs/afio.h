@@ -13,19 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 #pragma once
 
-#include "display_spi.h"
+#include <inttypes.h>
 
+/**
+  Alternate function GPIO registers 
+ */
+#ifdef __F103x
 
-class DisplaySPI_F10x : public DisplaySPI {
- public:
-    DisplaySPI_F10x(const char *name) : DisplaySPI(name) {}
+typedef struct AFIO_registers_type
+{
+    volatile uint32_t EVCR;         // 0x00
+    volatile uint32_t MAPR;         // 0x04
+    volatile uint32_t EXTICR[4];    // 0x08, 0x0C, 0x10, 0x14
+    volatile uint32_t MAPR2;        // 0x18
+} AFIO_registers_type;
 
- protected:
-    virtual void init_GPIO();
-    virtual void init_SPI();
-    virtual SPI_registers_type *spi_bar() { return (SPI_registers_type *)SPI1_BASE; }
-};
+#else
 
-
+#endif

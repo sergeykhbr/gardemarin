@@ -21,6 +21,7 @@
 #include <nvic.h>
 #include <syscfg.h>
 #include <rcc.h>
+#include <afio.h>  // STM32f10x
 #include <pwr.h>
 #include <flash.h>
 #include <gpio.h>
