@@ -36,8 +36,6 @@ typedef struct RCC_registers_type
     volatile uint32_t APB1ENR;       // 0x1C RCC APB1 peripheral clock enable register
     volatile uint32_t BDCR;          // 0x20 RCC Backup domain control register
     volatile uint32_t CSR;           // 0x24 RCC clock control & status register
-    volatile uint32_t AHBRSTR;       // 0x28 RCC AHB peripheral reset register
-    volatile uint32_t CFGR2;         // 0x2C RCC clock configuration register
 } RCC_registers_type;
 
 #else

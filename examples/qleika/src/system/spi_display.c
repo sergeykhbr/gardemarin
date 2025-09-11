@@ -125,6 +125,7 @@ void display_init() {
     AFIO_registers_type *afio = (AFIO_registers_type *)AFIO_BASE;
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SPI_registers_type *SPI = (SPI_registers_type *)SPI1_BASE;
+    uint32_t t1;
 
     // Display SPI1
     //     [PB5] SPI1 MOSI            (alternate)
@@ -141,16 +142,17 @@ void display_init() {
 
     gpio_pin_as_output(&CFG_PIN_DISPLAY_DC,
                        GPIO_NO_OPEN_DRAIN,
-                       GPIO_MEDIUM,
+                       GPIO_VERY_FAST,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_set(&CFG_PIN_DISPLAY_DC);
 
     gpio_pin_as_alternate(&CFG_PIN_DISPLAY_SDA, 6);
-
+#if 0
     // [PA7]SPI1_REMAP=0; [PB5] SPI1_REMAP=1
-    uint32_t t1 = read32(&afio->MAPR);
+    t1 = read32(&afio->MAPR);
     t1 |= (1 << 0);            // [0] SPI1REMAP
     write32(&afio->MAPR, t1);
+#endif
 
 
     // SPI clock on APB2 = 72 MHz
@@ -179,7 +181,7 @@ void display_init() {
        | (1 << 8)     // [8] SSI: Internal Slave select
        | (0 << 7)     // [7] LSBFIRST: 0=MSB tranmit first, 1=LSB
        | (0 << 6)     // [6] SPE: SPI enable
-       | (4 << 3)     // [5:3] BR[2:0]: Baud rate control: 0-Fpclk/2, 1=Fpclk/4, 2=Fpclk/8, ...,4=Fpclk/32, ..,  7=Fpclk/256
+       | (5 << 3)     // [5:3] BR[2:0]: Baud rate control: 0-Fpclk/2, 1=Fpclk/4, 2=Fpclk/8, ...,4=Fpclk/32, ..,  7=Fpclk/256
        | (1 << 2)     // [2] MSTR: Master selection
        | (1 << 1)     // [1] CPOL: Clock polarity: 0=CK to 0 when idle, 1=when idle
        | (1 << 0);    // [0] CPHA: Clock phase: 0=the first clock transition is the first data capture edge

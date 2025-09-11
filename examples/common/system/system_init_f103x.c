@@ -83,6 +83,7 @@ void system_init(void)
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     SCB_registers_type *SCB = (SCB_registers_type *)SCB_BASE;
     FLASH_registers_type *FLASH = (FLASH_registers_type *)FLASH_R_BASE;
+    AFIO_registers_type *AFIO = (AFIO_registers_type *)AFIO_BASE;
     uint32_t t1;
 
 
@@ -212,6 +213,16 @@ void system_init(void)
         | (1 << 2)     // PA
         | (1 << 0);    // [0] AFIOEN Alternate function I/O clock enable
     write32(&RCC->APB2ENR, t1);
+
+#if 0
+    // Disable JTAG SW only
+    // [26:24] SWJCFG: 000 JTAG+DP (reset); 001=JTAG+SW no NJTRST; 010=SW; 100=both Off
+    t1 = read32(&AFIO->MAPR);
+    t1 &= ~(0x7 << 24);
+    t1 |= (0x2 << 24);
+    write32(&AFIO->MAPR, t1);
+#endif
+
 
     setup_nvic();
 }

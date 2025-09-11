@@ -70,11 +70,11 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     display_splash_screen();
 
     gpio_pin_as_output(&CFG_PIN_LED1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_RES, GPIO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_SCK, GPIO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_DC, GPIO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_SDA, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-
+    /*gpio_pin_as_output(&CFG_PIN_DISPLAY_RES, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_DISPLAY_SCK, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_DISPLAY_DC, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_DISPLAY_SDA, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
+    */
     while(1) {
         if (sec_z != time_sec_) {
              sec_z = time_sec_;
@@ -82,17 +82,9 @@ extern "C" int fwmain(int argcnt, char *args[]) {
 
             // Switch User LED
             if (time_sec_ & 0x1) {
-                gpio_pin_set(&CFG_PIN_LED1);
-    gpio_pin_set(&CFG_PIN_DISPLAY_RES);
-    gpio_pin_set(&CFG_PIN_DISPLAY_SCK);
-    gpio_pin_set(&CFG_PIN_DISPLAY_DC);
-    gpio_pin_set(&CFG_PIN_DISPLAY_SDA);
+                gpio_pin_set(&CFG_PIN_LED1);  // LED is OFF
             } else {
-                gpio_pin_clear(&CFG_PIN_LED1);
-    gpio_pin_clear(&CFG_PIN_DISPLAY_RES);
-    gpio_pin_clear(&CFG_PIN_DISPLAY_SCK);
-    gpio_pin_clear(&CFG_PIN_DISPLAY_DC);
-    gpio_pin_clear(&CFG_PIN_DISPLAY_SDA);
+                //gpio_pin_clear(&CFG_PIN_LED1);  // LED is ON
             }
         }
     }
