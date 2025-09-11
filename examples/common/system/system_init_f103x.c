@@ -214,5 +214,4 @@ void system_init(void)
     write32(&RCC->APB2ENR, t1);
 
     setup_nvic();
-    uart_early_init();
 }

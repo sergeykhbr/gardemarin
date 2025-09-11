@@ -13,27 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
-#include <fwapi.h>
-#include <uart.h>
-#include "app_fwkernel.h"
-#include <string.h>
-#include <new>
+#include <inttypes.h>
 
-/**
- * @brief Kernel module constructor. Instance of this KernelClass registered
- *        as the first element in the single linked list of FwObjects.
- */
-AppKernelClass::AppKernelClass(const char *name) : KernelClassGeneric(name),
-    //uled0_("uled0"),
-    //ubtn0_("ubtn0"),
-    disp0_("disp0")
-{
-    version_.make_uint32(0x20250812);
-    output_.make_int32(0);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void display_init();
+void display_clearScreen();
+void display_clearLines(int start, int total, uint16_t clr);
+void display_draw_point(uint16_t x, uint16_t y, uint32_t clr);
+void display_outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
+void display_splash_screen();
+
+#ifdef __cplusplus
 }
-
-extern "C" void kernel_init() {
-    new (fw_malloc(sizeof(AppKernelClass))) AppKernelClass("kernel");
-}
+#endif
 

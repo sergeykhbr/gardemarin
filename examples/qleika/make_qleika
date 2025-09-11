@@ -14,7 +14,7 @@ MCU_SRC = stm32f10x_isr_vector \
 	    system_init_f103x
 
 
-CFLAGS= -c -g -static -Os $(MCU_CFLAGS)
+CFLAGS= -c -g -static -O0 $(MCU_CFLAGS)
 CFLAGS+=-fno-common
 
 LDFLAGS=$(MCU_LDFLAGS) -nostartfiles
@@ -52,19 +52,10 @@ SOURCES = $(MCU_SRC) \
 	gcc_startup \
 	gcc_newlib \
 	vprintfmt \
-	uart \
 	gpio_drv \
-	display_spi \
-	display_spi_f10x \
-	fwmem \
-	fwapi \
-	fwattribute \
-	fwobject \
-	fwkernelgen \
-	fwfifo \
-	dbc \
 	app_handlers \
-	app_fwkernel \
+	fwmem \
+	spi_display \
 	fwmain
 
 OBJ_FILES = $(addsuffix .o,$(SOURCES))

@@ -75,7 +75,7 @@ class DisplaySPI : public FwObject,
         Sleep
     } estate_;
     int8_t bitCnt_;
-    uint8_t buffer_[4096];
+    uint8_t buffer_[4*1024];
 
  protected:
     gpio_pin_type DISPLAY_RES;

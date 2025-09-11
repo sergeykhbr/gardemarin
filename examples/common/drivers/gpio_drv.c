@@ -24,11 +24,24 @@ void gpio_pin_as_input(const gpio_pin_type *p,
     uint32_t t1;
 
 #if __F103x
-    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    // MODE[1:0]
+    //      00 Input mode
+    //      01 Output mode, max speed 10 MHz
+    //      10 Output mode, max speed 2 MHz
+    //      11 Output mode, max speed 50 MHz
+    // CNF[3:2] Input mode (MODE[1:0] == 00)
+    //       00 Analog mode
+    //       01 Floating input (reset state)
+    //       10 Input with pull-up/pull-down
+    //       11 reserved
+    // CNF[3:2] Output mode (MODE[1:0] != 00)
+    //       00 General purpose output push-pull
+    //       01 general puspose output Open-drain
+    //       10 Alternate function output push-pull
+    //       11 Alternate function output open-drain
+    t1 = read32(&p->port->CR[p->pinidx >> 3]);
     t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
-    // [3:2] = 00 General purpose output push-pull
-    // [1:0] = 00 Input mode, max speed 10 MHz
-    t1 |= (0x0 << ((p->pinidx & 0x7) * 4));
+    t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
     write32(&p->port->CR[p->pinidx >> 3], t1);
 
 #else
@@ -58,11 +71,33 @@ void gpio_pin_as_output(const gpio_pin_type *p,
     uint32_t t1;
 
 #if __F103x
+    // MODE[1:0]
+    //      00 Input mode
+    //      01 Output mode, max speed 10 MHz
+    //      10 Output mode, max speed 2 MHz
+    //      11 Output mode, max speed 50 MHz
+    // CNF[3:2] Input mode (MODE[1:0] == 00)
+    //       00 Analog mode
+    //       01 Floating input (reset state)
+    //       10 Input with pull-up/pull-down
+    //       11 reserved
+    // CNF[3:2] Output mode (MODE[1:0] != 00)
+    //       00 General purpose output push-pull
+    //       01 general puspose output Open-drain
+    //       10 Alternate function output push-pull
+    //       11 Alternate function output open-drain
+    uint32_t mode = 0x1;
+    if (speed == GPIO_VERY_FAST) {
+        mode = 0x3;   // 50 MHz
+    } else if (speed == GPIO_SLOW) {
+        mode = 0x2;    // 2 MHz
+    }
+    if (odrain == GPIO_OPEN_DRAIN) {
+        mode |= 0x4;
+    }
     t1 = read32(&p->port->CR[p->pinidx>>3]);
     t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
-    // [3:2] = 00 General purpose output push-pull
-    // [1:0] = 01 Output mode, max speed 10 MHz
-    t1 |= (0x1 << ((p->pinidx & 0x7) * 4));
+    t1 |= (mode << ((p->pinidx & 0x7) * 4));
     write32(&p->port->CR[p->pinidx >> 3], t1);
 
 #else
@@ -98,11 +133,24 @@ void gpio_pin_as_alternate(const gpio_pin_type *p,
     uint32_t t1;
 
 #if __F103x
+    // MODE[1:0]
+    //      00 Input mode
+    //      01 Output mode, max speed 10 MHz
+    //      10 Output mode, max speed 2 MHz
+    //      11 Output mode, max speed 50 MHz
+    // CNF[3:2] Input mode (MODE[1:0] == 00)
+    //       00 Analog mode
+    //       01 Floating input (reset state)
+    //       10 Input with pull-up/pull-down
+    //       11 reserved
+    // CNF[3:2] Output mode (MODE[1:0] != 00)
+    //       00 General purpose output push-pull
+    //       01 general puspose output Open-drain
+    //       10 Alternate function output push-pull
+    //       11 Alternate function output open-drain
     t1 = read32(&p->port->CR[p->pinidx>>3]);
     t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
-    // [3:2] = 10 Alternate push-pull
-    // [1:0] = 00  (alternate could be enabled only when = 00)
-    t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
+    t1 |= (0xB << ((p->pinidx & 0x7) * 4));
     write32(&p->port->CR[p->pinidx >> 3], t1);
 
 #else
@@ -123,6 +171,24 @@ void gpio_pin_as_analog(const gpio_pin_type *p) {
     uint32_t t1;
 
 #if __F103x
+    // MODE[1:0]
+    //      00 Input mode
+    //      01 Output mode, max speed 10 MHz
+    //      10 Output mode, max speed 2 MHz
+    //      11 Output mode, max speed 50 MHz
+    // CNF[3:2] Input mode (MODE[1:0] == 00)
+    //       00 Analog mode
+    //       01 Floating input (reset state)
+    //       10 Input with pull-up/pull-down
+    //       11 reserved
+    // CNF[3:2] Output mode (MODE[1:0] != 00)
+    //       00 General purpose output push-pull
+    //       01 general puspose output Open-drain
+    //       10 Alternate function output push-pull
+    //       11 Alternate function output open-drain
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
 #else
     // 00 input; 01 output; 10 alternate; 11 analog
     t1 = read32(&p->port->MODER);
