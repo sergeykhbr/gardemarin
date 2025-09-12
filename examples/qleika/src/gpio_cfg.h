@@ -78,19 +78,17 @@ static const gpio_pin_type CFG_PIN_WATER_LEVEL_DATA = {
 //     [PB3] SPI1_SCK             (alternate)
 //     [PA15] RST (SPI_NSS)       (Output)
 static const gpio_pin_type CFG_PIN_DISPLAY_RES = {
-//    (GPIO_registers_type *)GPIOA_BASE, 15
-    (GPIO_registers_type *)GPIOA_BASE, 4
+//    (GPIO_registers_type *)GPIOA_BASE, 4
+    (GPIO_registers_type *)GPIOA_BASE, 6
 };
 static const gpio_pin_type CFG_PIN_DISPLAY_SCK = {
-//    (GPIO_registers_type *)GPIOB_BASE, 3
     (GPIO_registers_type *)GPIOA_BASE, 5
 };
 static const gpio_pin_type CFG_PIN_DISPLAY_DC = {
-//    (GPIO_registers_type *)GPIOB_BASE, 4
-    (GPIO_registers_type *)GPIOA_BASE, 6
+//    (GPIO_registers_type *)GPIOA_BASE, 6
+    (GPIO_registers_type *)GPIOA_BASE, 4
 };
 static const gpio_pin_type CFG_PIN_DISPLAY_SDA = {
-//    (GPIO_registers_type *)GPIOB_BASE, 5
     (GPIO_registers_type *)GPIOA_BASE, 7
 };
 

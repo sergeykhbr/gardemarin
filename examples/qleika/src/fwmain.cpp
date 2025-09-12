@@ -83,7 +83,14 @@ extern "C" int fwmain(int argcnt, char *args[]) {
             // Switch User LED
             if (time_sec_ & 0x1) {
                 gpio_pin_set(&CFG_PIN_LED1);  // LED is OFF
+                display_clearLines(28, 8, 0xcd13);
+
+                display_drawLinesBuffer(40);
+                display_drawLinesBuffer(49);
+                display_drawLinesBuffer(60);
+
             } else {
+                display_clearLines(20, 8, 0xabab);
                 //gpio_pin_clear(&CFG_PIN_LED1);  // LED is ON
             }
         }

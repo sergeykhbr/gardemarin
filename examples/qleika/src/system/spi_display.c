@@ -20,8 +20,9 @@
 
 extern int getTickTime();
 
-static uint8_t buffer_[1*1024];
+static uint8_t buffer_[4*1024];
 
+#pragma pack(1)
 static const uint8_t gsc_st7789_ascii_2412[95][36] =
 {      
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /*" ", 0*/
@@ -120,6 +121,7 @@ static const uint8_t gsc_st7789_ascii_2412[95][36] =
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x02, 0x30, 0x00, 0x06, 0x1F, 0xF7, 0xFC, 0x00, 0x14, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /*"}", 93*/
     {0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x60, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x00, 0x00, 0x20, 0x00, 0x00, 0x10, 0x00, 0x00, 0x08, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x10, 0x00, 0x00}, /*"~", 94*/
 };
+#pragma pack()
 
 void display_init() {
     AFIO_registers_type *afio = (AFIO_registers_type *)AFIO_BASE;
@@ -134,7 +136,7 @@ void display_init() {
     //     [PA15] RST (SPI_NSS)       (Output)
     gpio_pin_as_output(&CFG_PIN_DISPLAY_RES,
                        GPIO_NO_OPEN_DRAIN,
-                       GPIO_MEDIUM,
+                       GPIO_SLOW,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_set(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
 
@@ -142,7 +144,7 @@ void display_init() {
 
     gpio_pin_as_output(&CFG_PIN_DISPLAY_DC,
                        GPIO_NO_OPEN_DRAIN,
-                       GPIO_VERY_FAST,
+                       GPIO_SLOW,
                        GPIO_NO_PUSH_PULL);
     gpio_pin_set(&CFG_PIN_DISPLAY_DC);
 
@@ -181,7 +183,7 @@ void display_init() {
        | (1 << 8)     // [8] SSI: Internal Slave select
        | (0 << 7)     // [7] LSBFIRST: 0=MSB tranmit first, 1=LSB
        | (0 << 6)     // [6] SPE: SPI enable
-       | (5 << 3)     // [5:3] BR[2:0]: Baud rate control: 0-Fpclk/2, 1=Fpclk/4, 2=Fpclk/8, ...,4=Fpclk/32, ..,  7=Fpclk/256
+       | (6 << 3)     // [5:3] BR[2:0]: Baud rate control: 0-Fpclk/2, 1=Fpclk/4, 2=Fpclk/8, ...,4=Fpclk/32, ..,  7=Fpclk/256
        | (1 << 2)     // [2] MSTR: Master selection
        | (1 << 1)     // [1] CPOL: Clock polarity: 0=CK to 0 when idle, 1=when idle
        | (1 << 0);    // [0] CPHA: Clock phase: 0=the first clock transition is the first data capture edge
@@ -290,7 +292,7 @@ static uint8_t show_char(const uint8_t *arr,
 void display_clearScreen() {
     int m = 240 * 320 * 2 / sizeof(buffer_);     // total times
     int n = 240 * 320 * 2 % sizeof(buffer_);     // the last
-    memset(buffer_, 0x0, sizeof(buffer_));
+    memset(buffer_, 0x00, sizeof(buffer_));
 
     // ST7789. COLS 240; ROWS = 320
     write_cmd_poll(0x2A);                       // column address set command
@@ -352,6 +354,41 @@ void display_clearLines(int start, int total, uint16_t clr) {
     }
 }
 
+void display_drawLinesBuffer(int lineidx) {
+    // 2 Bytes per pixel
+    // 240 pix per line
+    //
+    int m = 8;     // total lines
+    int total = m*240;
+    uint16_t clr = 0xff33;
+
+    uint32_t *buf32 = (uint32_t *)(buffer_);
+    uint32_t rgb_x2 = (clr >> 8) | (clr << 8);
+    rgb_x2 = (rgb_x2 << 16) | rgb_x2;
+    for (int i = 0; i < total/2; i++) {
+        buf32[i] = rgb_x2;
+    }
+
+    // ST7789. COLS 240; ROWS = 320
+    write_cmd_poll(0x2A);                       // column address set command
+    write_data_poll((lineidx >> 8) & 0xFF);        // start address msb
+    write_data_poll((lineidx >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((lineidx + m - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((lineidx + m - 1) >> 0) & 0xFF);   // end address lsb
+
+    write_cmd_poll(0x2B);                       // row address set command
+    write_data_poll((0x00 >> 8) & 0xFF);        // start address msb
+    write_data_poll((0x00 >> 0) & 0xFF);        // start address lsb
+//    write_data_poll(((320 - 1) >> 8) & 0xFF);   // end address msb
+//    write_data_poll(((320 - 1) >> 0) & 0xFF);   // end address lsb
+    write_data_poll(((240 - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((240 - 1) >> 0) & 0xFF);   // end address lsb
+    write_cmd_poll(0x2C);                       // memory write command
+    for (int i = 0; i < total*2; i++) {
+        write_data_poll(buffer_[i]);
+    }
+}
+
 
 static void outputTextLine(const uint8_t *arr,
                                 uint8_t fontsz,
@@ -361,7 +398,6 @@ static void outputTextLine(const uint8_t *arr,
                                 uint32_t clr,
                                 uint32_t bkgclr) {
     uint8_t font = fontsz; // font 24
-    uint16_t len = (uint16_t)(strlen(str));
     uint16_t x = 0;
     uint16_t y = 0;
 #if 1
@@ -371,14 +407,14 @@ static void outputTextLine(const uint8_t *arr,
     x = 80 + symbpos * (fontsz >> 1);
     y = (fontsz + (fontsz >> 2)) * linepos;
 #else
-    uint16_t ROWS = 320;//240;
+    uint16_t ROWS = 240;
     uint16_t COLS = 240;
 #endif
 
-    while ((len != 0) && (*str <= '~') && (*str >= ' ')) {
+    while ((*str <= '~') && (*str >= ' ')) {
         if (x >= (COLS - (font / 2))) {
             x = 0;
-            y += (uint8_t)font;
+            y += (uint16_t)font;
             break;
         }
         if (y >= (ROWS - font)) {
@@ -387,9 +423,8 @@ static void outputTextLine(const uint8_t *arr,
         }
 
         show_char(arr, x, y, *str, font, clr, bkgclr);
-        x += (uint8_t)(font / 2);
+        x += (uint16_t)(font / 2);
         str++;
-        len--;
     }
 }
 
@@ -403,14 +438,14 @@ void display_splash_screen() {
     int t1;
     gpio_pin_clear(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
     t1 = getTickTime();
-    while ((t1 + 2) < getTickTime()) {}   // 1 tick = 10 ms
-    system_delay_ns(20000000);         // > 10 us
+    while ((t1 + 2) > getTickTime()) {}   // 1 tick = 10 ms
+    // > 10 us
     gpio_pin_set(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
 
     // Sleep out command (DC=0)
     write_cmd_poll(0x11);           // 0x11 sleep-out command
     t1 = getTickTime();
-    while ((t1 + 15) < getTickTime()) {}   // 1 tick = 10 ms
+    while ((t1 + 15) > getTickTime()) {}   // 1 tick = 10 ms
     // > 120 ms
     // Idle mode off command (DC=0)
     write_cmd_poll(0x38);           // 0x38 idle mode off command
@@ -674,8 +709,9 @@ void display_splash_screen() {
 
     display_clearScreen();
 
-    display_outputText24Line("       qLeika      ", 3, 0, 0x07E0, 0x7813);
-    display_outputText24Line("     developed     ", 5, 0, 0xffff, 0x0000);
-    display_outputText24Line("         by        ", 6, 0, 0xffff, 0x0000);
-    display_outputText24Line("     sergeykhbr    ", 7, 0, 0xffff, 0x0000);
+    display_outputText24Line("abcdefgh12345sfkjaf", 0, 0, 0x07E0, 0x7813);
+    display_outputText24Line("1111111qLeika111111", 3, 0, 0x07E0, 0x7813);
+    display_outputText24Line("22222developed22222", 5, 0, 0xffff, 0x0000);
+    display_outputText24Line("333333333by33333333", 6, 0, 0xffff, 0x0000);
+    display_outputText24Line("7777sergeykhbr7777", 7, 0, 0xffff, 0x0000);
 }

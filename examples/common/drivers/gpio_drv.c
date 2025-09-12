@@ -199,6 +199,7 @@ void gpio_pin_as_analog(const gpio_pin_type *p) {
 
 void gpio_pin_set(const gpio_pin_type *p) {
     write16(&p->port->BSRRL, (1 << p->pinidx));
+
 }
 
 void gpio_pin_clear(const gpio_pin_type *p) {

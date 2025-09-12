@@ -25,6 +25,7 @@ extern "C" {
 void display_init();
 void display_clearScreen();
 void display_clearLines(int start, int total, uint16_t clr);
+void display_drawLinesBuffer(int start);
 void display_draw_point(uint16_t x, uint16_t y, uint32_t clr);
 void display_outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
 void display_splash_screen();
