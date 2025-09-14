@@ -23,6 +23,7 @@
 #include <gpio_drv.h>
 #include <spi_display.h>
 #include "gpio_cfg.h"
+#include "task.h"
 
 extern int system_clock_hz();
 
@@ -63,6 +64,7 @@ void init_systick() {
 
 extern "C" int fwmain(int argcnt, char *args[]) {
     int sec_z = 0;
+    task_data_type task_data;
     EnableIrqGlobal();
     init_systick();
 
@@ -70,28 +72,29 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     display_splash_screen();
 
     gpio_pin_as_output(&CFG_PIN_LED1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    /*gpio_pin_as_output(&CFG_PIN_DISPLAY_RES, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_SCK, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_DC, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_DISPLAY_SDA, GPIO_NO_OPEN_DRAIN, GPIO_VERY_FAST, GPIO_NO_PUSH_PULL);
-    */
+    gpio_pin_as_input(&CFG_PIN_WATER_LEVEL_DATA, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_RELAIS_PWR, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_RELAIS_PUMP, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_set(&CFG_PIN_RELAIS_PWR);
+
+    task_init(&task_data);
+
     while(1) {
         if (sec_z != time_sec_) {
              sec_z = time_sec_;
 
+             task_update(&task_data, time_sec_);
 
             // Switch User LED
-            if (time_sec_ & 0x1) {
+            if (time_sec_ & 0x8) {
                 gpio_pin_set(&CFG_PIN_LED1);  // LED is OFF
-                display_clearLines(28, 8, 0xcd13);
 
-                display_drawLinesBuffer(40);
-                display_drawLinesBuffer(49);
-                display_drawLinesBuffer(60);
+                gpio_pin_set(&CFG_PIN_RELAIS_PUMP);
 
             } else {
-                display_clearLines(20, 8, 0xabab);
                 //gpio_pin_clear(&CFG_PIN_LED1);  // LED is ON
+
+                gpio_pin_clear(&CFG_PIN_RELAIS_PUMP);
             }
         }
     }

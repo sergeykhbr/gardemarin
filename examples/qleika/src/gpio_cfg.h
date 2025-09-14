@@ -44,10 +44,15 @@ static const gpio_pin_type CFG_PIN_AIR_UART2_RX = {
 };
 
 // Pump Relais
-//     [PA8] (output)
+//     [PA11] (output) (yellow)
 static const gpio_pin_type CFG_PIN_RELAIS_PUMP = {
-    (GPIO_registers_type *)GPIOA_BASE, 8
+    (GPIO_registers_type *)GPIOA_BASE, 12
 };
+// [PA12] (output) (brown)
+static const gpio_pin_type CFG_PIN_RELAIS_PWR = {
+    (GPIO_registers_type *)GPIOA_BASE, 11
+};
+
 
 //    PA9 USART1_TX  (USART1_REMAP=0); PB6 (USART1_REMAP=1);
 //    PA10 USART1_RX  (USART1_REMAP=0); PB7 (USART1_REMAP=1);
@@ -59,16 +64,13 @@ static const gpio_pin_type CFG_PIN_UART1_RX = {
 };
 
 // XKC Y25 T12V Liquide level sensor (5-12V)
-//     [PA11] Brown VCC (5V)         => PA11 (output to enable/disable 5V VCC sensor)
-//     [PA12]  Yellow  OUT           => PA12 (input)
+//     [+5V] Brown VCC (5V)         (output to enable/disable 5V VCC sensor)
+//     [PA8]  Yellow  OUT           (input)
 //            Blue GND
 //            Black MODE (positive/negative selection) -> floating/GND
 //
-static const gpio_pin_type CFG_PIN_WATER_LEVEL_PWR = {
-    (GPIO_registers_type *)GPIOA_BASE, 11
-};
 static const gpio_pin_type CFG_PIN_WATER_LEVEL_DATA = {
-    (GPIO_registers_type *)GPIOA_BASE, 12
+    (GPIO_registers_type *)GPIOA_BASE, 8
 };
 
 

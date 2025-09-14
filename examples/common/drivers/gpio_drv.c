@@ -41,7 +41,7 @@ void gpio_pin_as_input(const gpio_pin_type *p,
     //       11 Alternate function output open-drain
     t1 = read32(&p->port->CR[p->pinidx >> 3]);
     t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
-    t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
+    t1 |= (0x4 << ((p->pinidx & 0x7) * 4));
     write32(&p->port->CR[p->pinidx >> 3], t1);
 
 #else

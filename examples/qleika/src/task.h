@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Sergey Khabarov, sergeykhbr@gmail.com
+ *  Copyright 2025 Sergey Khabarov, sergeykhbr@gmail.com
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,38 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#pragma once
 
-#include <inttypes.h>
-
+#include <prjtypes.h>
+#include <mcu.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void display_init();
-void display_clearScreen();
-void display_clearLines(int start, int total, uint16_t clr);
-void display_draw_point(uint16_t x, uint16_t y, uint32_t clr);
-void display_outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
-void display_splash_screen();
+typedef enum estate_type {
+    State_Idle,
+    State_SplashScreen,
+    State_SelfTest,
+    State_Wait
+} estate_type;
+
+typedef enum water_level_state {
+    WaterLevel_Off,
+    WaterLevel_Measure,
+    WaterLevel_Empty,
+    WaterLevel_Full
+} water_level_state;
+
+typedef struct task_data_type {
+    estate_type state;
+    estate_type state_next;
+    int wait_cnt;
+    water_level_state water_sensor;
+} task_data_type;
+
+void task_init(task_data_type *data);
+void task_update(task_data_type *data, int sec);
 
 #ifdef __cplusplus
 }
 #endif
-

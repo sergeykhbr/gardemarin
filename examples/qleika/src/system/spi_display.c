@@ -23,7 +23,7 @@ extern int getTickTime();
 static uint8_t buffer_[4*1024];
 
 #pragma pack(1)
-static const uint8_t gsc_st7789_ascii_2412[95][36] =
+static const uint8_t ascii_2412[95][36] =
 {      
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /*" ", 0*/
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x80, 0x38, 0x0F, 0xFE, 0x38, 0x0F, 0x80, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /*"!", 1*/
@@ -250,45 +250,6 @@ void display_draw_point(uint16_t x, uint16_t y, uint32_t color) {
     write_data_poll((color >> 0) & 0xFF);
 }
 
-static uint8_t show_char(const uint8_t *arr,
-                              uint16_t x,
-                              uint16_t y,
-                              uint8_t chr,
-                              uint8_t size,
-                              uint32_t clr,
-                              uint32_t bkgclr) {
-    uint8_t temp, t, t1;
-    uint16_t y0 = y;
-    uint8_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size / 2);
-    int symb_w = 36;
-    if (size == 16) {
-        symb_w = 16;
-    } else if (size == 12) {
-        symb_w = 12;
-    }
-
-    chr = chr - ' ';
-    for (t = 0; t < csize; t++) {
-        temp = arr[chr*symb_w + t];
-        for (t1 = 0; t1 < 8; t1++)
-        {
-            if ((temp & 0x80) != 0) {
-                display_draw_point(x, y, clr);
-            } else {
-                display_draw_point(x, y, bkgclr);
-            }
-            temp <<= 1;
-            y++;
-            if ((y - y0) == size) {
-                y = y0;
-                x++;
-                break;
-            }
-        }
-    }
-    return 0;
-}
-
 void display_clearScreen() {
     int m = 240 * 320 * 2 / sizeof(buffer_);     // total times
     int n = 240 * 320 * 2 % sizeof(buffer_);     // the last
@@ -354,37 +315,51 @@ void display_clearLines(int start, int total, uint16_t clr) {
     }
 }
 
-void display_drawLinesBuffer(int lineidx) {
-    // 2 Bytes per pixel
-    // 240 pix per line
-    //
-    int m = 8;     // total lines
-    int total = m*240;
-    uint16_t clr = 0xff33;
+static void symb2buff(const uint8_t *chbuf,
+                      int w,
+                      int h,
+                      uint16_t clr,
+                      uint16_t bkg)
+{
+    uint16_t *buf16 = (uint16_t *)buffer_;
+    uint16_t *buf16_z  = buf16;
+    uint8_t symb;
+    for (int col = 0; col < w; col++) {
+        for (int row = 0; row < h; row++) {
+            if ((row & 0x7) == 0) {
+                symb = *chbuf++;
+            }
+            if (symb & 0x80) {
+                *buf16 = clr;
+            } else {
+                *buf16 = bkg;
+            }
+            symb <<= 1;
+            buf16++;
+        }
 
-    uint32_t *buf32 = (uint32_t *)(buffer_);
-    uint32_t rgb_x2 = (clr >> 8) | (clr << 8);
-    rgb_x2 = (rgb_x2 << 16) | rgb_x2;
-    for (int i = 0; i < total/2; i++) {
-        buf32[i] = rgb_x2;
+        // column inversion
+        buf16 = buf16_z + h;
+        buf16_z = buf16;
     }
+}
+
+void display_char24x12(int lineidx, int colidx, int w, int h) {
 
     // ST7789. COLS 240; ROWS = 320
     write_cmd_poll(0x2A);                       // column address set command
-    write_data_poll((lineidx >> 8) & 0xFF);        // start address msb
-    write_data_poll((lineidx >> 0) & 0xFF);        // start address lsb
-    write_data_poll(((lineidx + m - 1) >> 8) & 0xFF);   // end address msb
-    write_data_poll(((lineidx + m - 1) >> 0) & 0xFF);   // end address lsb
+    write_data_poll(((lineidx) >> 8) & 0xFF);        // start address msb
+    write_data_poll(((lineidx) >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((lineidx + h - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((lineidx + h - 1) >> 0) & 0xFF);   // end address lsb
 
     write_cmd_poll(0x2B);                       // row address set command
-    write_data_poll((0x00 >> 8) & 0xFF);        // start address msb
-    write_data_poll((0x00 >> 0) & 0xFF);        // start address lsb
-//    write_data_poll(((320 - 1) >> 8) & 0xFF);   // end address msb
-//    write_data_poll(((320 - 1) >> 0) & 0xFF);   // end address lsb
-    write_data_poll(((240 - 1) >> 8) & 0xFF);   // end address msb
-    write_data_poll(((240 - 1) >> 0) & 0xFF);   // end address lsb
+    write_data_poll((colidx >> 8) & 0xFF);        // start address msb
+    write_data_poll((colidx >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((colidx + w - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((colidx + w - 1) >> 0) & 0xFF);   // end address lsb
     write_cmd_poll(0x2C);                       // memory write command
-    for (int i = 0; i < total*2; i++) {
+    for (int i = 0; i < h*w*sizeof(uint16_t); i++) {
         write_data_poll(buffer_[i]);
     }
 }
@@ -397,39 +372,37 @@ static void outputTextLine(const uint8_t *arr,
                                 int symbpos,
                                 uint32_t clr,
                                 uint32_t bkgclr) {
+    // size 24
+    // ascii_2412[95][36]
+    //   24 x 12 = 288 bits / 8 = 36 bytes
     uint8_t font = fontsz; // font 24
-    uint16_t x = 0;
-    uint16_t y = 0;
-#if 1
-    // visible orientation
-    uint16_t ROWS = 240;
-    uint16_t COLS = 320;
-    x = 80 + symbpos * (fontsz >> 1);
-    y = (fontsz + (fontsz >> 2)) * linepos;
-#else
-    uint16_t ROWS = 240;
-    uint16_t COLS = 240;
-#endif
+    uint16_t w = 12;
+    uint16_t h = 24;
+    uint16_t col = 12*symbpos;
+    uint16_t row = (24 + 6)*linepos;  // 24 + 6 interval between lines
+    uint16_t rgb_clr = (clr >> 8) | (clr << 8);
+    uint16_t rgb_bkg = (bkgclr >> 8) | (bkgclr << 8);
+    const uint8_t *chbuf;
+    if (fontsz == 16) {
+        w = 8;
+        h = 16;
+        col = 8*symbpos;
+        row = (16 + 4)*linepos;
+    }
 
     while ((*str <= '~') && (*str >= ' ')) {
-        if (x >= (COLS - (font / 2))) {
-            x = 0;
-            y += (uint16_t)font;
-            break;
-        }
-        if (y >= (ROWS - font)) {
-            y = x = 0;
-            break;
-        }
+        chbuf = ascii_2412[*str - ' '];
 
-        show_char(arr, x, y, *str, font, clr, bkgclr);
-        x += (uint16_t)(font / 2);
+        symb2buff(chbuf, w, h, rgb_clr, rgb_bkg);
+        display_char24x12(row, col, w, h);
+
+        col += w;
         str++;
     }
 }
 
 void display_outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) {
-    outputTextLine((const uint8_t *)(gsc_st7789_ascii_2412), 24,
+    outputTextLine((const uint8_t *)(ascii_2412), 24,
                     str, linepos, symbpos, clr, bkgclr);
 }
 
@@ -463,7 +436,7 @@ void display_splash_screen() {
     // 0x36 memory data access control command
     t1 = 0 << 7             // [7] 0=top to bottom; 1=bottom to top
        | 0 << 6             // [6] 0=left to right; 1=right to left
-       | 0 << 5             // [5] 0=column normal mode; 1=reverse mode
+       | 1 << 5             // [5] 0=column normal mode; 1=reverse mode
        | 0 << 4             // [4] 0=lcd refresh top to bottom; 1=bottom to top
        | 0 << 3             // [3] 0=rgb; 1=bgr
        | 0 << 2;            // [2] 0=lcd refresh left to right; 1=right to left
@@ -709,9 +682,8 @@ void display_splash_screen() {
 
     display_clearScreen();
 
-    display_outputText24Line("abcdefgh12345sfkjaf", 0, 0, 0x07E0, 0x7813);
-    display_outputText24Line("1111111qLeika111111", 3, 0, 0x07E0, 0x7813);
-    display_outputText24Line("22222developed22222", 5, 0, 0xffff, 0x0000);
-    display_outputText24Line("333333333by33333333", 6, 0, 0xffff, 0x0000);
-    display_outputText24Line("7777sergeykhbr7777", 7, 0, 0xffff, 0x0000);
+    display_outputText24Line("       qLeika       ", 2, 0, 0x07E0, 0x7813);
+    display_outputText24Line("     developed      ", 4, 0, 0xffff, 0x0000);
+    display_outputText24Line("        by          ", 5, 0, 0xffff, 0x0000);
+    display_outputText24Line("     sergeykhbr     ", 6, 0, 0xffff, 0x0000);
 }
