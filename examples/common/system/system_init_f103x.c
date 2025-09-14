@@ -17,6 +17,8 @@
 #include "prjtypes.h"
 #include <mcu.h>
 
+#ifdef __F103x
+
 extern void uart_early_init();
 uint32_t SystemCoreClock = 72000000;
 
@@ -226,3 +228,5 @@ void system_init(void)
 
     setup_nvic();
 }
+
+#endif // __F103x

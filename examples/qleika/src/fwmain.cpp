@@ -89,12 +89,12 @@ extern "C" int fwmain(int argcnt, char *args[]) {
             if (time_sec_ & 0x8) {
                 gpio_pin_set(&CFG_PIN_LED1);  // LED is OFF
 
-                gpio_pin_set(&CFG_PIN_RELAIS_PUMP);
+                //gpio_pin_set(&CFG_PIN_RELAIS_PUMP);
 
             } else {
                 //gpio_pin_clear(&CFG_PIN_LED1);  // LED is ON
 
-                gpio_pin_clear(&CFG_PIN_RELAIS_PUMP);
+                //gpio_pin_clear(&CFG_PIN_RELAIS_PUMP);
             }
         }
     }

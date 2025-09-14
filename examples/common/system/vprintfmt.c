@@ -19,6 +19,21 @@
 #include <string.h>
 #include "vprintfmt.h"
 
+typedef struct string_buffer_type {
+    char *pstr;
+    int len;
+    int pos;
+} string_buffer_type;
+
+int str_putchar(int ch, void *putdat) {
+    string_buffer_type *p = (string_buffer_type *)putdat;
+    if (p->pos < (p->len - 1)) {
+        p->pstr[p->pos++] = (char)ch;
+        p->pstr[p->pos] = 0;
+    }
+    return 0;
+}
+
 static void printnum(f_putch putch,
                      void *putdat,
                      uint64_t num,
@@ -221,24 +236,11 @@ signed_number:
             break;
         }
     }
+    return ((string_buffer_type *)putdat)->pos;
 }
 
-typedef struct string_buffer_type {
-    char *pstr;
-    int len;
-    int pos;
-} string_buffer_type;
-
-int str_putchar(int ch, void *putdat) {
-    string_buffer_type *p = (string_buffer_type *)putdat;
-    if (p->pos < p->len) {
-        p->pstr[p->pos++] = (char)ch;
-        p->pstr[p->pos] = 0;
-    }
-    return 0;
-}
-
-void snprintf_lib(char *buf, int len, const char *fmt, ...) {
+int snprintf_lib(char *buf, int len, const char *fmt, ...) {
+    int ret;
     string_buffer_type s;
     va_list ap;
     va_start(ap, fmt);
@@ -248,4 +250,5 @@ void snprintf_lib(char *buf, int len, const char *fmt, ...) {
     s.pos = 0;
     vprintfmt_lib((f_putch)str_putchar, &s, fmt, ap);
     va_end(ap);
+    return s.pos;
 }

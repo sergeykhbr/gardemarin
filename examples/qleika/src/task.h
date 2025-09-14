@@ -25,7 +25,9 @@ typedef enum estate_type {
     State_Idle,
     State_SplashScreen,
     State_SelfTest,
-    State_Wait
+    State_Wait,
+    State_NoWater,
+    State_Watering
 } estate_type;
 
 typedef enum water_level_state {
@@ -39,7 +41,9 @@ typedef struct task_data_type {
     estate_type state;
     estate_type state_next;
     int wait_cnt;
+    int state_changed_sec;
     water_level_state water_sensor;
+    char tstr[21];     // 20 symbols of font24 per  line
 } task_data_type;
 
 void task_init(task_data_type *data);

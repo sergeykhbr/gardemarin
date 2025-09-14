@@ -29,12 +29,12 @@ typedef void (*f_putch)(int, void *);
 
 
 void vprintfmt_lib(f_putch putch,
-                   void *putdat,
-                   const char *fmt,
-                   va_list ap);
+                  void *putdat,
+                  const char *fmt,
+                  va_list ap);
 
 
-void snprintf_lib(char *buf, int len, const char *fmt, ...);
+int snprintf_lib(char *buf, int len, const char *fmt, ...);
 
 #if defined(__cplusplus)
 }  // extern "C"

@@ -23,11 +23,32 @@
 #include <new>
 #include "app_tasks.h"
 
+#if 1
+#include <vprintfmt.h>
+
+void show_int(int val, int line, int col) {
+    // Length of "Watering in:" = 12. We have 8 symbol for numbers
+    char tstr1[21];
+    char tstr[21];
+    int szmax = 20 - col;
+    int sz = snprintf_lib(tstr1, szmax + 1, "%d", val);
+    for (int i = 0; i < szmax - sz; i++) {
+         tstr[i] = ' ';
+    }
+    for (int i = 0; i < sz; i++) {
+         tstr[szmax - sz + i] = tstr1[i];
+    }
+    tstr[szmax] = 0;
+    //display_outputText24Line("-=  1234", line, col, 0xffff, 0x0000); // clear number field
+}
+#endif
+
 extern "C" int fwmain(int argcnt, char *args[]) {
     TaskHandle_t handleTask1ms;
     TaskHandle_t handleTaskEpoch;
 
     fw_init();
+    show_int(15, 3, 12);
 
     EnableIrqGlobal();
 

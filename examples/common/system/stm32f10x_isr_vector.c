@@ -20,6 +20,7 @@
 
 extern char __stack_base[];
 
+#ifdef __F103x
 /**
  @brief The vector table.
  @details This relies on the linker script to place at correct location in memory.
@@ -124,3 +125,4 @@ DefaultISR(void) {
     }
 }
 
+#endif  // __F103x
