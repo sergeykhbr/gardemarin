@@ -51,6 +51,9 @@ void gpio_pin_as_output(const gpio_pin_type *p,
 
 void gpio_pin_as_alternate(const gpio_pin_type *p,
                            uint32_t ADx);
+#if __F103x
+void gpio_pin_as_alternate_open_drain(const gpio_pin_type *p);
+#endif
 
 void gpio_pin_as_analog(const gpio_pin_type *p);
 

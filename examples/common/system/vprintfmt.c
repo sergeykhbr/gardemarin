@@ -236,7 +236,6 @@ signed_number:
             break;
         }
     }
-    return ((string_buffer_type *)putdat)->pos;
 }
 
 int snprintf_lib(char *buf, int len, const char *fmt, ...) {

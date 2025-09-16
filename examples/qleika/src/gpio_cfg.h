@@ -95,14 +95,14 @@ static const gpio_pin_type CFG_PIN_DISPLAY_SDA = {
 };
 
 // VEML7700 I2C Light sensor
-//     [PB9] I2C1 SDA => PB9                             pull-up to 3.3V  (2.2-4.7 kOhm)
-//     [PB8] I2C1 SCL => PB8 (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
+//     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
+//     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
 //
 static const gpio_pin_type CFG_PIN_LUMEN_SCL = {
-    (GPIO_registers_type *)GPIOB_BASE, 8
+    (GPIO_registers_type *)GPIOB_BASE, 10
 };
 static const gpio_pin_type CFG_PIN_LUMEN_SDA = {
-    (GPIO_registers_type *)GPIOB_BASE, 9
+    (GPIO_registers_type *)GPIOB_BASE, 11
 };
 
 // Blue LED

@@ -167,6 +167,32 @@ void gpio_pin_as_alternate(const gpio_pin_type *p,
 #endif
 }
 
+#if __F103x
+void gpio_pin_as_alternate_open_drain(const gpio_pin_type *p) {
+
+    uint32_t t1;
+    // MODE[1:0]
+    //      00 Input mode
+    //      01 Output mode, max speed 10 MHz
+    //      10 Output mode, max speed 2 MHz
+    //      11 Output mode, max speed 50 MHz
+    // CNF[3:2] Input mode (MODE[1:0] == 00)
+    //       00 Analog mode
+    //       01 Floating input (reset state)
+    //       10 Input with pull-up/pull-down
+    //       11 reserved
+    // CNF[3:2] Output mode (MODE[1:0] != 00)
+    //       00 General purpose output push-pull
+    //       01 general puspose output Open-drain
+    //       10 Alternate function output push-pull
+    //       11 Alternate function output open-drain
+    t1 = read32(&p->port->CR[p->pinidx>>3]);
+    t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
+    t1 |= (0xF << ((p->pinidx & 0x7) * 4));
+    write32(&p->port->CR[p->pinidx >> 3], t1);
+}
+#endif
+
 void gpio_pin_as_analog(const gpio_pin_type *p) {
     uint32_t t1;
 
