@@ -16,6 +16,7 @@
 
 #include <gpio_drv.h>
 #include <spi_display.h>
+#include <i2c_veml7700.h>
 #include <vprintfmt.h>
 #include "task.h"
 #include "gpio_cfg.h"
@@ -64,6 +65,8 @@ void task_update(task_data_type *data, int sec) {
     case State_Wait:
         if (--data->wait_cnt <= 0) {
             data->state = data->state_next;
+            //data->lux = veml32_lux();
+            data->lux = 9500;
         }
         break;
     case State_SelfTest:
@@ -71,7 +74,8 @@ void task_update(task_data_type *data, int sec) {
         display_outputText24Line("Moisture:       34.4", 1, 0, 0xffff, 0x0000);
         display_outputText24Line("Air 2.5:        13.5", 2, 0, 0xffff, 0x0000);
         display_outputText24Line("Air 1.25:        5.5", 3, 0, 0xffff, 0x0000);
-        display_outputText24Line("Light:         10000", 4, 0, 0xffff, 0x0000);
+        display_outputText24Line("Light:", 4, 0, 0xffff, 0x0000);
+        show_int(data->lux, 4, 6);
         display_outputText24Line("                    ", 5, 0, 0xffff, 0x0000);
         // Clear other strings
         display_outputText24Line("                    ", 6, 0, 0xffff, 0x0000);
@@ -101,6 +105,10 @@ void task_update(task_data_type *data, int sec) {
     default:;
     }
 
+    if (data->state > State_SelfTest) {
+        data->lux = update_lux_raw();
+        show_int(data->lux, 4, 6);
+    }
 
 }
 

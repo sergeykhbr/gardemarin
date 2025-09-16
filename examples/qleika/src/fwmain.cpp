@@ -22,6 +22,7 @@
 #include <vprintfmt.h>
 #include <gpio_drv.h>
 #include <spi_display.h>
+#include <i2c_veml7700.h>
 #include "gpio_cfg.h"
 #include "task.h"
 
@@ -69,6 +70,8 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     init_systick();
 
     display_init();
+    veml7700_init();
+    //veml7700_configure();
     display_splash_screen();
 
     gpio_pin_as_output(&CFG_PIN_LED1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);

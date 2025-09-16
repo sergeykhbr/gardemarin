@@ -33,6 +33,7 @@
 #include <tim.h>
 #include <rtc.h>
 #include <spi.h>
+#include <i2c.h>
 
 
 #define FLASH_BASE            ((uint32_t)0x08000000) // FLASH (128 KB) base address in the alias region

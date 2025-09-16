@@ -22,12 +22,12 @@ extern "C" {
 #endif
 
 typedef enum estate_type {
-    State_Idle,
     State_SplashScreen,
     State_SelfTest,
     State_Wait,
     State_NoWater,
-    State_Watering
+    State_Watering,
+    State_Idle
 } estate_type;
 
 typedef enum water_level_state {
@@ -43,6 +43,7 @@ typedef struct task_data_type {
     int wait_cnt;
     int state_changed_sec;
     water_level_state water_sensor;
+    uint32_t lux;
     char tstr[21];     // 20 symbols of font24 per  line
 } task_data_type;
 
