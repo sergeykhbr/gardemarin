@@ -22,12 +22,12 @@
 extern "C" {
 #endif
 
-void veml7700_init();
+void i2c_init();
 void veml7700_configure();
-void veml7700_write(uint8_t reg, uint16_t value);
-uint16_t veml7700_read(uint8_t reg);
-uint32_t veml32_lux();
-uint16_t update_lux_raw();
+
+void update_lux();
+int is_lux_busy();
+uint16_t get_lux();
 
 #ifdef __cplusplus
 }

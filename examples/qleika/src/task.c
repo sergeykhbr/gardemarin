@@ -24,7 +24,8 @@
 void task_init(task_data_type *data) {
     data->state = State_SplashScreen;
     data->state_changed_sec = 0;
-    data->water_sensor = WaterLevel_Off;
+    data->raw.lux = 9500;
+    data->raw.water_level = 0;
 }
 
 void show_int(int val, int line, int col) {
@@ -43,19 +44,25 @@ void show_int(int val, int line, int col) {
     display_outputText24Line(tstr, line, col, 0xffff, 0x0000); // clear number field
 }
 
-static void set_state_idle(task_data_type *data, int sec) {
-    data->state_changed_sec = sec;
-    data->state = State_Idle;
-    display_outputText24Line("Watering in:        ", 5, 0, 0xffff, 0x0000);
+void udpate_raw_data(raw_meas_type *raw) {
+    // Light measurement
+    update_lux();
+    while (is_lux_busy()) {}
+    raw->lux = get_lux();
+
+    // water level
+    raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
 }
 
-static void set_state_no_water(task_data_type *data, int sec) {
+void set_state(task_data_type *data, int sec, estate_type state_next) {
+    data->state = state_next;
     data->state_changed_sec = sec;
-    data->state = State_NoWater;
-    display_outputText24Line("No Water            ", 5, 0, 0xffff, 0xa2a8);
 }
+
 
 void task_update(task_data_type *data, int sec) {
+    raw_meas_type raw;
+
     switch (data->state) {
     case State_SplashScreen:
         data->state = State_Wait;
@@ -64,51 +71,53 @@ void task_update(task_data_type *data, int sec) {
         break;
     case State_Wait:
         if (--data->wait_cnt <= 0) {
-            data->state = data->state_next;
-            //data->lux = veml32_lux();
-            data->lux = 9500;
+            set_state(data, sec, data->state_next);
         }
         break;
     case State_SelfTest:
         display_outputText24Line("T:              23.0", 0, 0, 0x07E0, 0x7813);
-        display_outputText24Line("Moisture:       34.4", 1, 0, 0xffff, 0x0000);
-        display_outputText24Line("Air 2.5:        13.5", 2, 0, 0xffff, 0x0000);
-        display_outputText24Line("Air 1.25:        5.5", 3, 0, 0xffff, 0x0000);
-        display_outputText24Line("Light:", 4, 0, 0xffff, 0x0000);
-        show_int(data->lux, 4, 6);
-        display_outputText24Line("                    ", 5, 0, 0xffff, 0x0000);
+        display_outputText24Line("Pressure:        956", 1, 0, 0xffff, 0x0000);
+        display_outputText24Line("Moisture:       34.4", 2, 0, 0xffff, 0x0000);
+        display_outputText24Line("Air 2.5:        13.5", 3, 0, 0xffff, 0x0000);
+        display_outputText24Line("Air 1.25:        5.5", 4, 0, 0xffff, 0x0000);
+        display_outputText24Line("Light:", 5, 0, 0xffff, 0x0000);
+        show_int(data->raw.lux, 5, 6);
+        display_outputText24Line("No Water            ", 6, 0, 0xffff, 0xa2a8);
         // Clear other strings
-        display_outputText24Line("                    ", 6, 0, 0xffff, 0x0000);
         display_outputText24Line("                    ", 7, 0, 0xffff, 0x0000);
 
-        if (gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA)) {
-            set_state_idle(data, sec);
-        } else {
-            set_state_no_water(data, sec);
-        }
-        break;
-    case State_NoWater:
-        if (gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA)) {
-            set_state_idle(data, sec);
-        }
-        break;
-    case State_Watering:
+        veml7700_configure();
+        set_state(data, sec, State_Idle);
         break;
     case State_Idle:
-        if (!gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA)) {
-            set_state_no_water(data, sec);
+        udpate_raw_data(&raw);
+    
+        if (raw.water_level != data->raw.water_level) {
+            // State is changed:
+            if (raw.water_level) {
+                display_outputText24Line("Watering in:        ", 6, 0, 0xffff, 0x0000);
+            } else {
+                display_outputText24Line("No Water            ", 6, 0, 0xffff, 0xa2a8);
+            }
         } else {
-            int t1 = sec - data->state_changed_sec;
-            show_int(t1, 5, 12);
+            if (raw.water_level) {
+                // show time to net watering
+                int t1 = sec - data->state_changed_sec;
+                show_int(t1, 6, 12);
+            } else {
+                // do nothing
+            }
         }
+    
+        if (raw.lux != data->raw.lux) {
+            show_int(raw.lux, 5, 6);
+        }
+   
+        data->raw = raw;
         break;
     default:;
     }
 
-    if (data->state > State_SelfTest) {
-        data->lux = update_lux_raw();
-        show_int(data->lux, 4, 6);
-    }
 
 }
 

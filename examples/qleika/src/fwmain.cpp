@@ -69,9 +69,8 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     EnableIrqGlobal();
     init_systick();
 
+    i2c_init();
     display_init();
-    veml7700_init();
-    //veml7700_configure();
     display_splash_screen();
 
     gpio_pin_as_output(&CFG_PIN_LED1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
