@@ -26,8 +26,10 @@ void i2c_init();
 void veml7700_configure();
 
 void update_lux();
+void reset_lux();
 int is_lux_busy();
-uint16_t get_lux();
+int is_lux_error();
+int get_lux();
 
 #ifdef __cplusplus
 }

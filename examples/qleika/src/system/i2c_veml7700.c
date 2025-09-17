@@ -46,6 +46,8 @@ void i2c_reset(I2C_registers_type *I2C) {
     write32(&I2C->CR1, (1 << 15));
     write32(&I2C->CR1, 0);
 
+    nvic_irq_clear(33);
+
     // [12] LAST
     // [11] DMAEN
     // [10] ITBUFEN.
@@ -130,12 +132,24 @@ void update_lux() {
     start_sequence();
 }
 
+void reset_lux() {
+    I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
+    i2c_reset(I2C);
+    estate_ = state_idle;
+}
+
 int is_lux_busy() {
     return estate_ != state_idle ? 1: 0;
 }
 
-uint16_t get_lux() {
-    return lux_raw_;
+int is_lux_error() {
+    return estate_ == state_error ? 1: 0;
+}
+
+int get_lux() {
+    int ret = (int)lux_raw_ * 672;
+    ret /= 10000;  // 0.0336 lx/bit resolution when GAIN=x2, for GAIN=x1 0.0672 lx/bit
+    return ret;
 }
 
 void i2c2_ev_handler() {

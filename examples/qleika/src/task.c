@@ -46,9 +46,13 @@ void show_int(int val, int line, int col) {
 
 void udpate_raw_data(raw_meas_type *raw) {
     // Light measurement
-    update_lux();
-    while (is_lux_busy()) {}
-    raw->lux = get_lux();
+    if (is_lux_error()) {
+        reset_lux();
+    } else {
+        update_lux();
+        while (is_lux_busy()) {}
+        raw->lux = get_lux();
+    }
 
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
