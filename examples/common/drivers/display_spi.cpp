@@ -792,7 +792,7 @@ void DisplaySPI::clearLines(int start, int total, uint16_t clr) {
 
 void DisplaySPI::outputTextLine(const uint8_t *arr,
                                 uint8_t fontsz,
-                                char *str,
+                                const char *str,
                                 int linepos,
                                 int symbpos,
                                 uint32_t clr,
@@ -830,12 +830,12 @@ void DisplaySPI::outputTextLine(const uint8_t *arr,
     }
 }
 
-void DisplaySPI::outputText16Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) {
+void DisplaySPI::outputText16Line(const char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) {
     outputTextLine(reinterpret_cast<const uint8_t *>(gsc_st7789_ascii_1608), 16,
                     str, linepos, symbpos, clr, bkgclr);
 }
 
-void DisplaySPI::outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) {
+void DisplaySPI::outputText24Line(const char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) {
     outputTextLine(reinterpret_cast<const uint8_t *>(gsc_st7789_ascii_2412), 24,
                     str, linepos, symbpos, clr, bkgclr);
 }

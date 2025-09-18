@@ -41,12 +41,12 @@ class DisplaySPI : public FwObject,
     // IDisplayInterface
     virtual void clearScreen();
     virtual void clearLines(int start, int total, uint16_t clr);
-    virtual void outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
-    virtual void outputText16Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
+    virtual void outputText24Line(const char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
+    virtual void outputText16Line(const char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr);
 
  protected:
     virtual void outputTextLine(const uint8_t *arr, uint8_t fontsz,
-                                char *str, int linepos,
+                                const char *str, int linepos,
                                 int symbpos,
                                 uint32_t clr, uint32_t bkgclr);
     virtual void starCounter(void *dev, int usec);  // resolution 100 ns

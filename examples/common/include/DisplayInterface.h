@@ -24,6 +24,6 @@ class DisplayInterface : public CommonInterface {
     virtual void clearScreen() = 0;
     virtual void clearLines(int start, int total, uint16_t clr) = 0;
     // Font Size 24, total 8 lines, 19 symbols per line
-    virtual void outputText24Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) = 0;
-    virtual void outputText16Line(char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) = 0;
+    virtual void outputText24Line(const char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) = 0;
+    virtual void outputText16Line(const char *str, int linepos, int symbpos, uint32_t clr, uint32_t bkgclr) = 0;
 };
