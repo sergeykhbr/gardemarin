@@ -147,13 +147,13 @@ void ManagementClass::drawCan1ListenerMode() {
 
     t1 = read_uint32("can1", "mode");
     if (t1 == 0) {
-        disp0_->outputText24Line("Bus OFF           ", 3, 1, 0xF7E7, 0x0000);
+        disp0_->outputText24Line(" Bus OFF            ", 3, 0, 0xF7E7, 0x0000);
     } else if (t1 == 2) {
-        disp0_->outputText24Line("Bus Listener      ", 3, 1, 0x47EB, 0x0000);
+        disp0_->outputText24Line(" Bus Listener       ", 3, 0, 0x47EB, 0x0000);
     } else if (t1 == 3) {
-        disp0_->outputText24Line("Bus Injector      ", 3, 1, 0x47EB, 0x0000);
+        disp0_->outputText24Line(" Bus Injector       ", 3, 0, 0x47EB, 0x0000);
     } else {
-        disp0_->outputText24Line("No Data           ", 3, 1, 0x6B6D, 0x0000);
+        disp0_->outputText24Line(" No Data            ", 3, 0, 0x6B6D, 0x0000);
     }
 }
 
@@ -189,11 +189,11 @@ void ManagementClass::drawCan2ListenerMode() {
 
     t1 = read_uint32("can2", "mode");
     if (t1 == 0) {
-        disp0_->outputText24Line("Bus OFF           ", 7, 1, 0xF7E7, 0x0000);
+        disp0_->outputText24Line(" Bus OFF            ", 7, 0, 0xF7E7, 0x0000);
     } else if (t1 == 2) {
-        disp0_->outputText24Line("Bus Listener      ", 7, 1, 0x47EB, 0x0000);
+        disp0_->outputText24Line(" Bus Listener       ", 7, 0, 0x47EB, 0x0000);
     } else {
-        disp0_->outputText24Line("No Data           ", 7, 1, 0x6B6D, 0x0000);
+        disp0_->outputText24Line(" No Data            ", 7, 0, 0x6B6D, 0x0000);
     }
 }
 

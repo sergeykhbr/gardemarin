@@ -724,6 +724,7 @@ uint8_t DisplaySPI::show_char(const uint8_t *arr,
     return 0;
 }
 
+
 void DisplaySPI::clearScreen() {
     size_t m = 240 * 320 * 2 / sizeof(buffer_);     // total times
     size_t n = 240 * 320 * 2 % sizeof(buffer_);     // the last
@@ -789,6 +790,60 @@ void DisplaySPI::clearLines(int start, int total, uint16_t clr) {
     }
 }
 
+void DisplaySPI::symb2buff(const uint8_t *chbuf,
+                      int w,
+                      int h,
+                      uint16_t clr,
+                      uint16_t bkg)
+{
+    //uint16_t *buf16 = (uint16_t *)buffer_;
+    uint16_t *buf16_z  = (uint16_t *)(buffer_ + w*h*sizeof(uint16_t));
+    uint16_t *buf16 = buf16_z - h;
+    uint8_t symb;
+    clr = (clr >> 8) | (clr << 8);
+    bkg = (bkg >> 8) | (bkg << 8);
+    for (int col = 0; col < w; col++) {
+        for (int row = 0; row < h; row++) {
+            if ((row & 0x7) == 0) {
+                symb = *chbuf++;
+            }
+            if (symb & 0x80) {
+                *buf16 = clr;
+            } else {
+                *buf16 = bkg;
+            }
+            symb <<= 1;
+            buf16++;
+        }
+
+        // column inversion
+        buf16_z -= h;
+        buf16 = buf16_z - h;
+    }
+}
+
+void DisplaySPI::display_char(int lineidx, int colidx, int w, int h) {
+
+    // ST7789. COLS 240; ROWS = 320
+    write_cmd_poll(0x2A);                       // column address set command
+    write_data_poll(((lineidx) >> 8) & 0xFF);        // start address msb
+    write_data_poll(((lineidx) >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((lineidx + h - 1) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((lineidx + h - 1) >> 0) & 0xFF);   // end address lsb
+
+    int x_end =  239 - colidx;
+    int x_start = (239 - (colidx + w - 1));
+    write_cmd_poll(0x2B);                       // row address set command
+    write_data_poll((x_start >> 8) & 0xFF);        // start address msb
+    write_data_poll((x_start >> 0) & 0xFF);        // start address lsb
+    write_data_poll(((x_end) >> 8) & 0xFF);   // end address msb
+    write_data_poll(((x_end) >> 0) & 0xFF);   // end address lsb
+    write_cmd_poll(0x2C);                       // memory write command
+    for (int i = 0; i < h*w*sizeof(uint16_t); i++) {
+        write_data_poll(buffer_[i]);
+    }
+}
+
 
 void DisplaySPI::outputTextLine(const uint8_t *arr,
                                 uint8_t fontsz,
@@ -797,36 +852,26 @@ void DisplaySPI::outputTextLine(const uint8_t *arr,
                                 int symbpos,
                                 uint32_t clr,
                                 uint32_t bkgclr) {
-    uint8_t font = fontsz; // font 24
-    uint16_t len = static_cast<uint16_t>(strlen(str));
-    uint16_t x = 0;
-    uint16_t y = 0;
-#if 1
-    // visible orientation
-    uint16_t ROWS = 240;
-    uint16_t COLS = 320;
-    x = 80 + symbpos * (fontsz >> 1);
-    y = (fontsz + (fontsz >> 2)) * linepos;
-#else
-    uint16_t ROWS = 320;//240;
-    uint16_t COLS = 240;
-#endif
+    const uint8_t *chbuf;
+    int col = symbpos * (fontsz >> 1);
+    int row = (fontsz + (fontsz >> 2)) * linepos;
 
-    while ((len != 0) && (*str <= '~') && (*str >= ' ')) {
-        if (x >= (COLS - (font / 2))) {
-            x = 0;
-            y += (uint8_t)font;
-            break;
-        }
-        if (y >= (ROWS - font)) {
-            y = x = 0;
-            break;
-        }
+    int bytes_per_symb = 36;
+    if (fontsz == 16) {
+        bytes_per_symb = 16;
+    } else if (fontsz == 12) {
+        bytes_per_symb = 12;
+    }
 
-        show_char(arr, x, y, *str, font, clr, bkgclr);
-        x += (uint8_t)(font / 2);
+
+    while ((*str <= '~') && (*str >= ' ')) {
+        chbuf = &arr[bytes_per_symb * (int)(*str - ' ')];
+
+        symb2buff(chbuf, fontsz/2, fontsz, clr, bkgclr);
+        display_char(row, col, fontsz/2, fontsz);
+
+        col += (uint8_t)(fontsz / 2);
         str++;
-        len--;
     }
 }
 

@@ -57,6 +57,12 @@ class DisplaySPI : public FwObject,
 
     virtual uint8_t draw_point(uint16_t x, uint16_t y, uint32_t clr);
     virtual uint8_t show_char(const uint8_t *arr, uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint32_t clr, uint32_t bkgclr);
+    virtual void symb2buff(const uint8_t *chbuf,
+                           int w,
+                           int h,
+                           uint16_t clr,
+                           uint16_t bkg);
+    virtual void display_char(int lineidx, int colidx, int w, int h);
     //virtual uint8_t show_string(uint16_t x, uint16_t y, char *str, uint16_t len, uint32_t clr, uint32_t bkgclr);
 
     enum EState {
