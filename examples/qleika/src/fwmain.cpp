@@ -23,6 +23,7 @@
 #include <gpio_drv.h>
 #include <spi_display.h>
 #include <i2c_veml7700.h>
+#include <dht22.h>
 #include "gpio_cfg.h"
 #include "task.h"
 
@@ -70,6 +71,7 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     init_systick();
 
     i2c_init();
+    dht_init();
     display_init();
     display_splash_screen();
 

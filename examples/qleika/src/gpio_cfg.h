@@ -114,11 +114,11 @@ static const gpio_pin_type CFG_PIN_LED1 = {
 
 // DHT22(AM2302 the same in a case) Temperature Humidity sensor (sampling period 2 sec)
 //     1 VDD (3.3-6V, typical 5V)
-//     [PB15] 2 DATA
+//     [A1] 2 DATA
 //     3 NC
 //     4 GND
 static const gpio_pin_type CFG_PIN_DHT22_DATA = {
-    (GPIO_registers_type *)GPIOB_BASE, 15
+    (GPIO_registers_type *)GPIOA_BASE, 1
 };
 
 

@@ -57,6 +57,7 @@ SOURCES = $(MCU_SRC) \
 	fwmem \
 	spi_display \
 	i2c_veml7700 \
+	dht22 \
 	task \
 	fwmain
 

@@ -32,6 +32,8 @@ typedef enum estate_type {
 typedef struct raw_meas_type {
     int water_level;
     uint16_t lux;
+    int temperature;
+    int moisture;
 } raw_meas_type;
 
 typedef struct task_data_type {
@@ -40,6 +42,7 @@ typedef struct task_data_type {
     int wait_cnt;
     int state_changed_sec;
     raw_meas_type raw;
+    int watering_cnt;  // 1800 seconds wait + 20 seconds watering
 
     char tstr[21];     // 20 symbols of font24 per  line
 } task_data_type;
