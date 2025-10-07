@@ -17,10 +17,11 @@
 #include "dht22.h"
 #include "../gpio_cfg.h"
 
-char timeout_ = 0;
-unsigned long long raw_bits_ = 0;
-int raw_temperature_ = 0;
-int raw_moisture_ = 0;
+static char timeout_ = 0;
+static unsigned long long raw_bits_ = 0;
+static int raw_temperature_ = 0;
+static int raw_moisture_ = 0;
+static int errcode_ = 0;
 
 static void startCounter(uint32_t usec) {
     TIM_registers_type *TIM = (TIM_registers_type *) TIM2_BASE;
@@ -65,7 +66,7 @@ void dht_init() {
     write32(&RCC->APB1ENR, t1);
 
     write32(&TIM->CR1.val, 0);         // stop counter
-    write16(&TIM->PSC, 35);            // to form 1 MHz count
+    write16(&TIM->PSC, 71);            // to form 1 MHz count
     write16(&TIM->DIER, 1);            // [0] UIE - update interrupt enabled
 
     // prio: 0 highest; 7 is lowest
@@ -84,7 +85,23 @@ void dht_reset() {
     gpio_pin_set(&CFG_PIN_DHT22_DATA);
 }
 
+void set_error(int errcode) {
+    errcode_ = errcode;
+
+    gpio_pin_as_output(&CFG_PIN_DHT22_DATA,
+                       GPIO_NO_OPEN_DRAIN,
+                       GPIO_VERY_FAST,
+                       GPIO_NO_PUSH_PULL);
+    gpio_pin_set(&CFG_PIN_DHT22_DATA);
+ 
+}
+
+int dht_is_error() {
+    return errcode_;
+}
+
 void dht_update() {
+    errcode_ = 0;
     // Tbe: Host the start signal down: 0.8 - 20 ms. Typical 1 ms
     gpio_pin_as_output(&CFG_PIN_DHT22_DATA,
                        GPIO_NO_OPEN_DRAIN,
@@ -101,21 +118,21 @@ void dht_update() {
 
     gpio_pin_as_input(&CFG_PIN_DHT22_DATA,
                       GPIO_FAST,
-                      GPIO_NO_PUSH_PULL);
+                      GPIO_PULL_UP);
     startCounter(200);    // wait upto 200 usec to response low
     while (gpio_pin_get(&CFG_PIN_DHT22_DATA) != 0) {
         if (timeout_) {
-            raw_moisture_ = 1;
+            set_error(1);
             return;    // error
         }
     }
     stopCounter();
 
     // Trel: Response to low time
-    startCounter(85);    // wiat 75..85 usec to response high
+    startCounter(200);    // wiat 75..85 usec to response high
     while (gpio_pin_get(&CFG_PIN_DHT22_DATA) == 0) {
         if (timeout_) {
-            raw_moisture_ = 2;
+            set_error(2);
             return;    // error
         }
     }
@@ -125,7 +142,7 @@ void dht_update() {
     startCounter(85);    // 75..85 usec to response high
     while (gpio_pin_get(&CFG_PIN_DHT22_DATA) != 0) {
         if (timeout_) {
-            raw_moisture_ = 3;
+            set_error(3);
             return;    // error
         }
     }
@@ -136,7 +153,7 @@ void dht_update() {
         startCounter(55);    // Tlow 45..55 usec low time of bits always the same
         while (gpio_pin_get(&CFG_PIN_DHT22_DATA) == 0) {
             if (timeout_) {
-                raw_moisture_ = 10+i;
+                set_error(10 + i);
                 return;    // error
             }
         }
@@ -159,7 +176,7 @@ void dht_update() {
             startCounter(75 - 30);    // Signal"1" high time: 68..75
             while (gpio_pin_get(&CFG_PIN_DHT22_DATA) != 0) {
                 if (timeout_) {
-                    raw_moisture_ = 20+i;
+                    set_error(20 + i);
                     return;    // error
                 }
             }

@@ -31,12 +31,17 @@
 #define WATERING_WAIT_SEC 1800
 #define WATERING_SEC 20
 
+#define CLR_BLACK     0x0000
+#define CLR_WHITE     0xFFFF
+#define CLR_YELLOW    0xFF56
+
 void task_init(task_data_type *data) {
     data->state = State_SplashScreen;
     data->state_changed_sec = 0;
     data->watering_cnt = WATERING_WAIT_SEC - 10;   // wait 10 seconds after water detected
     data->raw.lux = 9500;
     data->raw.water_level = 0;
+    data->raw.dht_error = 0;
     data->raw.temperature = 230;
     data->raw.moisture = 343;
 }
@@ -57,7 +62,7 @@ void show_int(int val, int line, int col) {
     display_outputText24Line(tstr, line, col, 0xffff, 0x0000); // clear number field
 }
 
-void show_int_x10(int val, int line, int col) {
+void show_int_x10(int val, int line, int col, uint16_t bkg) {
     // Length of "Watering in:" = 12. We have 8 symbol for numbers
     char tstr1[21];
     char tstr[21];
@@ -70,10 +75,10 @@ void show_int_x10(int val, int line, int col) {
          tstr[szmax - sz + i] = tstr1[i];
     }
     tstr[szmax] = 0;
-    display_outputText24Line(tstr, line, col, 0xffff, 0x0000); // clear number field
+    display_outputText24Line(tstr, line, col, 0xffff, bkg); // clear number field
 }
 
-void udpate_raw_data(raw_meas_type *raw) {
+void udpate_raw_data(raw_meas_type *raw, int sec) {
     // Light measurement
     if (is_lux_error()) {
         reset_lux();
@@ -86,9 +91,15 @@ void udpate_raw_data(raw_meas_type *raw) {
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
 
-    dht_update();
-    raw->temperature = dht_get_temperature();
-    raw->moisture = dht_get_moisture();
+    // Cannot request dht measurement moreoften than 2 sec. Let it be 4 sec.
+    if ((sec & 0x3) == 0) {
+        dht_update();
+        raw->dht_error =  dht_is_error();
+        if (raw->dht_error == 0) {
+            raw->temperature = dht_get_temperature();
+            raw->moisture = dht_get_moisture();
+        }
+    }
 }
 
 void set_state(task_data_type *data, int sec, estate_type state_next) {
@@ -124,6 +135,7 @@ void pump_disable() {
 
 void task_update(task_data_type *data, int sec) {
     raw_meas_type raw;
+    raw = data->raw;
 
     switch (data->state) {
     case State_SplashScreen:
@@ -138,10 +150,10 @@ void task_update(task_data_type *data, int sec) {
         break;
     case State_SelfTest:
         display_outputText24Line("T:              23.0", TEMPERATURE_INFO_LINE, 0, 0x07E0, 0x7813);
-        show_int_x10(data->raw.temperature, TEMPERATURE_INFO_LINE, 2);
+        show_int_x10(data->raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);
         display_outputText24Line("Pressure:        956", PRESSURE_INFO_LINE, 0, 0xffff, 0x0000);
         display_outputText24Line("Moisture:       34.4", MOISTURE_INFO_LINE, 0, 0xffff, 0x0000);
-        show_int_x10(data->raw.moisture, MOISTURE_INFO_LINE, 9);
+        show_int_x10(data->raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
         display_outputText24Line("Air 2.5:        13.5", 3, 0, 0xffff, 0x0000);
         display_outputText24Line("Air 1.25:        5.5", 4, 0, 0xffff, 0x0000);
         display_outputText24Line("Light:", LIGHT_INFO_LINE, 0, 0xffff, 0x0000);
@@ -154,7 +166,7 @@ void task_update(task_data_type *data, int sec) {
         set_state(data, sec, State_Idle);
         break;
     case State_Idle:
-        udpate_raw_data(&raw);
+        udpate_raw_data(&raw, sec);
     
         // Show watering line (6) on display
         if (raw.water_level != data->raw.water_level) {
@@ -184,10 +196,14 @@ void task_update(task_data_type *data, int sec) {
         }
     
         if (raw.temperature != data->raw.temperature) {
-            show_int_x10(raw.lux, TEMPERATURE_INFO_LINE, 2);
+            show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);
+        } else if (raw.dht_error) {
+            show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_YELLOW);
         }
         if (raw.moisture != data->raw.moisture) {
-            show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9);
+            show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
+        } else if (raw.dht_error) {
+            show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_YELLOW);
         }
         if (raw.lux != data->raw.lux) {
             show_int(raw.lux, LIGHT_INFO_LINE, 6);

@@ -25,6 +25,7 @@ extern "C" {
 void dht_init();
 void dht_update();
 void dht_reset();
+int dht_is_error();
 int dht_get_temperature();
 int dht_get_moisture();
 
