@@ -18,6 +18,7 @@
 #include <spi_display.h>
 #include <i2c_veml7700.h>
 #include <dht22.h>
+#include <air_d9.h>
 #include <vprintfmt.h>
 #include "task.h"
 #include "gpio_cfg.h"
@@ -25,28 +26,39 @@
 #define TEMPERATURE_INFO_LINE 0
 #define PRESSURE_INFO_LINE    1
 #define MOISTURE_INFO_LINE    2
-#define LIGHT_INFO_LINE       5
-#define WATERING_INFO_LINE    6
+#define PM1p0_INFO_LINE       3
+#define PM2p5_INFO_LINE       4
+#define PM10_INFO_LINE        5
+#define LIGHT_INFO_LINE       6
+#define WATERING_INFO_LINE    7
 
 #define WATERING_WAIT_SEC 1800
 #define WATERING_SEC 20
 
-#define CLR_BLACK     0x0000
-#define CLR_WHITE     0xFFFF
-#define CLR_YELLOW    0xFF56
+#define CLR_BLACK              0x0000
+#define CLR_WHITE              0xFFFF
+#define CLR_YELLOW             0xFF56
+#define CLR_DARK_GREEN         0x0280
+#define CLR_DARK_GREEN_YELLOW  0x2280
+#define CLR_DARK_YELLOW        0x4A80
+#define CLR_DARK_RED           0x50A1
 
 void task_init(task_data_type *data) {
     data->state = State_SplashScreen;
     data->state_changed_sec = 0;
     data->watering_cnt = WATERING_WAIT_SEC - 10;   // wait 10 seconds after water detected
     data->raw.lux = 9500;
+    data->raw.pressure = 750;
     data->raw.water_level = 0;
     data->raw.dht_error = 0;
     data->raw.temperature = 230;
     data->raw.moisture = 343;
+    data->raw.air_1p0 = 0;
+    data->raw.air_2p5 = 0;
+    data->raw.air_10 = 0;
 }
 
-void show_int(int val, int line, int col) {
+void show_int(int val, int line, int col, uint16_t bkg) {
     // Length of "Watering in:" = 12. We have 8 symbol for numbers
     char tstr1[21];
     char tstr[21];
@@ -59,7 +71,7 @@ void show_int(int val, int line, int col) {
          tstr[szmax - sz + i] = tstr1[i];
     }
     tstr[szmax] = 0;
-    display_outputText24Line(tstr, line, col, 0xffff, 0x0000); // clear number field
+    display_outputText24Line(tstr, line, col, 0xffff, bkg); // clear number field
 }
 
 void show_int_x10(int val, int line, int col, uint16_t bkg) {
@@ -78,6 +90,25 @@ void show_int_x10(int val, int line, int col, uint16_t bkg) {
     display_outputText24Line(tstr, line, col, 0xffff, bkg); // clear number field
 }
 
+// PM2.5 concentration:
+// 0 - 12         Good
+// 12.1 - 35.4    Moderate
+// 35.5 - 55.4    Unhealthy for sensitive people
+// 55.5 - 150.4   Unhealthy
+// 150.5 - 250.4  Healthy alert
+// 250.5 - 500.4  Hazardous
+uint16_t air_bkg_color(int val) {
+    int v = val >> 8;
+    if (v <= 12) {
+        return CLR_DARK_GREEN;
+    } else if (v <= 35) {
+        return CLR_DARK_GREEN_YELLOW;
+    } else if (v <= 55) {
+        return CLR_DARK_YELLOW;
+    }
+    return CLR_DARK_RED;
+}
+
 void udpate_raw_data(raw_meas_type *raw, int sec) {
     // Light measurement
     if (is_lux_error()) {
@@ -90,6 +121,12 @@ void udpate_raw_data(raw_meas_type *raw, int sec) {
 
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
+
+    // Air quality
+    raw->air_1p0 = air_d9_get_pm1p0();
+    raw->air_2p5 = air_d9_get_pm2p5();
+    raw->air_10 = air_d9_get_pm10();
+
 
     // Cannot request dht measurement moreoften than 2 sec. Let it be 4 sec.
     if ((sec & 0x3) == 0) {
@@ -149,18 +186,28 @@ void task_update(task_data_type *data, int sec) {
         }
         break;
     case State_SelfTest:
-        display_outputText24Line("T:              23.0", TEMPERATURE_INFO_LINE, 0, 0x07E0, 0x7813);
+        display_outputText24Line("T:", TEMPERATURE_INFO_LINE, 0, 0x07E0, 0x7813);
         show_int_x10(data->raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);
-        display_outputText24Line("Pressure:        956", PRESSURE_INFO_LINE, 0, 0xffff, 0x0000);
-        display_outputText24Line("Moisture:       34.4", MOISTURE_INFO_LINE, 0, 0xffff, 0x0000);
+
+        display_outputText24Line("Pressure:", PRESSURE_INFO_LINE, 0, 0xffff, 0x0000);
+        show_int(data->raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
+
+        display_outputText24Line("Moisture:", MOISTURE_INFO_LINE, 0, 0xffff, 0x0000);
         show_int_x10(data->raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
-        display_outputText24Line("Air 2.5:        13.5", 3, 0, 0xffff, 0x0000);
-        display_outputText24Line("Air 1.25:        5.5", 4, 0, 0xffff, 0x0000);
+
+        display_outputText24Line("PM1.0 ug/m3:", PM1p0_INFO_LINE, 0, 0xffff, 0x0000);
+        show_int(data->raw.air_1p0, PM1p0_INFO_LINE, 12, air_bkg_color(raw.air_1p0));
+
+        display_outputText24Line("PM2.5 ug/m3:", PM2p5_INFO_LINE, 0, 0xffff, 0x0000);
+        show_int(data->raw.air_2p5, PM2p5_INFO_LINE, 12, air_bkg_color(raw.air_2p5));
+
+        display_outputText24Line("PM10  ug/m3:", PM10_INFO_LINE, 0, 0xffff, 0x0000);
+        show_int(data->raw.air_10, PM10_INFO_LINE, 12, air_bkg_color(raw.air_10));
+
         display_outputText24Line("Light:", LIGHT_INFO_LINE, 0, 0xffff, 0x0000);
-        show_int(data->raw.lux, LIGHT_INFO_LINE, 6);
+        show_int(data->raw.lux, LIGHT_INFO_LINE, 6, CLR_BLACK);
+
         display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
-        // Clear other strings
-        display_outputText24Line("                    ", 7, 0, 0xffff, 0x0000);
 
         veml7700_configure();
         set_state(data, sec, State_Idle);
@@ -181,9 +228,11 @@ void task_update(task_data_type *data, int sec) {
                 // show time to net watering
                 int t1 = WATERING_WAIT_SEC - data->watering_cnt;
                 if (t1 < 0) {
-                    t1 = 0;   // now is watering
+                    t1 += WATERING_SEC;   // now is watering
+                    show_int(t1, WATERING_INFO_LINE, 12, CLR_DARK_GREEN);
+                } else {
+                    show_int(t1, WATERING_INFO_LINE, 12, CLR_BLACK);
                 }
-                show_int(t1, WATERING_INFO_LINE, 12);
             } else {
                 // do nothing
             }
@@ -198,22 +247,36 @@ void task_update(task_data_type *data, int sec) {
         if (raw.temperature != data->raw.temperature) {
             show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);
         } else if (raw.dht_error) {
-            show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_YELLOW);
+            show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_DARK_RED);
         }
         if (raw.moisture != data->raw.moisture) {
             show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
         } else if (raw.dht_error) {
-            show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_YELLOW);
+            show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_DARK_RED);
+        }
+        // PM2.5 concentration:
+        // 0 - 12         Good
+        // 12.1 - 35.4    Moderate
+        // 35.5 - 55.4    Unhealthy for sensitive people
+        // 55.5 - 150.4   Unhealthy
+        // 150.5 - 250.4  Healthy alert
+        // 250.5 - 500.4  Hazardous
+        if (raw.air_1p0 != data->raw.air_1p0) {
+            show_int(raw.air_1p0, PM1p0_INFO_LINE, 12, air_bkg_color(raw.air_1p0));
+        }
+        if (raw.air_2p5 != data->raw.air_2p5) {
+            show_int(raw.air_2p5, PM2p5_INFO_LINE, 12, air_bkg_color(raw.air_2p5));
+        }
+        if (raw.air_10 != data->raw.air_10) {
+            show_int(raw.air_10, PM10_INFO_LINE, 12, air_bkg_color(raw.air_10));
         }
         if (raw.lux != data->raw.lux) {
-            show_int(raw.lux, LIGHT_INFO_LINE, 6);
+            show_int(raw.lux, LIGHT_INFO_LINE, 6, CLR_BLACK);
         }
    
         data->raw = raw;
         break;
     default:;
     }
-
-
 }
 

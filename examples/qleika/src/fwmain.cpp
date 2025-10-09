@@ -24,6 +24,7 @@
 #include <spi_display.h>
 #include <i2c_veml7700.h>
 #include <dht22.h>
+#include <air_d9.h>
 #include "gpio_cfg.h"
 #include "task.h"
 
@@ -74,6 +75,7 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     dht_init();
     display_init();
     display_splash_screen();
+    air_d9_init();
 
     gpio_pin_as_output(&CFG_PIN_LED1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_as_input(&CFG_PIN_WATER_LEVEL_DATA, GPIO_SLOW, GPIO_NO_PUSH_PULL);

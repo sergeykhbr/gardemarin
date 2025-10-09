@@ -19,29 +19,32 @@
 #include <gpio_drv.h>
 
 // Air sensor D9:
-//     [PA0] PIN1 Src Voltage for FAN 5V    => PA0 output ena/dis +5V
-//     [PA0] PIN2 Src Voltage for FAN 5V    => PA0 output ena/dis +5V
+//     PIN1 Src Voltage for FAN 5V    => PA0 output ena/dis +5V
+//     PIN2 Src Voltage for FAN 5V    => PA0 output ena/dis +5V
 //     PIN3 GND
 //     PIN4 GND
 //     PIN5 NC
 //     PIN6 NC
-//     [PA2 Serial2 TX] PIN7 RXD PM2.5 UART INPUT (0~3.3V) (response time 0-10 seconds, typical 5 s)
-//     [PA1 PWM2/2] PIN8 PWM OUTPUT (0~3.3V)
+//     PIN7 RXD PM2.5 UART INPUT (0~3.3V) (response time 0-10 seconds, typical 5 s)
+//     PIN8 PWM OUTPUT (0~3.3V)
 //     [PA3 Serial2 RX] PIN9 TXD PM2.5 UART OUTPUT (0~3.3V)
 //     PIN10 NC
 //
+//    PA9 USART1_TX  (USART1_REMAP=0); PB6 (USART1_REMAP=1);
+//    PA10 USART1_RX  (USART1_REMAP=0); PB7 (USART1_REMAP=1);
 static const gpio_pin_type CFG_PIN_AIR_D9_PWR5V = {
-    (GPIO_registers_type *)GPIOA_BASE, 0
+    (GPIO_registers_type *)GPIOA_BASE, 8
+};
+static const gpio_pin_type CFG_PIN_AIR_UART1_TX = {
+    (GPIO_registers_type *)GPIOA_BASE, 9
+};
+static const gpio_pin_type CFG_PIN_AIR_UART1_RX = {
+    (GPIO_registers_type *)GPIOA_BASE, 10
 };
 static const gpio_pin_type CFG_PIN_AIR_D9_PWM = {
-    (GPIO_registers_type *)GPIOA_BASE, 1
+    (GPIO_registers_type *)GPIOA_BASE, 11
 };
-static const gpio_pin_type CFG_PIN_AIR_UART2_TX = {
-    (GPIO_registers_type *)GPIOA_BASE, 2
-};
-static const gpio_pin_type CFG_PIN_AIR_UART2_RX = {
-    (GPIO_registers_type *)GPIOA_BASE, 3
-};
+
 
 // Pump Relais
 //     [PA11] (output) (yellow)
@@ -54,14 +57,6 @@ static const gpio_pin_type CFG_PIN_RELAIS_PWR = {
 };
 
 
-//    PA9 USART1_TX  (USART1_REMAP=0); PB6 (USART1_REMAP=1);
-//    PA10 USART1_RX  (USART1_REMAP=0); PB7 (USART1_REMAP=1);
-static const gpio_pin_type CFG_PIN_UART1_TX = {
-    (GPIO_registers_type *)GPIOA_BASE, 9
-};
-static const gpio_pin_type CFG_PIN_UART1_RX = {
-    (GPIO_registers_type *)GPIOA_BASE, 10
-};
 
 // XKC Y25 T12V Liquide level sensor (5-12V)
 //     [+5V] Brown VCC (5V)         (output to enable/disable 5V VCC sensor)

@@ -23,6 +23,7 @@ extern "C"
 
 void i2c2_ev_handler();
 void dht_tim_handler();
+void air_d9_irq_handler();
 
 #define WWDG_IRQHandler DefaultISR
 #define PVD_IRQHandler DefaultISR
@@ -61,7 +62,7 @@ void dht_tim_handler();
 #define I2C2_ER_IRQHandler DefaultISR
 #define SPI1_IRQHandler DefaultISR
 #define SPI2_IRQHandler DefaultISR
-#define USART1_IRQHandler DefaultISR
+#define USART1_IRQHandler air_d9_irq_handler
 #define USART2_IRQHandler DefaultISR
 #define USART3_IRQHandler DefaultISR
 #define EXTI15_10_IRQHandler DefaultISR
