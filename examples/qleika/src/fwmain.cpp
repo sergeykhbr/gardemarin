@@ -77,11 +77,10 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     display_splash_screen();
     air_d9_init();
 
-    gpio_pin_as_output(&CFG_PIN_LED1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_as_input(&CFG_PIN_WATER_LEVEL_DATA, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_RELAIS_PWR, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_as_output(&CFG_PIN_RELAIS_PUMP, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_set(&CFG_PIN_RELAIS_PWR);
+    gpio_pin_as_output(&CFG_PIN_AIR_D9_PWR5V, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_set(&CFG_PIN_AIR_D9_PWR5V);
 
     task_init(&task_data);
 
@@ -93,13 +92,8 @@ extern "C" int fwmain(int argcnt, char *args[]) {
 
             // Switch User LED
             if (time_sec_ & 0x8) {
-                gpio_pin_set(&CFG_PIN_LED1);  // LED is OFF
-
                 //gpio_pin_set(&CFG_PIN_RELAIS_PUMP);
-
             } else {
-                //gpio_pin_clear(&CFG_PIN_LED1);  // LED is ON
-
                 //gpio_pin_clear(&CFG_PIN_RELAIS_PUMP);
             }
         }

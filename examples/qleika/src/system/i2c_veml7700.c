@@ -33,12 +33,49 @@ typedef enum estate_type {
     state_EV7_receiver,      // RxNE=1
 } estate_type;
 
-int irq_cnt_ = 0;
-int err_cnt_ = 0;
-uint32_t err_sr1_ = 0;
-estate_type estate_ = state_idle;
-estate_type err_state_ = state_idle;
-uint16_t lux_raw_ = 0;
+static int irq_cnt_ = 0;
+static int err_cnt_ = 0;
+static uint32_t err_sr1_ = 0;
+static estate_type estate_ = state_idle;
+static estate_type err_state_ = state_idle;
+static uint16_t lux_raw_ = 0;
+static int watchdog_ = 0;
+
+static void startWatchdog() {
+    TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
+    tim_cr1_reg_type cr1;
+    uint32_t usec = 1000;  // 1ms
+
+    watchdog_ = 0;
+    write32(&TIM->ARR, usec);
+    write32(&TIM->CNT, usec);
+
+    cr1.val = 0;
+    cr1.bits.CEN = 1;
+    cr1.bits.OPM = 1;   // one pulse mode
+    cr1.bits.DIR = 1;   // downcount
+    write32(&TIM->CR1.val, cr1.val);
+}
+
+static void stopWatchdog() {
+    TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
+    write32(&TIM->CR1.val, 0);
+    nvic_irq_clear(29);        // TIM3
+    watchdog_ = 0;
+}
+
+void i2c_watchdog_handler() {
+    TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
+    uint16_t sr;
+
+    sr = read16(&TIM->SR);
+
+    write32(&TIM->CR1.val, 0); // stop timer
+    write16(&TIM->SR, 0);      // clear all pending interrupts
+    nvic_irq_clear(29);        // TIM3
+    watchdog_ = 1;
+}
+
 
 void i2c_reset(I2C_registers_type *I2C) {
     uint32_t t1;
@@ -262,14 +299,15 @@ void i2c_init() {
     AFIO_registers_type *afio = (AFIO_registers_type *)AFIO_BASE;
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
+    TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
     uint32_t t1;
 
     // VEML7700 I2C Light sensor
     //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
     //     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
     //
-    gpio_pin_as_alternate_open_drain(&CFG_PIN_LUMEN_SCL);
-    gpio_pin_as_alternate_open_drain(&CFG_PIN_LUMEN_SDA);
+    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SCL);
+    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SDA);
 
 
     // I2C2 clock on APB1 = 36 MHz
@@ -278,6 +316,18 @@ void i2c_init() {
     write32(&RCC->APB1ENR, t1);
 
     i2c_reset(I2C);
+
+    // TIM3 as watchdog
+    t1 = read32(&RCC->APB1ENR);
+    t1 |= (1 << 1);             // APB1[1] TIM3EN
+    write32(&RCC->APB1ENR, t1);
+
+    write32(&TIM->CR1.val, 0);         // stop counter
+    write16(&TIM->PSC, 71);            // to form 1 MHz count
+    write16(&TIM->DIER, 1);            // [0] UIE - update interrupt enabled
+
+    // prio: 0 highest; 7 is lowest
+    nvic_irq_enable(29, 3);
 }
 
 // configure sensor (default settings):

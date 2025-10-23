@@ -47,13 +47,14 @@ static const gpio_pin_type CFG_PIN_AIR_D9_PWM = {
 
 
 // Pump Relais
-//     [PA11] (output) (yellow)
+//     [PA12] (output) (yellow)
 static const gpio_pin_type CFG_PIN_RELAIS_PUMP = {
     (GPIO_registers_type *)GPIOA_BASE, 12
 };
-// [PA12] (output) (brown)
-static const gpio_pin_type CFG_PIN_RELAIS_PWR = {
-    (GPIO_registers_type *)GPIOA_BASE, 11
+
+// [PB13_MOSFET_1] (output)
+static const gpio_pin_type CFG_PIN_MOSFET_1 = {
+    (GPIO_registers_type *)GPIOB_BASE, 13
 };
 
 
@@ -65,7 +66,7 @@ static const gpio_pin_type CFG_PIN_RELAIS_PWR = {
 //            Black MODE (positive/negative selection) -> floating/GND
 //
 static const gpio_pin_type CFG_PIN_WATER_LEVEL_DATA = {
-    (GPIO_registers_type *)GPIOA_BASE, 8
+    (GPIO_registers_type *)GPIOB_BASE, 15
 };
 
 
@@ -75,15 +76,13 @@ static const gpio_pin_type CFG_PIN_WATER_LEVEL_DATA = {
 //     [PB3] SPI1_SCK             (alternate)
 //     [PA15] RST (SPI_NSS)       (Output)
 static const gpio_pin_type CFG_PIN_DISPLAY_RES = {
-//    (GPIO_registers_type *)GPIOA_BASE, 4
-    (GPIO_registers_type *)GPIOA_BASE, 6
+    (GPIO_registers_type *)GPIOA_BASE, 4
 };
 static const gpio_pin_type CFG_PIN_DISPLAY_SCK = {
     (GPIO_registers_type *)GPIOA_BASE, 5
 };
 static const gpio_pin_type CFG_PIN_DISPLAY_DC = {
-//    (GPIO_registers_type *)GPIOA_BASE, 6
-    (GPIO_registers_type *)GPIOA_BASE, 4
+    (GPIO_registers_type *)GPIOA_BASE, 6
 };
 static const gpio_pin_type CFG_PIN_DISPLAY_SDA = {
     (GPIO_registers_type *)GPIOA_BASE, 7
@@ -93,18 +92,18 @@ static const gpio_pin_type CFG_PIN_DISPLAY_SDA = {
 //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
 //     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
 //
-static const gpio_pin_type CFG_PIN_LUMEN_SCL = {
+static const gpio_pin_type CFG_PIN_I2C_SCL = {
     (GPIO_registers_type *)GPIOB_BASE, 10
 };
-static const gpio_pin_type CFG_PIN_LUMEN_SDA = {
+static const gpio_pin_type CFG_PIN_I2C_SDA = {
     (GPIO_registers_type *)GPIOB_BASE, 11
 };
 
 // Blue LED
 //     [PC13] output
-static const gpio_pin_type CFG_PIN_LED1 = {
-    (GPIO_registers_type *)GPIOC_BASE, 13
-};
+//static const gpio_pin_type CFG_PIN_LED1 = {
+//    (GPIO_registers_type *)GPIOC_BASE, 13
+//};
 
 
 // DHT22(AM2302 the same in a case) Temperature Humidity sensor (sampling period 2 sec)

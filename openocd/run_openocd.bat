@@ -1,5 +1,5 @@
-::C:\tools\OpenOCD-20250710-0.12.0\bin\openocd.exe -f stm32f1xx-boot.cfg
-C:\soft\OpenOCD-20250710-0.12.0\bin\openocd.exe -f stm32f1xx-boot.cfg
+C:\tools\OpenOCD-20250710-0.12.0\bin\openocd.exe -f stm32f1xx-boot.cfg
+::C:\soft\OpenOCD-20250710-0.12.0\bin\openocd.exe -f stm32f1xx-boot.cfg
 
 :: start gdb:
 ::   target remote localhost:3333

@@ -18,6 +18,8 @@
 #include "spi_display.h"
 #include "../gpio_cfg.h"
 
+//#define DOUBLE_RESET_ENA
+
 extern int getTickTime();
 
 static uint8_t buffer_[4*1024];
@@ -411,6 +413,22 @@ void display_splash_screen() {
     int t1;
     gpio_pin_clear(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
     t1 = getTickTime();
+    while ((t1 + 6) > getTickTime()) {}   // 1 tick = 10 ms (>50 ms)
+
+    gpio_pin_set(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
+    t1 = getTickTime();
+    while ((t1 + 13) > getTickTime()) {}   // 1 tick = 10 ms (>120ms)
+
+    // Sleep out command (DC=0)
+    write_cmd_poll(0x11);           // 0x11 sleep-out command
+    t1 = getTickTime();
+    while ((t1 + 13) > getTickTime()) {}   // 1 tick = 10 ms
+    // > 120 ms
+
+#ifdef DOUBLE_RESET_ENA
+    // Let's reset again:
+    gpio_pin_clear(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
+    t1 = getTickTime();
     while ((t1 + 2) > getTickTime()) {}   // 1 tick = 10 ms
     // > 10 us
     gpio_pin_set(&CFG_PIN_DISPLAY_RES);   // reset: active LOW
@@ -420,6 +438,8 @@ void display_splash_screen() {
     t1 = getTickTime();
     while ((t1 + 15) > getTickTime()) {}   // 1 tick = 10 ms
     // > 120 ms
+#endif
+
     // Idle mode off command (DC=0)
     write_cmd_poll(0x38);           // 0x38 idle mode off command
 
