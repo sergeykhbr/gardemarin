@@ -38,6 +38,8 @@
 #define CLR_BLACK              0x0000
 #define CLR_WHITE              0xFFFF
 #define CLR_YELLOW             0xFF56
+#define CLR_GREEN              0x07E0
+#define CLR_VIOLET             0x7813
 #define CLR_DARK_GREEN         0x0280
 #define CLR_DARK_GREEN_YELLOW  0x2280
 #define CLR_DARK_YELLOW        0x4A80
@@ -186,25 +188,25 @@ void task_update(task_data_type *data, int sec) {
         }
         break;
     case State_SelfTest:
-        display_outputText24Line("T:", TEMPERATURE_INFO_LINE, 0, 0x07E0, 0x7813);
+        display_outputText24Line("T:", TEMPERATURE_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int_x10(data->raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);
 
-        display_outputText24Line("Pressure:", PRESSURE_INFO_LINE, 0, 0xffff, 0x0000);
+        display_outputText24Line("Pressure:", PRESSURE_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int(data->raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
 
-        display_outputText24Line("Moisture:", MOISTURE_INFO_LINE, 0, 0xffff, 0x0000);
+        display_outputText24Line("Moisture:", MOISTURE_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int_x10(data->raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
 
-        display_outputText24Line("PM1.0 ug/m3:", PM1p0_INFO_LINE, 0, 0xffff, 0x0000);
+        display_outputText24Line("PM1.0 ug/m3:", PM1p0_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int(data->raw.air_1p0, PM1p0_INFO_LINE, 12, air_bkg_color(raw.air_1p0));
 
-        display_outputText24Line("PM2.5 ug/m3:", PM2p5_INFO_LINE, 0, 0xffff, 0x0000);
+        display_outputText24Line("PM2.5 ug/m3:", PM2p5_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int(data->raw.air_2p5, PM2p5_INFO_LINE, 12, air_bkg_color(raw.air_2p5));
 
-        display_outputText24Line("PM10  ug/m3:", PM10_INFO_LINE, 0, 0xffff, 0x0000);
+        display_outputText24Line("PM10  ug/m3:", PM10_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int(data->raw.air_10, PM10_INFO_LINE, 12, air_bkg_color(raw.air_10));
 
-        display_outputText24Line("Light:", LIGHT_INFO_LINE, 0, 0xffff, 0x0000);
+        display_outputText24Line("Light:", LIGHT_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int(data->raw.lux, LIGHT_INFO_LINE, 6, CLR_BLACK);
 
         display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);

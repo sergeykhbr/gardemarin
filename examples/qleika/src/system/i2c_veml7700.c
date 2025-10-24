@@ -42,11 +42,13 @@ static estate_type err_state_ = state_idle;
 static uint16_t lux_raw_ = 0;
 static int watchdog_ = 0;
 
+void stop_sequence();
+
 static void set_error(estate_type curstate, uint32_t sr1) {
     estate_ = state_error;
     err_state_ = curstate;
     err_sr1_ = sr1;
-    //stop_sequence();
+    stop_sequence();
     nvic_irq_disable(33);
     err_cnt_++;
 }
@@ -54,7 +56,7 @@ static void set_error(estate_type curstate, uint32_t sr1) {
 static void startWatchdog() {
     TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
     tim_cr1_reg_type cr1;
-    uint32_t usec = 10000;  // 10ms
+    uint32_t usec = 100000;  // 10ms
 
     watchdog_ = 0;
     write32(&TIM->ARR, usec);
@@ -132,7 +134,7 @@ void i2c_init() {
     //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
     //     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
     //
-    gpio_pin_as_output(&CFG_PIN_I2C_SCL, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    /*gpio_pin_as_output(&CFG_PIN_I2C_SCL, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_as_output(&CFG_PIN_I2C_SDA, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
 
     gpio_pin_set(&CFG_PIN_I2C_SCL);
@@ -145,7 +147,7 @@ void i2c_init() {
     gpio_pin_set(&CFG_PIN_I2C_SDA);
     gpio_pin_clear(&CFG_PIN_I2C_SDA);
     gpio_pin_set(&CFG_PIN_I2C_SDA);
-    gpio_pin_clear(&CFG_PIN_I2C_SDA);
+    gpio_pin_clear(&CFG_PIN_I2C_SDA);*/
     gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SCL);
     gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SDA);
 
@@ -161,7 +163,7 @@ void i2c_init() {
     write32(&RCC->APB1ENR, t1);
 
     write32(&TIM->CR1.val, 0);         // stop counter
-    write16(&TIM->PSC, 71);            // to form 1 MHz count
+    write16(&TIM->PSC, 710);            // to form 0.1 MHz count
     write16(&TIM->DIER, 1);            // [0] UIE - update interrupt enabled
 
     // prio: 0 highest; 7 is lowest
