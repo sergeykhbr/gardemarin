@@ -18,6 +18,33 @@
 
 #include <gpio_drv.h>
 
+// DHT22(AM2302 the same in a case) Temperature Humidity sensor (sampling period 2 sec)
+//     1 VDD (3.3-6V, typical 5V)
+//     [A1] 2 DATA
+//     3 NC
+//     4 GND
+static const gpio_pin_type CFG_PIN_DHT22_DATA = {
+    (GPIO_registers_type *)GPIOA_BASE, 1
+};
+
+// Display SPI1
+//     [PB5] SPI1 MOSI            (alternate)
+//     [PB4] CMD_DATA (SPI1 MISO) (Output)
+//     [PB3] SPI1_SCK             (alternate)
+//     [PA15] RST (SPI_NSS)       (Output)
+static const gpio_pin_type CFG_PIN_DISPLAY_RES = {
+    (GPIO_registers_type *)GPIOA_BASE, 4
+};
+static const gpio_pin_type CFG_PIN_DISPLAY_SCK = {
+    (GPIO_registers_type *)GPIOA_BASE, 5
+};
+static const gpio_pin_type CFG_PIN_DISPLAY_DC = {
+    (GPIO_registers_type *)GPIOA_BASE, 6
+};
+static const gpio_pin_type CFG_PIN_DISPLAY_SDA = {
+    (GPIO_registers_type *)GPIOA_BASE, 7
+};
+
 // Air sensor D9:
 //     PIN1 Src Voltage for FAN 5V    => PA0 output ena/dis +5V
 //     PIN2 Src Voltage for FAN 5V    => PA0 output ena/dis +5V
@@ -52,41 +79,7 @@ static const gpio_pin_type CFG_PIN_RELAIS_PUMP = {
     (GPIO_registers_type *)GPIOA_BASE, 12
 };
 
-// [PB13_MOSFET_1] (output)
-static const gpio_pin_type CFG_PIN_MOSFET_1 = {
-    (GPIO_registers_type *)GPIOB_BASE, 13
-};
 
-
-
-// XKC Y25 T12V Liquide level sensor (5-12V)
-//     [+5V] Brown VCC (5V)         (output to enable/disable 5V VCC sensor)
-//     [PA8]  Yellow  OUT           (input)
-//            Blue GND
-//            Black MODE (positive/negative selection) -> floating/GND
-//
-static const gpio_pin_type CFG_PIN_WATER_LEVEL_DATA = {
-    (GPIO_registers_type *)GPIOB_BASE, 15
-};
-
-
-// Display SPI1
-//     [PB5] SPI1 MOSI            (alternate)
-//     [PB4] CMD_DATA (SPI1 MISO) (Output)
-//     [PB3] SPI1_SCK             (alternate)
-//     [PA15] RST (SPI_NSS)       (Output)
-static const gpio_pin_type CFG_PIN_DISPLAY_RES = {
-    (GPIO_registers_type *)GPIOA_BASE, 4
-};
-static const gpio_pin_type CFG_PIN_DISPLAY_SCK = {
-    (GPIO_registers_type *)GPIOA_BASE, 5
-};
-static const gpio_pin_type CFG_PIN_DISPLAY_DC = {
-    (GPIO_registers_type *)GPIOA_BASE, 6
-};
-static const gpio_pin_type CFG_PIN_DISPLAY_SDA = {
-    (GPIO_registers_type *)GPIOA_BASE, 7
-};
 
 // VEML7700 I2C Light sensor
 //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
@@ -99,20 +92,27 @@ static const gpio_pin_type CFG_PIN_I2C_SDA = {
     (GPIO_registers_type *)GPIOB_BASE, 11
 };
 
+
+// [PB13_MOSFET_1] (output)
+static const gpio_pin_type CFG_PIN_MOSFET_1 = {
+    (GPIO_registers_type *)GPIOB_BASE, 13
+};
+
 // Blue LED
 //     [PC13] output
 //static const gpio_pin_type CFG_PIN_LED1 = {
 //    (GPIO_registers_type *)GPIOC_BASE, 13
 //};
 
-
-// DHT22(AM2302 the same in a case) Temperature Humidity sensor (sampling period 2 sec)
-//     1 VDD (3.3-6V, typical 5V)
-//     [A1] 2 DATA
-//     3 NC
-//     4 GND
-static const gpio_pin_type CFG_PIN_DHT22_DATA = {
-    (GPIO_registers_type *)GPIOA_BASE, 1
+// XKC Y25 T12V Liquide level sensor (5-12V)
+//     [+5V] Brown VCC (5V)         (output to enable/disable 5V VCC sensor)
+//     [PA8]  Yellow  OUT           (input)
+//            Blue GND
+//            Black MODE (positive/negative selection) -> floating/GND
+//
+static const gpio_pin_type CFG_PIN_WATER_LEVEL_DATA = {
+    (GPIO_registers_type *)GPIOB_BASE, 15
 };
+
 
 

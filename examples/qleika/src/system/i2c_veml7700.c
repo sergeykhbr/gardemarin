@@ -31,6 +31,7 @@ typedef enum estate_type {
     state_EV6_receiver,      // ADDR=1
     state_EV7_1_receiver,    // RxNE=1, write ACK=0; STOP=1
     state_EV7_receiver,      // RxNE=1
+    state_watchdog,          // timeout
 } estate_type;
 
 static int irq_cnt_ = 0;
@@ -41,10 +42,19 @@ static estate_type err_state_ = state_idle;
 static uint16_t lux_raw_ = 0;
 static int watchdog_ = 0;
 
+static void set_error(estate_type curstate, uint32_t sr1) {
+    estate_ = state_error;
+    err_state_ = curstate;
+    err_sr1_ = sr1;
+    //stop_sequence();
+    nvic_irq_disable(33);
+    err_cnt_++;
+}
+
 static void startWatchdog() {
     TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
     tim_cr1_reg_type cr1;
-    uint32_t usec = 1000;  // 1ms
+    uint32_t usec = 10000;  // 10ms
 
     watchdog_ = 0;
     write32(&TIM->ARR, usec);
@@ -74,10 +84,12 @@ void i2c_watchdog_handler() {
     write16(&TIM->SR, 0);      // clear all pending interrupts
     nvic_irq_clear(29);        // TIM3
     watchdog_ = 1;
+    estate_ = state_watchdog;
+    set_error(estate_, 0);
 }
 
-
-void i2c_reset(I2C_registers_type *I2C) {
+void i2c_reset() {
+    I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
     uint32_t t1;
     // [15] SWRST software reset: 1=under reset state
     write32(&I2C->CR1, (1 << 15));
@@ -105,10 +117,63 @@ void i2c_reset(I2C_registers_type *I2C) {
     t1 = read32(&I2C->CR1);
     t1 |= (1 << 0);            // [0] PE: enable periphery
     write32(&I2C->CR1, t1);
+
+    estate_ = state_idle;
 }
+
+void i2c_init() {
+    AFIO_registers_type *afio = (AFIO_registers_type *)AFIO_BASE;
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
+    TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
+    uint32_t t1;
+
+    // VEML7700 I2C Light sensor
+    //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
+    //     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
+    //
+    gpio_pin_as_output(&CFG_PIN_I2C_SCL, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_I2C_SDA, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+
+    gpio_pin_set(&CFG_PIN_I2C_SCL);
+    gpio_pin_clear(&CFG_PIN_I2C_SCL);
+    gpio_pin_set(&CFG_PIN_I2C_SCL);
+    gpio_pin_clear(&CFG_PIN_I2C_SCL);
+
+    gpio_pin_set(&CFG_PIN_I2C_SDA);
+    gpio_pin_clear(&CFG_PIN_I2C_SDA);
+    gpio_pin_set(&CFG_PIN_I2C_SDA);
+    gpio_pin_clear(&CFG_PIN_I2C_SDA);
+    gpio_pin_set(&CFG_PIN_I2C_SDA);
+    gpio_pin_clear(&CFG_PIN_I2C_SDA);
+    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SCL);
+    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SDA);
+
+
+    // I2C2 clock on APB1 = 36 MHz
+    t1 = read32(&RCC->APB1ENR);
+    t1 |= (1 << 22);            // APB1[22] I2C2EN
+    write32(&RCC->APB1ENR, t1);
+
+    // TIM3 as watchdog
+    t1 = read32(&RCC->APB1ENR);
+    t1 |= (1 << 1);             // APB1[1] TIM3EN
+    write32(&RCC->APB1ENR, t1);
+
+    write32(&TIM->CR1.val, 0);         // stop counter
+    write16(&TIM->PSC, 71);            // to form 1 MHz count
+    write16(&TIM->DIER, 1);            // [0] UIE - update interrupt enabled
+
+    // prio: 0 highest; 7 is lowest
+    nvic_irq_enable(29, 3);
+
+    i2c_reset();
+}
+
 
 void start_sequence() {
     I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
+    startWatchdog();   // 10 msec interval
     uint32_t t1 = read32(&I2C->CR1);
     t1 |= (1 << 8);                // [8] START:
     write32(&I2C->CR1, t1);
@@ -116,18 +181,11 @@ void start_sequence() {
 
 void stop_sequence() {
     I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
+    stopWatchdog();
+
     uint32_t t1 = read32(&I2C->CR1);
     t1 |= (1 << 9);                 // [9] STOP:
     write32(&I2C->CR1, t1);
-}
-
-static void set_error(estate_type curstate, uint32_t sr1) {
-    estate_ = state_error;
-    err_state_ = curstate;
-    err_sr1_ = sr1;
-    stop_sequence();
-    nvic_irq_disable(33);
-    err_cnt_++;
 }
 
 void ack_enable() {
@@ -169,18 +227,16 @@ void update_lux() {
     start_sequence();
 }
 
-void reset_lux() {
-    I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
-    i2c_reset(I2C);
-    estate_ = state_idle;
+int is_i2c_busy() {
+    return estate_ != state_idle && estate_ != state_error ? 1: 0;
 }
 
-int is_lux_busy() {
-    return estate_ != state_idle ? 1: 0;
-}
-
-int is_lux_error() {
+int is_i2c_error() {
     return estate_ == state_error ? 1: 0;
+}
+
+int get_i2c_err_state() {
+    return err_state_;
 }
 
 int get_lux() {
@@ -286,6 +342,9 @@ void i2c2_ev_handler() {
         // shouldn't be here
         set_error(estate_, sr1);
         break;
+    case state_watchdog:
+        set_error(estate_, sr1);
+        break;
     case state_error:
         break;
     default:;
@@ -295,40 +354,6 @@ void i2c2_ev_handler() {
 }
 
 
-void i2c_init() {
-    AFIO_registers_type *afio = (AFIO_registers_type *)AFIO_BASE;
-    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
-    I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
-    TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
-    uint32_t t1;
-
-    // VEML7700 I2C Light sensor
-    //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
-    //     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
-    //
-    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SCL);
-    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SDA);
-
-
-    // I2C2 clock on APB1 = 36 MHz
-    t1 = read32(&RCC->APB1ENR);
-    t1 |= (1 << 22);            // APB1[22] I2C2EN
-    write32(&RCC->APB1ENR, t1);
-
-    i2c_reset(I2C);
-
-    // TIM3 as watchdog
-    t1 = read32(&RCC->APB1ENR);
-    t1 |= (1 << 1);             // APB1[1] TIM3EN
-    write32(&RCC->APB1ENR, t1);
-
-    write32(&TIM->CR1.val, 0);         // stop counter
-    write16(&TIM->PSC, 71);            // to form 1 MHz count
-    write16(&TIM->DIER, 1);            // [0] UIE - update interrupt enabled
-
-    // prio: 0 highest; 7 is lowest
-    nvic_irq_enable(29, 3);
-}
 
 // configure sensor (default settings):
 void veml7700_configure() {
@@ -337,26 +362,46 @@ void veml7700_configure() {
     nvic_irq_disable(33); // 33 I2C2 event
 
     start_sequence();
-    while ((read32(&I2C->SR1) & 1) == 0) {}
+    while ((read32(&I2C->SR1) & 1) == 0) {
+        if (is_i2c_error()) {
+            return;
+        }
+    }
     // SB=1, cleared by reading SR1 register followed by writting DR register with Address
     write32(&I2C->DR, VEML7700_ADDR_WR);
 
     // ADDR=1, cleared by reading SR1 followed by reading SR2
-    while ((read32(&I2C->SR1) & (1 << 1)) == 0) {}
+    while ((read32(&I2C->SR1) & (1 << 1)) == 0) {
+        if (is_i2c_error()) {
+            return;
+        }
+    }
     read32(&I2C->SR2);
 
     write32(&I2C->DR, 0x00);  // 0x00:Config; 0x07:DevceID; 0x04:ALS_DATA
     // TxE=1, shift register empty, data register empty, cleared by writing DR
-    while ((read32(&I2C->SR1) & (1 << 7)) == 0) {}
+    while ((read32(&I2C->SR1) & (1 << 7)) == 0) {
+        if (is_i2c_error()) {
+            return;
+        }
+    }
 
     write32(&I2C->DR, 0x00);  // 0x0000 LSB
-    while ((read32(&I2C->SR1) & (1 << 7)) == 0) {}
+    while ((read32(&I2C->SR1) & (1 << 7)) == 0) {
+        if (is_i2c_error()) {
+            return;
+        }
+    }
 
     write32(&I2C->DR, 0x00);  // 0x0000 LSB
     stop_sequence();
 
     // [1] BUSY
-    while (read32(&I2C->SR2) & (1 << 1)) {}
+    while (read32(&I2C->SR2) & (1 << 1)) {
+        if (is_i2c_error()) {
+            return;
+        }
+    }
 
     nvic_irq_clear(33);
 }

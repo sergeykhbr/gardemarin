@@ -98,7 +98,7 @@ void show_int_x10(int val, int line, int col, uint16_t bkg) {
 // 150.5 - 250.4  Healthy alert
 // 250.5 - 500.4  Hazardous
 uint16_t air_bkg_color(int val) {
-    int v = val >> 8;
+    int v = val;
     if (v <= 12) {
         return CLR_DARK_GREEN;
     } else if (v <= 35) {
@@ -111,11 +111,11 @@ uint16_t air_bkg_color(int val) {
 
 void udpate_raw_data(raw_meas_type *raw, int sec) {
     // Light measurement
-    if (is_lux_error()) {
-        reset_lux();
+    if (is_i2c_error()) {
+        i2c_reset();
     } else {
         update_lux();
-        while (is_lux_busy()) {}
+        while (is_i2c_busy()) {}
         raw->lux = get_lux();
     }
 
@@ -270,7 +270,9 @@ void task_update(task_data_type *data, int sec) {
         if (raw.air_10 != data->raw.air_10) {
             show_int(raw.air_10, PM10_INFO_LINE, 12, air_bkg_color(raw.air_10));
         }
-        if (raw.lux != data->raw.lux) {
+        if (is_i2c_error()) {
+            show_int(get_i2c_err_state(), LIGHT_INFO_LINE, 6, CLR_DARK_RED);
+        } else if (raw.lux != data->raw.lux) {
             show_int(raw.lux, LIGHT_INFO_LINE, 6, CLR_BLACK);
         }
    

@@ -25,11 +25,12 @@ extern "C" {
 void i2c_init();
 void veml7700_configure();
 
-void update_lux();
-void reset_lux();
-int is_lux_busy();
-int is_lux_error();
+void i2c_reset();
+int is_i2c_busy();
+int is_i2c_error();
+int get_i2c_err_state();  // previous to error state
 int get_lux();
+void update_lux();
 
 #ifdef __cplusplus
 }
