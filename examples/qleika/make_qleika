@@ -56,7 +56,9 @@ SOURCES = $(MCU_SRC) \
 	app_handlers \
 	fwmem \
 	spi_display \
+	i2c_common \
 	i2c_veml7700 \
+	i2c_bmp280 \
 	dht22 \
 	air_d9 \
 	task \

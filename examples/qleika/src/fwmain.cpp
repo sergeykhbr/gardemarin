@@ -22,7 +22,7 @@
 #include <vprintfmt.h>
 #include <gpio_drv.h>
 #include <spi_display.h>
-#include <i2c_veml7700.h>
+#include <i2c_common.h>
 #include <dht22.h>
 #include <air_d9.h>
 #include "gpio_cfg.h"

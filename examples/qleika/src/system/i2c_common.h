@@ -17,14 +17,19 @@
 
 #include <inttypes.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void veml7700_configure();
-void update_lux();
-int get_lux();
+void i2c_init();
+void i2c_reset();
+int is_i2c_busy();
+int is_i2c_error();
+int get_i2c_err_state();  // previous to error state
+
+void i2c_start_sequence();
+void i2c_stop_sequence();
+void i2c_read_reg_burst(uint8_t busadr, uint8_t regadr, uint8_t *buf, int sz);
 
 #ifdef __cplusplus
 }

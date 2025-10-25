@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Sergey Khabarov, sergeykhbr@gmail.com
+ *  Copyright 2025 Sergey Khabarov, sergeykhbr@gmail.com
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 
 #include <inttypes.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void veml7700_configure();
-void update_lux();
-int get_lux();
+void bmp280_configure();
+void update_pressure();
+int get_pressure();
 
 #ifdef __cplusplus
 }

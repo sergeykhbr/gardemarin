@@ -16,7 +16,9 @@
 
 #include <gpio_drv.h>
 #include <spi_display.h>
+#include <i2c_common.h>
 #include <i2c_veml7700.h>
+#include <i2c_bmp280.h>
 #include <dht22.h>
 #include <air_d9.h>
 #include <vprintfmt.h>
@@ -113,13 +115,9 @@ uint16_t air_bkg_color(int val) {
 
 void udpate_raw_data(raw_meas_type *raw, int sec) {
     // Light measurement
-    if (is_i2c_error()) {
-        i2c_reset();
-    } else {
-        update_lux();
-        while (is_i2c_busy()) {}
-        raw->lux = get_lux();
-    }
+    update_lux();
+    while (is_i2c_busy()) {}
+    raw->lux = get_lux();
 
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
@@ -212,6 +210,7 @@ void task_update(task_data_type *data, int sec) {
         display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
 
         veml7700_configure();
+        bmp280_configure();
         set_state(data, sec, State_Idle);
         break;
     case State_Idle:
@@ -251,6 +250,9 @@ void task_update(task_data_type *data, int sec) {
         } else if (raw.dht_error) {
             show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_DARK_RED);
         }
+
+        show_int(get_pressure(), PRESSURE_INFO_LINE, 9, CLR_BLACK);
+
         if (raw.moisture != data->raw.moisture) {
             show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
         } else if (raw.dht_error) {
