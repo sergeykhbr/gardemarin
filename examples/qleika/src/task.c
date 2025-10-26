@@ -57,6 +57,7 @@ void task_init(task_data_type *data) {
     data->raw.pressure_error = 0;
     data->raw.water_level = 0;
     data->raw.water_low = 0;
+    data->raw.watering_ena = 0;
     data->raw.dht_error = 0;
     data->raw.temperature = 230;
     data->raw.moisture = 343;
@@ -236,13 +237,14 @@ void task_update(task_data_type *data, int sec) {
         break;
     case State_Idle:
         udpate_raw_data(&raw, sec);
+        raw.watering_ena = is_time_to_watering(data);
     
         // pump control
-        if (is_time_to_watering(data)) {
+        if (raw.watering_ena) {
             pump_enable(data);
 
             int t1 = WATERING_SEC - (data->watering_cnt - WATERING_WAIT_SEC);
-            if (raw.water_low) {
+            if (data->raw.water_low) {
                 display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_DARK_YELLOW);
                 show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_YELLOW);
             } else {
@@ -252,7 +254,8 @@ void task_update(task_data_type *data, int sec) {
         } else {
             pump_disable(data);
 
-            if (raw.water_level != data->raw.water_level) {
+            if (raw.watering_ena != data->raw.watering_ena
+               || raw.water_level != data->raw.water_level) {
                 if (raw.water_level) {
                     display_outputText24Line("Watering in:        ", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
                 } else {
