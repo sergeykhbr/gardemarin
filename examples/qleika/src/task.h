@@ -30,7 +30,8 @@ typedef enum estate_type {
 
 
 typedef struct raw_meas_type {
-    int water_level;
+    char water_level;
+    char water_low;     // no water detected during watering
     uint16_t lux;
     int lux_error;
     int pressure;

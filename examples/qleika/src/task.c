@@ -56,6 +56,7 @@ void task_init(task_data_type *data) {
     data->raw.pressure = 7500;
     data->raw.pressure_error = 0;
     data->raw.water_level = 0;
+    data->raw.water_low = 0;
     data->raw.dht_error = 0;
     data->raw.temperature = 230;
     data->raw.moisture = 343;
@@ -159,14 +160,21 @@ void set_state(task_data_type *data, int sec, estate_type state_next) {
 
 int is_time_to_watering(task_data_type *data) {
     int ret = 0;
-    if (!data->raw.water_level) {
-        data->watering_cnt = WATERING_WAIT_SEC - 10;   // wait 10 seconds after water detected
-        return ret;
-    }
 
     data->watering_cnt++;
     if (data->watering_cnt >= WATERING_WAIT_SEC) {
         ret = 1;
+        // Finish watering even there's no water detector
+        if (!data->raw.water_level) {
+            data->raw.water_low = 1;
+        }
+    } else {
+        data->raw.water_low = 0;
+        // stop updating counter if there's no water and timeout is less than 10 sec
+        if (!data->raw.water_level
+           && data->watering_cnt > (WATERING_WAIT_SEC - 10)) {
+            data->watering_cnt = WATERING_WAIT_SEC - 10;
+        }
     }
     if (data->watering_cnt > (WATERING_WAIT_SEC + WATERING_SEC)) {
         data->watering_cnt = 0;
@@ -229,33 +237,32 @@ void task_update(task_data_type *data, int sec) {
     case State_Idle:
         udpate_raw_data(&raw, sec);
     
-        // Show watering line (6) on display
-        if (raw.water_level != data->raw.water_level) {
-            // State is changed:
-            if (raw.water_level) {
-                display_outputText24Line("Watering in:        ", WATERING_INFO_LINE, 0, 0xffff, 0x0000);
-            } else {
-                display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
-            }
-        } else {
-            if (raw.water_level) {
-                // show time to net watering
-                int t1 = WATERING_WAIT_SEC - data->watering_cnt;
-                if (t1 < 0) {
-                    t1 += WATERING_SEC;   // now is watering
-                    show_int(t1, WATERING_INFO_LINE, 12, CLR_DARK_GREEN);
-                } else {
-                    show_int(t1, WATERING_INFO_LINE, 12, CLR_BLACK);
-                }
-            } else {
-                // do nothing
-            }
-        }
         // pump control
         if (is_time_to_watering(data)) {
             pump_enable(data);
+
+            int t1 = WATERING_SEC - (data->watering_cnt - WATERING_WAIT_SEC);
+            if (raw.water_low) {
+                display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_DARK_YELLOW);
+                show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_YELLOW);
+            } else {
+                display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
+                show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_GREEN);
+            }
         } else {
             pump_disable(data);
+
+            if (raw.water_level != data->raw.water_level) {
+                if (raw.water_level) {
+                    display_outputText24Line("Watering in:        ", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
+                } else {
+                    display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
+                }
+            }
+            if (raw.water_level) {
+                int t1 = WATERING_WAIT_SEC - data->watering_cnt;
+                show_int(t1, WATERING_INFO_LINE, 12, CLR_BLACK);
+            }
         }
     
         if (raw.temperature != data->raw.temperature) {
