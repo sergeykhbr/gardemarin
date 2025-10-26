@@ -61,6 +61,7 @@ SOURCES = $(MCU_SRC) \
 	i2c_bmp280 \
 	dht22 \
 	air_d9 \
+	exti_btn \
 	task \
 	fwmain
 

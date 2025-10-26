@@ -79,6 +79,20 @@ static const gpio_pin_type CFG_PIN_RELAIS_PUMP = {
     (GPIO_registers_type *)GPIOA_BASE, 12
 };
 
+// Button 1 (Top)
+static const gpio_pin_type CFG_PIN_BTN1_UP = {
+    (GPIO_registers_type *)GPIOB_BASE, 0
+};
+
+// Button 2 (Top)
+static const gpio_pin_type CFG_PIN_BTN2_CENTER = {
+    (GPIO_registers_type *)GPIOB_BASE, 1
+};
+
+// Button 3 (Down)
+static const gpio_pin_type CFG_PIN_BTN3_DOWN = {
+    (GPIO_registers_type *)GPIOC_BASE, 13
+};
 
 
 // VEML7700 I2C Light sensor

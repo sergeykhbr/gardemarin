@@ -25,6 +25,10 @@ void i2c2_ev_handler();
 void dht_tim_handler();
 void air_d9_irq_handler();
 void i2c_watchdog_handler();
+void exti0_btn_up_handler();
+void exti1_btn_center_handler();
+void exti13_btn_down_handler();
+
 
 #define WWDG_IRQHandler DefaultISR
 #define PVD_IRQHandler DefaultISR
@@ -32,8 +36,8 @@ void i2c_watchdog_handler();
 #define RTC_WKUP_IRQHandler DefaultISR
 #define FLASH_IRQHandler DefaultISR
 #define RCC_IRQHandler DefaultISR
-#define EXTI0_IRQHandler DefaultISR
-#define EXTI1_IRQHandler DefaultISR
+#define EXTI0_IRQHandler exti0_btn_up_handler
+#define EXTI1_IRQHandler exti1_btn_center_handler
 #define EXTI2_IRQHandler DefaultISR
 #define EXTI3_IRQHandler DefaultISR
 #define EXTI4_IRQHandler DefaultISR
@@ -66,7 +70,7 @@ void i2c_watchdog_handler();
 #define USART1_IRQHandler air_d9_irq_handler
 #define USART2_IRQHandler DefaultISR
 #define USART3_IRQHandler DefaultISR
-#define EXTI15_10_IRQHandler DefaultISR
+#define EXTI15_10_IRQHandler exti13_btn_down_handler
 #define RTC_Alarm_IRQHandler DefaultISR
 #define OTG_FS_WKUP_IRQHandler DefaultISR
 #define TIM8_BRK_TIM12_IRQHandler DefaultISR
