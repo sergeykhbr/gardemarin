@@ -56,7 +56,7 @@ static void set_error(estate_type curstate, uint32_t sr1) {
 static void startWatchdog() {
     TIM_registers_type *TIM = (TIM_registers_type *) TIM3_BASE;
     tim_cr1_reg_type cr1;
-    uint32_t usec = 100000;  // 10ms
+    uint32_t usec = 100000;
 
     watchdog_ = 0;
     write32(&TIM->ARR, usec);
@@ -163,7 +163,7 @@ void i2c_init() {
     write32(&RCC->APB1ENR, t1);
 
     write32(&TIM->CR1.val, 0);         // stop counter
-    write16(&TIM->PSC, 710);            // to form 0.1 MHz count
+    write16(&TIM->PSC, 7100);            // to form 0.01 MHz count
     write16(&TIM->DIER, 1);            // [0] UIE - update interrupt enabled
 
     // prio: 0 highest; 7 is lowest
@@ -298,10 +298,17 @@ void i2c2_ev_handler() {
     case state_EV6_receiver:
         // ADDR=1, cleared by reading SR1 followed by reading SR2
         read32(&I2C->SR2);
-        ack_enable();
         // [1] Address sent
         if (sr1 & (1 << 1)) {
-            estate_ = state_EV7_1_receiver;
+            if (rdcnt_ >= (rdsz_ - 1)) {
+                // 1 Byte only
+                estate_ = state_EV7_receiver;
+                ack_disable();  // ACK=0, STOP=1
+            } else {
+                // More than 1 byte
+                estate_ = state_EV7_1_receiver;
+                ack_enable();
+            }
             i2c_rxtx_event_enable();
         } else {
             set_error(estate_, sr1);
@@ -309,7 +316,6 @@ void i2c2_ev_handler() {
         break;
     case state_EV7_1_receiver:
         // RxNE=1 cleared by reading DR, program ACK=0 and STOP request
-        //lux_raw_ = (uint8_t)read32(&I2C->DR);
         rdbuf_[rdcnt_++] = (uint8_t)read32(&I2C->DR);
 
         // [6] RxNE
@@ -326,7 +332,7 @@ void i2c2_ev_handler() {
         break;
     case state_EV7_receiver:
         // RxNE=1 cleared by reading DR register
-        //lux_raw_ |= (read32(&I2C->DR) & 0xFF) << 8;
+        i2c_stop_sequence();
         rdbuf_[rdcnt_++] = read32(&I2C->DR);
         estate_ = state_idle;
         break;
@@ -360,7 +366,6 @@ void i2c_read_reg_burst(uint8_t busadr, uint8_t regadr, uint8_t *buf, int sz) {
     rdsz_ = sz;
     rdcnt_ = 0;
 
-    i2c_rxtx_event_enable();
     nvic_irq_enable(33, 6); // 33 I2C2 event
 
     i2c_start_sequence();

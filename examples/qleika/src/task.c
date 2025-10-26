@@ -52,7 +52,9 @@ void task_init(task_data_type *data) {
     data->state_changed_sec = 0;
     data->watering_cnt = WATERING_WAIT_SEC - 10;   // wait 10 seconds after water detected
     data->raw.lux = 9500;
-    data->raw.pressure = 750;
+    data->raw.lux_error = 0;
+    data->raw.pressure = 7500;
+    data->raw.pressure_error = 0;
     data->raw.water_level = 0;
     data->raw.dht_error = 0;
     data->raw.temperature = 230;
@@ -118,6 +120,17 @@ void udpate_raw_data(raw_meas_type *raw, int sec) {
     update_lux();
     while (is_i2c_busy()) {}
     raw->lux = get_lux();
+    raw->lux_error = is_i2c_error();
+
+    // temperature on PCB is higher than env. temperature
+    bmp280_update_temperature();
+    while (is_i2c_busy()) {}
+    raw->pressure_error = is_i2c_error();
+
+    bmp280_update_pressure();
+    while (is_i2c_busy()) {}
+    raw->pressure = get_pressure(raw->temperature);
+    raw->pressure_error |= is_i2c_error();
 
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
@@ -190,7 +203,7 @@ void task_update(task_data_type *data, int sec) {
         show_int_x10(data->raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);
 
         display_outputText24Line("Pressure:", PRESSURE_INFO_LINE, 0, 0xffff, CLR_BLACK);
-        show_int(data->raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
+        show_int_x10(data->raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
 
         display_outputText24Line("Moisture:", MOISTURE_INFO_LINE, 0, 0xffff, CLR_BLACK);
         show_int_x10(data->raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);
@@ -251,7 +264,11 @@ void task_update(task_data_type *data, int sec) {
             show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_DARK_RED);
         }
 
-        show_int(get_pressure(), PRESSURE_INFO_LINE, 9, CLR_BLACK);
+        if (raw.pressure != data->raw.pressure) {
+            show_int_x10(raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
+        } else if (raw.pressure_error) {
+            show_int_x10(raw.pressure, PRESSURE_INFO_LINE, 9, CLR_DARK_RED);
+        }
 
         if (raw.moisture != data->raw.moisture) {
             show_int_x10(raw.moisture, MOISTURE_INFO_LINE, 9, CLR_BLACK);

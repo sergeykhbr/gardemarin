@@ -32,7 +32,9 @@ typedef enum estate_type {
 typedef struct raw_meas_type {
     int water_level;
     uint16_t lux;
+    int lux_error;
     int pressure;
+    int pressure_error;
     int dht_error;
     int temperature;
     int moisture;

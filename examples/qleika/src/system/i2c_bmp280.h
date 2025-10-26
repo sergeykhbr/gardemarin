@@ -22,8 +22,9 @@ extern "C" {
 #endif
 
 void bmp280_configure();
-void update_pressure();
-int get_pressure();
+void bmp280_update_temperature();    // fine temperature is used in Pa calculation (internal)
+void bmp280_update_pressure();
+int get_pressure(int T_x10);
 
 #ifdef __cplusplus
 }
