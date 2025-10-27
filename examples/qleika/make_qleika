@@ -62,6 +62,7 @@ SOURCES = $(MCU_SRC) \
 	dht22 \
 	air_d9 \
 	exti_btn \
+	bkp \
 	task \
 	fwmain
 

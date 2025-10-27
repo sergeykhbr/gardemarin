@@ -22,6 +22,7 @@
 #include <dht22.h>
 #include <air_d9.h>
 #include <exti_btn.h>
+#include <bkp.h>
 #include <vprintfmt.h>
 #include "task.h"
 #include "gpio_cfg.h"
@@ -34,9 +35,6 @@
 #define PM10_INFO_LINE        5
 #define LIGHT_INFO_LINE       6
 #define WATERING_INFO_LINE    7
-
-//#define WATERING_WAIT_SEC 1800
-//#define WATERING_SEC 20
 
 #define CLR_BLACK              0x0000
 #define CLR_WHITE              0xFFFF
@@ -84,6 +82,8 @@ void task_init(task_data_type *data) {
     data->raw.air_2p5 = 0;
     data->raw.air_10 = 0;
     data->raw.btn_event = 0;
+
+    data->watering_mode = bkp_get_watering_mode();
 }
 
 void show_int(int val, int line, int col, uint16_t bkg) {
@@ -322,7 +322,7 @@ void task_update(task_data_type *data, int sec) {
                     if (data->watering_redraw) {
                         data->watering_mode = (data->watering_mode + 1) % 8;
                         data->watering_cnt = 0;
-                        // TODO: store to BKP register
+                        bkp_set_watering_mode(data->watering_mode);
                     }
                 }
                 show_watering_mode(data->watering_mode, WATERING_INFO_LINE, 7, CLR_WHITE, CLR_VIOLET);
