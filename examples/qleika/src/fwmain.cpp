@@ -25,6 +25,7 @@
 #include <i2c_common.h>
 #include <dht22.h>
 #include <air_d9.h>
+#include <exti_btn.h>
 #include "gpio_cfg.h"
 #include "task.h"
 
@@ -83,6 +84,7 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     gpio_pin_as_output(&CFG_PIN_AIR_D9_PWR5V, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_set(&CFG_PIN_AIR_D9_PWR5V);
 
+    task_data.watering_mode = 4;   // 4=1800/20. restore from BKP
     task_init(&task_data);
 
     while(1) {

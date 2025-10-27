@@ -24,21 +24,21 @@ static int btn_[3] = {0};
 void exti0_btn_up_handler() {
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     btn_[0] = 1;
-    write32(&EXTI->PR, 0);  // clear pending bit
+    write32(&EXTI->PR, 1 << CFG_PIN_BTN1_UP.pinidx);  // clear pending bit
     nvic_irq_clear(6);        // EXTI0
 }
 
 void exti1_btn_center_handler() {
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     btn_[1] = 1;
-    write32(&EXTI->PR, 0);  // clear pending bit
+    write32(&EXTI->PR, 1 << CFG_PIN_BTN2_CENTER.pinidx);  // clear pending bit
     nvic_irq_clear(7);        // EXTI1
 }
 
 void exti13_btn_down_handler() {
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     btn_[2] = 1;
-    write32(&EXTI->PR, 0);  // clear pending bit
+    write32(&EXTI->PR, 1 << CFG_PIN_BTN3_DOWN.pinidx);  // clear pending bit
     nvic_irq_clear(40);        // EXTI15_10
 }
 
@@ -67,7 +67,7 @@ void exti_init() {
     write32(&EXTI->RTSR, 0);  // Disable rising edge
     write32(&EXTI->FTSR, (1 << 0) | (1 << 1) | (1 << 13));  // Enable falling edge
     write32(&EXTI->IMR, (1 << 0) | (1 << 1) | (1 << 13));  // Unmask interrupts
-    write32(&EXTI->PR, 0);  // clear pending bit
+    write32(&EXTI->PR, ~0ul);  // clear pending bit
 
     // prio: 0 highest; 7 is lowest
     nvic_irq_enable(6, 7);  // 6=EXTI0

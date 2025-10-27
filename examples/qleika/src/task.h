@@ -29,10 +29,16 @@ typedef enum estate_type {
 } estate_type;
 
 
+#define BTN_Up     0x1
+#define BTN_Center 0x2
+#define BTN_Down   0x4
+
+
 typedef struct raw_meas_type {
     char water_level;
     char water_low;     // no water detected during watering
     char watering_ena;
+    uint8_t btn_event;
     uint16_t lux;
     int lux_error;
     int pressure;
@@ -52,6 +58,9 @@ typedef struct task_data_type {
     int state_changed_sec;
     raw_meas_type raw;
     int watering_cnt;  // 1800 seconds wait + 20 seconds watering
+    char watering_mode;  // stored in BKP setting: wait/watering cycle duration index
+    int watering_mode_sec; // last time it was changed
+    char watering_redraw;  // redraw watering line after button events
 
     char tstr[21];     // 20 symbols of font24 per  line
 } task_data_type;

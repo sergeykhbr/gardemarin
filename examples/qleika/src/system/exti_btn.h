@@ -23,8 +23,8 @@ extern "C" {
 
 void exti_init();
 int is_btn_up_pressed();
-int is_btn_center_pressed()
-int is_btn_down_pressed()
+int is_btn_center_pressed();
+int is_btn_down_pressed();
 
 #ifdef __cplusplus
 }
