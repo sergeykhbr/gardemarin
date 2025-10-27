@@ -20,7 +20,6 @@
 
 static int btn_[3] = {0};
 
-
 void exti0_btn_up_handler() {
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     btn_[0] = 1;
@@ -48,7 +47,7 @@ void exti_init() {
     EXTI_registers_type *EXTI = (EXTI_registers_type *)EXTI_BASE;
     uint32_t t1;
 
-    gpio_pin_as_input(&CFG_PIN_BTN1_UP, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_input(&CFG_PIN_BTN1_UP, GPIO_SLOW, GPIO_PULL_UP);
     gpio_pin_as_input(&CFG_PIN_BTN2_CENTER, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_as_input(&CFG_PIN_BTN3_DOWN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
 
@@ -61,20 +60,19 @@ void exti_init() {
     t1 = read32(&afio->EXTICR[3]);
     t1 &= ~(0xF << 4);
     t1 |= (0x2 << 4);   // [7:4] 0010 EXTI13 <- PC13 (btn down)
-    write32(&afio->EXTICR[0], t1);
+    write32(&afio->EXTICR[3], t1);
 
     write32(&EXTI->EMR, 0);  // No event
     write32(&EXTI->RTSR, 0);  // Disable rising edge
     write32(&EXTI->FTSR, (1 << 0) | (1 << 1) | (1 << 13));  // Enable falling edge
     write32(&EXTI->IMR, (1 << 0) | (1 << 1) | (1 << 13));  // Unmask interrupts
-    write32(&EXTI->PR, ~0ul);  // clear pending bit
+    write32(&EXTI->PR, 0);  // clear pending bit
 
     // prio: 0 highest; 7 is lowest
     nvic_irq_enable(6, 7);  // 6=EXTI0
     nvic_irq_enable(7, 7);   // 7=EXTI1
     nvic_irq_enable(40, 7);  // 40=EXTI[15:10]
 }
-
 
 int is_btn_up_pressed() {
     int ret = btn_[0];

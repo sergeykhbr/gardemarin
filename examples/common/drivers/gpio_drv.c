@@ -41,8 +41,24 @@ void gpio_pin_as_input(const gpio_pin_type *p,
     //       11 Alternate function output open-drain
     t1 = read32(&p->port->CR[p->pinidx >> 3]);
     t1 &= ~(0xF << ((p->pinidx & 0x7) * 4));
-    t1 |= (0x4 << ((p->pinidx & 0x7) * 4));
-    write32(&p->port->CR[p->pinidx >> 3], t1);
+    if (pushpull == GPIO_PULL_UP) {
+        t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
+        write32(&p->port->CR[p->pinidx >> 3], t1);
+
+        t1 = read32(&p->port->ODR);
+        t1 |= (1 << p->pinidx);
+        write32(&p->port->ODR, t1);
+    } else if (pushpull == GPIO_PULL_DOWN) {
+        t1 |= (0x8 << ((p->pinidx & 0x7) * 4));
+        write32(&p->port->CR[p->pinidx >> 3], t1);
+
+        t1 = read32(&p->port->ODR);
+        t1 &= ~(1 << p->pinidx);
+        write32(&p->port->ODR, t1);
+    } else {
+        t1 |= (0x4 << ((p->pinidx & 0x7) * 4));
+        write32(&p->port->CR[p->pinidx >> 3], t1);
+    }
 
 #else
     // 00 input; 01 output; 10 alternate; 11 analog

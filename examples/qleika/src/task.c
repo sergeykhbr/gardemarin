@@ -124,7 +124,7 @@ void show_watering_mode(int val, int line, int col, uint16_t clr, uint16_t bkg) 
     int szmax = 20 - col;
     int w1 = WATERING_CYCLE[val].wait;
     int w2 = WATERING_CYCLE[val].watering;
-    sz = snprintf_lib(tstr1, szmax + 1, "%d:%d/%d", w1/3600, (w1/60) % 60, w2);
+    sz = snprintf_lib(tstr1, szmax + 1, "%dh:%dm/%d", w1/3600, (w1/60) % 60, w2);
     for (int i = 0; i < szmax - sz; i++) {
          tstr[i] = ' ';
     }
@@ -315,15 +315,17 @@ void task_update(task_data_type *data, int sec) {
             pump_disable(data);
 
 
-            if (raw.btn_event || (sec - data->watering_mode_sec) < 7) {
-                display_outputText24Line("Mode:", WATERING_INFO_LINE, 0, 0xffff, CLR_VIOLET);
-                if (raw.btn_event && (sec - data->watering_mode_sec) < 7) {
-                    data->watering_mode = (data->watering_mode + 1) % 8;
-                    data->watering_cnt = 0;
-                    // TODO: store to BKP register
+            if ((raw.btn_event & BTN_Up) || (sec - data->watering_mode_sec) < 7) {
+                display_outputText24Line("Period:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+                if (raw.btn_event & BTN_Up) {
+                    data->watering_mode_sec = sec;
+                    if (data->watering_redraw) {
+                        data->watering_mode = (data->watering_mode + 1) % 8;
+                        data->watering_cnt = 0;
+                        // TODO: store to BKP register
+                    }
                 }
-                show_watering_mode(data->watering_mode, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_BLACK);
-                data->watering_mode_sec = sec;
+                show_watering_mode(data->watering_mode, WATERING_INFO_LINE, 7, CLR_WHITE, CLR_VIOLET);
                 data->watering_redraw = 1;
             } else if (raw.watering_ena != data->raw.watering_ena
                || raw.water_level != data->raw.water_level
