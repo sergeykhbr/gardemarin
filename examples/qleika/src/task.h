@@ -51,9 +51,17 @@ typedef struct raw_meas_type {
     int air_10;
 } raw_meas_type;
 
+#define STATUS_NO_WATER     0
+#define STATUS_WATERING_IN  1
+#define STATUS_STOP_IN      2
+#define STATUS_MODE_SELECT  3
+#define STATUS_TIME_SET     4
+#define STATUS_LIGHT_SELECT 5
+
 typedef struct task_data_type {
     estate_type state;
     estate_type state_next;
+    int status;
     int wait_cnt;
     int state_changed_sec;
     raw_meas_type raw;
