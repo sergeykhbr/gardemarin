@@ -16,6 +16,7 @@
 
 #include <mcu.h>
 #include "pwm.h"
+#include "../gpio_cfg.h"
 
 void pwm_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
@@ -29,7 +30,7 @@ void pwm_init() {
     write32(&RCC->APB2ENR, t1);
 
     // TIM1_CH1N -> PB[13]: TIM1_REMAP[1:0]=00 (no remap)
-    gpio_pin_as_alternate(&CFG_PIN_MOSFET_1);
+    gpio_pin_as_alternate(&CFG_PIN_MOSFET_1, 6);
 
     // OCxM = 011 to toggle OCx output pin when CNT matches CCRx
     // OCxPE = 0 to disable preload register
@@ -38,10 +39,10 @@ void pwm_init() {
 
     // [6:4] OC1M output compare 1 mode: 011=Toggle when CNT=CCR1; 110=PWM mode 1; 111=PWM mode 2
     // [1:0] CC1S: 00 = CC1 configured as output
-    write32(&TIM->CCMR1, (0x3 << 4));
+    write16(&TIM->CCMR1, (0x3 << 4));
     // [3] CC1NP: 0 = active high; 1=active low
     // [2] CC1NE: 1: pin 
-    write32(&TIM->CCER, (1 << 3) | (1 << 2));
+    write16(&TIM->CCER, (1 << 3) | (1 << 2));
 
     write32(&TIM->ARR, period - 1);
     write32(&TIM->CCR1, period/2);

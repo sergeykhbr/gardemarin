@@ -21,11 +21,9 @@
 extern "C" {
 #endif
 
-void bkp_init();
-int bkp_get_watering_mode();
-void bkp_set_watering_mode(int val);
-int bkp_get_light_mode();
-void bkp_set_light_mode(int val);
+void rtc_init();
+uint32_t rtc_get_time();
+void rtc_set_time(uint32_t val);
 
 #ifdef __cplusplus
 }

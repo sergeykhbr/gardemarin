@@ -42,6 +42,20 @@ int bkp_get_watering_mode() {
 
 void bkp_set_watering_mode(int val) {
     uint32_t *BKP = (uint32_t *)BKP_BASE;
-    BKP[3] = val & 0x7;
+    uint32_t t = BKP[3] & ~0x7;
+    t |= val & 0x7;
+    BKP[3] = t;
+}
+
+int bkp_get_light_mode() {
+    uint32_t *BKP = (uint32_t *)BKP_BASE;
+    return (BKP[3] >> 4) & 0x1;    // BKP_DR3[4] light mode
+}
+
+void bkp_set_light_mode(int val) {
+    uint32_t *BKP = (uint32_t *)BKP_BASE;
+    uint32_t t = BKP[3] & ~0x10;
+    t |= (val & 0x1) << 4;
+    BKP[3] = t;
 }
 

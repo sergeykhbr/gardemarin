@@ -27,6 +27,8 @@
 #include <air_d9.h>
 #include <exti_btn.h>
 #include <bkp.h>
+#include <pwm.h>
+#include <rtc_qleika.h>
 #include "gpio_cfg.h"
 #include "task.h"
 
@@ -79,6 +81,8 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     display_splash_screen();
     air_d9_init();
     exti_init();
+    pwm_init();
+    rtc_init();
 
     gpio_pin_as_input(&CFG_PIN_WATER_LEVEL_DATA, GPIO_SLOW, GPIO_NO_PUSH_PULL);
     gpio_pin_as_output(&CFG_PIN_RELAIS_PUMP, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);

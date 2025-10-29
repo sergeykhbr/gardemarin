@@ -64,6 +64,7 @@ SOURCES = $(MCU_SRC) \
 	exti_btn \
 	bkp \
 	pwm \
+	rtc_qleika \
 	task \
 	fwmain
 

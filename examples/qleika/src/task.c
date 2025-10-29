@@ -23,6 +23,8 @@
 #include <air_d9.h>
 #include <exti_btn.h>
 #include <bkp.h>
+#include <pwm.h>
+#include <rtc_qleika.h>
 #include <vprintfmt.h>
 #include "task.h"
 #include "gpio_cfg.h"
@@ -78,7 +80,7 @@ void task_init(task_data_type *data) {
     data->hour = 0;
     data->minute = 0;
     data->t_corr = 0;
-    data->light = 0;
+    data->light = bkp_get_light_mode();
     data->raw.lux = 9500;
     data->raw.lux_error = 0;
     data->raw.pressure = 7500;
@@ -112,8 +114,14 @@ void show_int(int val, int line, int col, uint16_t bkg) {
 void show_int_x10(int val, int line, int col, uint16_t bkg) {
     char tstr1[21];
     char tstr[21];
+    int sz;
     int szmax = 20 - col;
-    int sz = snprintf_lib(tstr1, szmax + 1, "%d.%d", val/10, val%10);
+    if (val < 0) {
+        val = -val;
+        sz = snprintf_lib(tstr1, szmax + 1, "-%d.%d", val/10, val%10);
+    } else {
+        sz = snprintf_lib(tstr1, szmax + 1, "%d.%d", val/10, val%10);
+    }
     for (int i = 0; i < szmax - sz; i++) {
          tstr[i] = ' ';
     }
@@ -323,6 +331,9 @@ void draw_status_line(raw_meas_type *raw,       // current data
     case STATUS_TIME_H_SET:
         if (status != data->status) {
             display_outputText24Line("Time:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            t1 = rtc_get_time();
+            data->hour = t1 >> 16;
+            data->minute = t1 >> 8;
             show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
@@ -330,10 +341,7 @@ void draw_status_line(raw_meas_type *raw,       // current data
             show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-            data->hour--;
-            if (data->hour < 0) {
-                data->hour = 23;
-            }
+            data->hour = (data->hour - 1) % 24;
             show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
             status = STATUS_TIME_M_SET;
@@ -347,10 +355,7 @@ void draw_status_line(raw_meas_type *raw,       // current data
             show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-            data->minute--;
-            if (data->minute < 0) {
-                data->minute = 59;
-            }
+            data->minute = (data->minute - 1) % 60;
             show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
             status = STATUS_TIME_T_CORR;
@@ -376,7 +381,13 @@ void draw_status_line(raw_meas_type *raw,       // current data
     case STATUS_LIGHT_SELECT:
         if (status != data->status) {
             display_outputText24Line("Light:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
-            show_int(0, WATERING_INFO_LINE, 6, CLR_VIOLET);
+            show_int(data->light, WATERING_INFO_LINE, 6, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Down) {
+            data->status_changed_sec = data->sec;
+
+            data->light = (data->light + 1) & 1;
+            bkp_set_light_mode(data->light);
+            show_int(data->light, WATERING_INFO_LINE, 6, CLR_VIOLET);
         }
     break;
     case STATUS_STOP_IN:
