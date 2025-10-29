@@ -36,8 +36,6 @@ typedef enum estate_type {
 
 typedef struct raw_meas_type {
     char water_level;
-    char water_low;     // no water detected during watering
-    char watering_ena;
     uint8_t btn_event;
     uint16_t lux;
     int lux_error;
@@ -51,30 +49,39 @@ typedef struct raw_meas_type {
     int air_10;
 } raw_meas_type;
 
-#define STATUS_NO_WATER     0
-#define STATUS_WATERING_IN  1
-#define STATUS_STOP_IN      2
-#define STATUS_MODE_SELECT  3
-#define STATUS_TIME_SET     4
-#define STATUS_LIGHT_SELECT 5
+#define STATUS_NO_WATER      0
+#define STATUS_WATERING_IN   1
+#define STATUS_STOP_IN       2
+#define STATUS_MODE_SELECT   3  // watering interval
+#define STATUS_TIME_H_SET    4
+#define STATUS_TIME_M_SET    5
+#define STATUS_TIME_T_CORR   6  // temperature correction
+#define STATUS_LIGHT_SELECT  7
 
 typedef struct task_data_type {
     estate_type state;
     estate_type state_next;
+    int sec;
     int status;
+    int status_changed_sec; // last time it was changed
     int wait_cnt;
     int state_changed_sec;
     raw_meas_type raw;
-    int watering_cnt;  // 1800 seconds wait + 20 seconds watering
-    char watering_mode;  // stored in BKP setting: wait/watering cycle duration index
-    int watering_mode_sec; // last time it was changed
-    char watering_redraw;  // redraw watering line after button events
+    int watering_cnt;    // 1800 seconds wait + 20 seconds watering
+    int watering_wait;
+    int watering_duration;
+    int t_corr;          // temperature correction 0.1 resolution
+    char water_low;      // no water detected during watering
+    char watering_ena;
+    char hour;
+    char minute;
+    char light;
 
     char tstr[21];     // 20 symbols of font24 per  line
 } task_data_type;
 
 void task_init(task_data_type *data);
-void task_update(task_data_type *data, int sec);
+void task_update(task_data_type *data);
 
 #ifdef __cplusplus
 }

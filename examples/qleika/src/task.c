@@ -48,7 +48,7 @@
 
 typedef struct watering_cycle_type {
     int wait;
-    int watering;
+    int duration;
 } watering_cycle_type;
 
 static const watering_cycle_type WATERING_CYCLE[] = {
@@ -63,18 +63,27 @@ static const watering_cycle_type WATERING_CYCLE[] = {
 };
 
 void task_init(task_data_type *data) {
+    int mode = bkp_get_watering_mode();
+    data->watering_wait = WATERING_CYCLE[mode].wait;
+    data->watering_duration = WATERING_CYCLE[mode].duration;
+
     data->state = State_SplashScreen;
+    data->sec = 0;
     data->state_changed_sec = 0;
-    data->watering_cnt = WATERING_CYCLE[data->watering_mode].wait - 10;   // wait 10 seconds after water detected
-    data->watering_mode_sec = 0;
-    data->watering_redraw = 0;
+    data->status = STATUS_NO_WATER;
+    data->status_changed_sec = 0;
+    data->watering_cnt = data->watering_wait - 10;   // wait 10 seconds after water detected
+    data->water_low = 0;
+    data->watering_ena = 0;
+    data->hour = 0;
+    data->minute = 0;
+    data->t_corr = 0;
+    data->light = 0;
     data->raw.lux = 9500;
     data->raw.lux_error = 0;
     data->raw.pressure = 7500;
     data->raw.pressure_error = 0;
     data->raw.water_level = 0;
-    data->raw.water_low = 0;
-    data->raw.watering_ena = 0;
     data->raw.dht_error = 0;
     data->raw.temperature = 230;
     data->raw.moisture = 343;
@@ -82,9 +91,6 @@ void task_init(task_data_type *data) {
     data->raw.air_2p5 = 0;
     data->raw.air_10 = 0;
     data->raw.btn_event = 0;
-    data->status = STATUS_NO_WATER;
-
-    data->watering_mode = bkp_get_watering_mode();
 }
 
 void show_int(int val, int line, int col, uint16_t bkg) {
@@ -118,14 +124,28 @@ void show_int_x10(int val, int line, int col, uint16_t bkg) {
     display_outputText24Line(tstr, line, col, 0xffff, bkg); // clear number field
 }
 
-void show_watering_mode(int val, int line, int col, uint16_t clr, uint16_t bkg) {
+void show_watering_mode(int w1, int w2, int line, int col, uint16_t clr, uint16_t bkg) {
     char tstr1[21];
     char tstr[21];
     int sz;
     int szmax = 20 - col;
-    int w1 = WATERING_CYCLE[val].wait;
-    int w2 = WATERING_CYCLE[val].watering;
     sz = snprintf_lib(tstr1, szmax + 1, "%dh:%dm/%d", w1/3600, (w1/60) % 60, w2);
+    for (int i = 0; i < szmax - sz; i++) {
+         tstr[i] = ' ';
+    }
+    for (int i = 0; i < sz; i++) {
+         tstr[szmax - sz + i] = tstr1[i];
+    }
+    tstr[szmax] = 0;
+    display_outputText24Line(tstr, line, col, clr, bkg); // clear number field
+}
+
+void show_time(char h, char m, int line, int col, uint16_t clr, uint16_t bkg) {
+    char tstr1[21];
+    char tstr[21];
+    int sz;
+    int szmax = 20 - col;
+    sz = snprintf_lib(tstr1, szmax + 1, "%02d:%02d", h, m);
     for (int i = 0; i < szmax - sz; i++) {
          tstr[i] = ' ';
     }
@@ -211,32 +231,30 @@ void udpate_raw_data(raw_meas_type *raw, int sec) {
     }
 }
 
-void set_state(task_data_type *data, int sec, estate_type state_next) {
+void set_state(task_data_type *data, estate_type state_next) {
     data->state = state_next;
-    data->state_changed_sec = sec;
+    data->state_changed_sec = data->sec;
 }
 
 int is_time_to_watering(task_data_type *data) {
     int ret = 0;
-    int w1 = WATERING_CYCLE[data->watering_mode].wait;
-    int w2 = WATERING_CYCLE[data->watering_mode].watering;
 
     data->watering_cnt++;
-    if (data->watering_cnt >= w1) {
+    if (data->watering_cnt >= data->watering_wait) {
         ret = 1;
         // Finish watering even there's no water detector
         if (!data->raw.water_level) {
-            data->raw.water_low = 1;
+            data->water_low = 1;
         }
     } else {
-        data->raw.water_low = 0;
+        data->water_low = 0;
         // stop updating counter if there's no water and timeout is less than 10 sec
         if (!data->raw.water_level
-           && data->watering_cnt > (w1 - 10)) {
-            data->watering_cnt = w1 - 10;
+           && data->watering_cnt > (data->watering_wait - 10)) {
+            data->watering_cnt = data->watering_wait - 10;
         }
     }
-    if (data->watering_cnt > (w1 + w2)) {
+    if (data->watering_cnt > (data->watering_wait + data->watering_duration)) {
         data->watering_cnt = 0;
     }
     return ret;
@@ -250,76 +268,148 @@ void pump_disable() {
     gpio_pin_clear(&CFG_PIN_RELAIS_PUMP);
 }
 
-int status_setting_timeout() {
-    (sec - data->watering_mode_sec) < 7
+int status_setting_timeout(task_data_type *data) {
+    return (data->sec - data->status_changed_sec) >= 7 ? 1: 0;
 }
 
-void draw_status_line(raw_meas_type *raw,    // current data
-                      task_data_type *data,  // data on previous epoch
-                      int sec) {             // current time
+void draw_status_line(raw_meas_type *raw,       // current data
+                      task_data_type *data) {  // data on previous epoch
+    int t1;
     int status = data->status;
-    if (raw->btn_event & BTN_Up) {
-        status = STATUS_MODE_SELECT;
-    } else if (raw->btn_event & BTN_Center) {
-        status = STATUS_TIME_SET;
-    } else if (raw->btn_event & BTN_Down) {
-        status = STATUS_LIGHT_SET;
+    if (raw->btn_event && (status == STATUS_NO_WATER
+        || status == STATUS_WATERING_IN
+        || status == STATUS_STOP_IN)) {
+        if (raw->btn_event & BTN_Up) {
+            status = STATUS_MODE_SELECT;
+            data->status_changed_sec = data->sec;
+        } else if (raw->btn_event & BTN_Center) {
+            status = STATUS_TIME_H_SET;
+            data->status_changed_sec = data->sec;
+        } else if (raw->btn_event & BTN_Down) {
+            status = STATUS_LIGHT_SELECT;
+            data->status_changed_sec = data->sec;
+        }
+    } else if (status_setting_timeout(data)) {
+        if (data->watering_ena) {
+            status = STATUS_STOP_IN;
+        } else if (!raw->water_level) {
+            status = STATUS_NO_WATER;
+        } else {
+            status = STATUS_WATERING_IN;
+        }
     }
+    
 
     switch (status) {
     case STATUS_MODE_SELECT:
-        break;
-    default:
-        if (raw->water_level) {
-            display_outputText24Line("Watering in:        ", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
+        if (status != data->status) {
+            display_outputText24Line("Period:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            show_watering_mode(data->watering_wait,
+                               data->watering_duration,
+                               WATERING_INFO_LINE, 7, CLR_WHITE, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+
+            t1 = (bkp_get_watering_mode() + 1) % 8;
+            data->watering_cnt = 0;
+            data->watering_wait = WATERING_CYCLE[t1].wait;
+            data->watering_duration = WATERING_CYCLE[t1].duration;
+            bkp_set_watering_mode(t1);
+            show_watering_mode(data->watering_wait,
+                               data->watering_duration,
+                               WATERING_INFO_LINE, 7, CLR_WHITE, CLR_VIOLET);
+        }
+       break;
+    case STATUS_TIME_H_SET:
+        if (status != data->status) {
+            display_outputText24Line("Time:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+            data->hour = (data->hour + 1) % 24;
+            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Down) {
+            data->status_changed_sec = data->sec;
+            data->hour--;
+            if (data->hour < 0) {
+                data->hour = 23;
+            }
+            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Center) {
+            status = STATUS_TIME_M_SET;
+            data->status_changed_sec = data->sec;
+        }
+    break;
+    case STATUS_TIME_M_SET:
+        if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+            data->minute = (data->minute + 1) % 60;
+            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Down) {
+            data->status_changed_sec = data->sec;
+            data->minute--;
+            if (data->minute < 0) {
+                data->minute = 59;
+            }
+            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Center) {
+            status = STATUS_TIME_T_CORR;
+            data->status_changed_sec = data->sec;
+            display_outputText24Line("T,corr:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            show_int_x10(data->t_corr, WATERING_INFO_LINE, 7, CLR_DARK_YELLOW);
+        }
+    break;
+    case STATUS_TIME_T_CORR:
+        if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+            data->t_corr++;
+            show_int_x10(data->t_corr, WATERING_INFO_LINE, 7, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Down) {
+            data->status_changed_sec = data->sec;
+            data->t_corr--;
+            show_int_x10(data->t_corr, WATERING_INFO_LINE, 7, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Center) {
+            // end-of-timeout
+            data->status_changed_sec = data->sec - 7;
+        }
+    break;
+    case STATUS_LIGHT_SELECT:
+        if (status != data->status) {
+            display_outputText24Line("Light:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            show_int(0, WATERING_INFO_LINE, 6, CLR_VIOLET);
+        }
+    break;
+    case STATUS_STOP_IN:
+        t1 = data->watering_duration - (data->watering_cnt - data->watering_wait);
+        if (data->water_low) {
+            display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_DARK_YELLOW);
+            show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_YELLOW);
         } else {
+            display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
+            show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_GREEN);
+        }
+    break;
+    case STATUS_WATERING_IN:
+        if (status != data->status) {
+            display_outputText24Line("Watering in:", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
+        }
+        t1 = data->watering_wait - data->watering_cnt;
+        show_int(t1, WATERING_INFO_LINE, 12, CLR_BLACK);
+    break;
+    case STATUS_NO_WATER:
+        if (status != data->status) {
             display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
         }
+    break;
+    default:
+        display_outputText24Line("Error state:         ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
     }
 
-        if (raw->watering_ena) {
-            int w1 = WATERING_CYCLE[data->watering_mode].wait;
-            int w2 = WATERING_CYCLE[data->watering_mode].watering;
-            int t1 = w2 - (data->watering_cnt - w1);
-            if (raw->water_low) {
-                display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_DARK_YELLOW);
-                show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_YELLOW);
-            } else {
-                display_outputText24Line("Stop in:", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
-                show_int(t1, WATERING_INFO_LINE, 8, CLR_DARK_GREEN);
-            }
-        } else {
-            if ((raw->btn_event & BTN_Up) || (sec - data->watering_mode_sec) < 7) {
-                display_outputText24Line("Period:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
-                if (raw->btn_event & BTN_Up) {
-                    data->watering_mode_sec = sec;
-                    if (data->watering_redraw) {
-                        data->watering_mode = (data->watering_mode + 1) % 8;
-                        data->watering_cnt = 0;
-                        bkp_set_watering_mode(data->watering_mode);
-                    }
-                }
-                show_watering_mode(data->watering_mode, WATERING_INFO_LINE, 7, CLR_WHITE, CLR_VIOLET);
-                data->watering_redraw = 1;
-            } else if (raw->watering_ena != data->raw.watering_ena
-               || raw->water_level != data->raw.water_level
-               || data->watering_redraw) {
-                data->watering_redraw = 0;
-                if (raw->water_level) {
-                    display_outputText24Line("Watering in:        ", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
-                } else {
-                    display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
-                }
-            }
-            if (raw->water_level && raw->btn_event == 0) {
-                int t1 = WATERING_CYCLE[data->watering_mode].wait - data->watering_cnt;
-                show_int(t1, WATERING_INFO_LINE, 12, CLR_BLACK);
-            }
-        }
+    data->status = status;
 }
 
 
-void task_update(task_data_type *data, int sec) {
+void task_update(task_data_type *data) {
     raw_meas_type raw;
     raw = data->raw;
 
@@ -331,7 +421,7 @@ void task_update(task_data_type *data, int sec) {
         break;
     case State_Wait:
         if (--data->wait_cnt <= 0) {
-            set_state(data, sec, data->state_next);
+            set_state(data, data->state_next);
         }
         break;
     case State_SelfTest:
@@ -360,20 +450,20 @@ void task_update(task_data_type *data, int sec) {
 
         veml7700_configure();
         bmp280_configure();
-        set_state(data, sec, State_Idle);
+        set_state(data, State_Idle);
         break;
     case State_Idle:
-        udpate_raw_data(&raw, sec);
+        udpate_raw_data(&raw, data->sec);
 
         // pump control
-        raw.watering_ena = is_time_to_watering(data);
-        if (raw.watering_ena) {
+        data->watering_ena = is_time_to_watering(data);
+        if (data->watering_ena) {
             pump_enable(data);
         } else {
             pump_disable(data);
         }
 
-        draw_status_line(&raw, data, sec);
+        draw_status_line(&raw, data);
     
         if (raw.temperature != data->raw.temperature) {
             show_int_x10(raw.temperature, TEMPERATURE_INFO_LINE, 2, CLR_BLACK);

@@ -68,7 +68,6 @@ void init_systick() {
 
 
 extern "C" int fwmain(int argcnt, char *args[]) {
-    int sec_z = 0;
     task_data_type task_data;
     EnableIrqGlobal();
     init_systick();
@@ -89,10 +88,10 @@ extern "C" int fwmain(int argcnt, char *args[]) {
     task_init(&task_data);
 
     while(1) {
-        if (sec_z != time_sec_) {
-             sec_z = time_sec_;
+        if (task_data.sec != time_sec_) {
+             task_data.sec = time_sec_;
 
-             task_update(&task_data, time_sec_);
+             task_update(&task_data);
 
             // Switch User LED
             if (time_sec_ & 0x8) {
