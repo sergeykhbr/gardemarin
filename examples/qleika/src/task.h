@@ -71,10 +71,10 @@ typedef struct task_data_type {
     int watering_wait;
     int watering_duration;
     int t_corr;          // temperature correction 0.1 resolution
+    uint32_t time_of_day;
+    uint32_t temp_time;  // temporary time while changing it
     char water_low;      // no water detected during watering
     char watering_ena;
-    char hour;
-    char minute;
     char light;
 
     char tstr[21];     // 20 symbols of font24 per  line

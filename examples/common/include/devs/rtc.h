@@ -21,6 +21,32 @@
 /**
   Real Time Clock registers
  */
+#ifdef __F103x
+
+typedef struct RTC_registers_type {
+    volatile uint32_t CRH;             // 0x00
+    volatile uint32_t CRL;             // 0x04
+    volatile uint16_t PRLH;            // 0x08
+    volatile uint16_t rsrv_0x0A;       //
+    volatile uint16_t PRLL;            // 0x0C
+    volatile uint16_t rsrv_0x0E;       //
+    volatile uint16_t DIVH;            // 0x10
+    volatile uint16_t rsrv_0x12;       //
+    volatile uint16_t DIVL;            // 0x14
+    volatile uint16_t rsrv_0x16;       //
+    volatile uint16_t CNTH;            // 0x18
+    volatile uint16_t rsrv_0x1A;       //
+    volatile uint16_t CNTL;            // 0x1C
+    volatile uint16_t rsrv_0x1E;       //
+    volatile uint16_t ALRH;            // 0x20
+    volatile uint16_t rsrv_0x22;       //
+    volatile uint16_t ALRL;            // 0x24
+    volatile uint16_t rsrv_0x26;       //
+} RTC_registers_type;
+
+
+#else
+
 typedef struct RTC_registers_type {
     volatile uint32_t TR;      /*!< RTC time register,                                        Address offset: 0x00 */
     volatile uint32_t DR;      /*!< RTC date register,                                        Address offset: 0x04 */
@@ -64,3 +90,5 @@ typedef struct RTC_registers_type {
     volatile uint32_t BKP18R;  /*!< RTC backup register 18,                                   Address offset: 0x98 */
     volatile uint32_t BKP19R;  /*!< RTC backup register 19,                                   Address offset: 0x9C */
 } RTC_registers_type;
+
+#endif

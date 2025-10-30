@@ -15,7 +15,74 @@
  */
 
 #include <mcu.h>
+#include "bkp.h"
 #include "rtc_qleika.h"
+
+static void rtc_delay_ms(volatile uint32_t ms) {
+    volatile uint32_t n;
+    while (ms--) {
+        for (n = 0; n < 8000; ++n) {
+            __asm__("nop");
+        }
+    }
+}
+
+static int rtc_wait_lse_ready(uint32_t timeout_ms) {
+    RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
+    // [1] LSERDY
+    while ((read32(&RCC->BDCR) & 0x2) == 0) {
+        if (!timeout_ms--) {
+            return 0;
+        }
+        rtc_delay_ms(1);
+    }
+    return 1;
+}
+
+// previous write operation finished
+static void rtc_wait_rtoff() {
+    RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
+    uint32_t timeout_ms = 100;
+    // [5] RTOFF: 0=Last write operation is ongoing; 1=last write operation terminated
+    while ((read32(&RTC->CRL) & (1 << 5)) == 0) {
+        if (!timeout_ms--) {
+            return;
+        }
+        rtc_delay_ms(1);
+    }
+}
+
+static void rtc_wait_sync() {
+    RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
+    // [3] RSF Register sinchronized flag
+    // This bit is set by hardware at each time the RTC_CNT and RTC_DIV registers are updated
+    // and cleared by software. Before any read operation after an APB1 reset or an APB1 clock
+    // stop, this bit must be cleared by software, and the user application must wait until it is set to
+    // be sure that the RTC_CNT, RTC_ALR or RTC_PRL registers are synchronized
+    uint32_t t1 = read32(&RTC->CRL);
+    t1 &= ~(1 <<  3);
+    write32(&RTC->CRL, t1);
+    while ((read32(&RTC->CRL) & (1 << 3)) == 0) {}
+}
+
+static void rtc_enter_config() {
+    RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
+    rtc_wait_rtoff();
+
+    uint32_t t1 = read32(&RTC->CRL);
+    // [4] CNF: 1=enter configuration mode
+    t1 |= (1 << 4);
+    write32(&RTC->CRL, t1);
+}
+
+static void rtc_exit_config() {
+    RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
+
+    uint32_t t1 = read32(&RTC->CRL);
+    // [4] CNF: 1=enter configuration mode
+    t1 &= ~(1 << 4);
+    write32(&RTC->CRL, t1);
+}
 
 void rtc_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
@@ -23,111 +90,75 @@ void rtc_init() {
     RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
     // APB1 = 36 MHz
     uint32_t t1 = read32(&RCC->APB1ENR);
-    uint32_t ttime = 0x00215530;
-    uint32_t tdate = 0x00251030;
-
-    t1 |= (1 << 28);             // APB1[28] PWREN
+    // Warning: BKP should be init first
+    t1 |= (1 << 27)              // APB1[27] BKPEN
+        | (1 << 28);             // APB1[28] PWREN
     write32(&RCC->APB1ENR, t1);
 
     t1 = read32(&PWR->CR);
     t1 |= (1 << 8);             // CR[8]: DBP Disable backup domain write protection. 1=Acces to RTC and Backup enabled
     write32(&PWR->CR, t1);
+    rtc_delay_ms(1);  // small delay
 
-    // [4] INITS: 1=Calendar was initialized
-    t1 = read32(&RTC->ISR);
-    if ((t1 & (1 << 4))) {
-        // RTC: was initialized before reset
-        ttime = read32(&RTC->TR);
-        tdate = read32(&RTC->DR);
+    if (bkp_is_rtc_initilized()) {
+        rtc_wait_sync();
+        return;
     }
     // unlock write protection on all RTC registers except ISR[13:8], TAFCR, BKPxR
-    write32(&RCC->BDCR, 1 << 16);   // [16] BDRST. Backup domain software reset only after PWR_CR=1
+    t1 = read32(&RCC->BDCR);
+    t1 |= 1;    // [0] LSEON
+    write32(&RCC->BDCR, t1);
+    if (rtc_wait_lse_ready(500)) {
+        // LSE not working
+        return;
+    }
 
-    write8(&RTC->WPR, 0xCA);
-    write8(&RTC->WPR, 0x53);
-
-
-    int wdog = 0;
-    int rtc_available = 1;
-    // [16] BDRST: rw
-    // [15] RTCEN: rw
-    // [9:8] RTCSEL rw 00=no clock; 01=LSE; 10=LSI; 11=HSE
-    // [2] LSEBYP rw
-    // [1] LSERDY r
-    // [0] LSEON rw
-    t1 = (1 << 15)                  // [15] RTC ON
-       | (0x1 << 8)                 // [9:8] 01=LSE
-       | (1 << 0);                  // [0] LSE ON
+    // [9:8] RTCSEL: 00=No clock; 01=LSE; 10=LSI; 11==HSE
+    t1 = read32(&RCC->BDCR);
+    t1 &= ~(0x3 << 8);
+    t1 |= (0x1 << 8);
     write32(&RCC->BDCR, t1);
 
-    // Wait [1] LSERDY flag
-    while ((read32(&RCC->BDCR) & (1 << 1)) == 0) {
-        if (++wdog > system_clock_hz() / 10) {
-            rtc_available = 0;
-            break;
-        }
-    }
 
-    // [4] INITS: 1=Calendar was initialized
-    t1 = read32(&RTC->ISR);
-    if (rtc_available && (t1 & (1 << 4)) == 0) {
-        t1 |= (1 << 7);             // [7] INIT
-        write32(&RTC->ISR, t1);
-        // Wait [6] INITF Calendar registers update is allowed
-        wdog = 0;
-        while ((read32(&RTC->ISR) & (1 << 6)) == 0) {
-            if (++wdog > system_clock_hz() / 10) {
-                break;
-            }
-        }
+    // [15] RTCEN: 1=RTC clock enabled
+    t1 = read32(&RCC->BDCR);
+    t1 |= (1 << 15);
+    write32(&RCC->BDCR, t1);
 
-        // RTC_CR (default is 0):
-        // [23] COE Calibration output: 0=disabled
-        // [22:21] OSEL Output selection: 00=disabled
-        // [20] POL Output polarity
-        // [19] COSEL Calibration output selection: 0=512 Hz; 1= 1 Hz
-        // [18] BKP Backup: control by user to memorize something
-        // [17] SUB1H Subtract 1 hour: 0=no effect
-        // [16] ADD1H Add 1 hour: 0=no effect
-        // [15] TSIE Timestamp interrupt: 0=disabled
-        // [14] WUTIE Wake-up timer interrupt: 0=disabled 
-        // [13] ALRBIE Alarm B interrupt: 0=disabled
-        // [12] ALRAIE Alarm A interrupt: 0=disabled
-        // [11] TSE Time stamp: 0=disabled
-        // [10] WUTE Wake-up timer: 0=disabled
-        // [9] ALRBE Alarm B: 0=disabled
-        // [8] ALRAE Alarm A: 0=disabled
-        // [7] DCE Coarse digital calibration: 0=disabled
-        // [6] FMT Hour formar 0=24 hour/day; 1=AM/PM
-        // [5] BYPSHAD Bypass the shadow registers: 0=TR,DR,SSR are taken from shadow registers
-        // [4] REFCKON Reference clock detection: 0=disabled
-        // [3] TSEDGE Timestamp event active edge: 0=rising
-        // [2:0] WUCLKSEL Wake-up clock selection: 000=RTC/16 clock
+    rtc_wait_sync();
 
-        // Set default Date and Time:
-        write32(&RTC->TR, ttime);
-        write32(&RTC->DR, tdate);
-        
-        t1 &= ~(1 << 7);            // [7] INIT
-        write32(&RTC->ISR, t1);
-    }
+    rtc_enter_config();
+
+    // LSE=32768Hz
+    uint32_t prescaler = 32767; // 1Hz tick
+    write16(&RTC->PRLH, (uint16_t)(prescaler >> 16));
+    write16(&RTC->PRLL, (uint16_t)(prescaler));
+
+    // reset counter to some value
+    write16(&RTC->CNTH, (uint16_t)(0x33));
+    write16(&RTC->CNTL, (uint16_t)(0x22));
+
+    rtc_exit_config();
+    bkp_set_rtc_initialized();
 }
 
 uint32_t rtc_get_time() {
     RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
-    return read32(&RTC->TR);
+    uint32_t high1;
+    uint32_t high2;
+    uint32_t low;
+    do {
+        high1 = read16(&RTC->CNTH);
+        low = read16(&RTC->CNTL);
+        high2 = read16(&RTC->CNTH);
+    } while (high1 != high2);
+    return (high1 << 16) | low;
 }
 
 void rtc_set_time(uint32_t val) {
     RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
-    int wdog = 0;
-
-    write32(&RTC->ISR, (1 << 7)); // [7] INIT
-    // Wait [6] INITF Calendar registers update is allowed
-    while ((read32(&RTC->ISR) & (1 << 6)) == 0
-        && ++wdog < (system_clock_hz() / 1000)) {}
-
-    write32(&RTC->TR, val);
-
-    write32(&RTC->ISR, 0);          // [7] INIT
+    rtc_enter_config();
+    write16(&RTC->CNTH, (uint16_t)(val >> 16));
+    write16(&RTC->CNTL, (uint16_t)(val));
+    rtc_exit_config();
 }

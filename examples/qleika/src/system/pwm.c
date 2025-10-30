@@ -30,6 +30,13 @@ void pwm_init() {
     write32(&RCC->APB2ENR, t1);
 
     // TIM1_CH1N -> PB[13]: TIM1_REMAP[1:0]=00 (no remap)
+#if 1
+    gpio_pin_as_output(&CFG_PIN_MOSFET_1, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_set(&CFG_PIN_MOSFET_1);
+    gpio_pin_clear(&CFG_PIN_MOSFET_1);
+    gpio_pin_set(&CFG_PIN_MOSFET_1);
+    gpio_pin_clear(&CFG_PIN_MOSFET_1);
+#endif
     gpio_pin_as_alternate(&CFG_PIN_MOSFET_1, 6);
 
     // OCxM = 011 to toggle OCx output pin when CNT matches CCRx
@@ -42,7 +49,7 @@ void pwm_init() {
     write16(&TIM->CCMR1, (0x3 << 4));
     // [3] CC1NP: 0 = active high; 1=active low
     // [2] CC1NE: 1: pin 
-    write16(&TIM->CCER, (1 << 3) | (1 << 2));
+    write16(&TIM->CCER, (0 << 3) | (1 << 2));
 
     write32(&TIM->ARR, period - 1);
     write32(&TIM->CCR1, period/2);

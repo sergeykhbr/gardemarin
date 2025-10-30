@@ -59,3 +59,13 @@ void bkp_set_light_mode(int val) {
     BKP[3] = t;
 }
 
+
+int bkp_is_rtc_initilized() {
+    uint32_t *BKP = (uint32_t *)BKP_BASE;
+    return BKP[4] == 0xcafef00d ? 1: 0;
+}
+
+void bkp_set_rtc_initialized() {
+    uint32_t *BKP = (uint32_t *)BKP_BASE;
+    BKP[4] = 0xcafef00d;
+}

@@ -24,8 +24,12 @@ extern "C" {
 void bkp_init();
 int bkp_get_watering_mode();
 void bkp_set_watering_mode(int val);
+
 int bkp_get_light_mode();
 void bkp_set_light_mode(int val);
+
+int bkp_is_rtc_initilized();
+void bkp_set_rtc_initialized();
 
 #ifdef __cplusplus
 }

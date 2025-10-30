@@ -77,9 +77,8 @@ void task_init(task_data_type *data) {
     data->watering_cnt = data->watering_wait - 10;   // wait 10 seconds after water detected
     data->water_low = 0;
     data->watering_ena = 0;
-    data->hour = 0;
-    data->minute = 0;
     data->t_corr = 0;
+    data->time_of_day = rtc_get_time();
     data->light = bkp_get_light_mode();
     data->raw.lux = 9500;
     data->raw.lux_error = 0;
@@ -148,11 +147,13 @@ void show_watering_mode(int w1, int w2, int line, int col, uint16_t clr, uint16_
     display_outputText24Line(tstr, line, col, clr, bkg); // clear number field
 }
 
-void show_time(char h, char m, int line, int col, uint16_t clr, uint16_t bkg) {
+void show_time(uint32_t tod, int line, int col, uint16_t clr, uint16_t bkg) {
     char tstr1[21];
     char tstr[21];
     int sz;
     int szmax = 20 - col;
+    uint32_t h = (tod / 3600) % 24;
+    uint32_t m = (tod % 3600) / 60;
     sz = snprintf_lib(tstr1, szmax + 1, "%02d:%02d", h, m);
     for (int i = 0; i < szmax - sz; i++) {
          tstr[i] = ' ';
@@ -331,18 +332,18 @@ void draw_status_line(raw_meas_type *raw,       // current data
     case STATUS_TIME_H_SET:
         if (status != data->status) {
             display_outputText24Line("Time:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
-            t1 = rtc_get_time();
-            data->hour = t1 >> 16;
-            data->minute = t1 >> 8;
-            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            data->temp_time = rtc_get_time();
+            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
-            data->hour = (data->hour + 1) % 24;
-            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            data->temp_time += 3600;
+            data->temp_time %= (24 * 3600);
+            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-            data->hour = (data->hour - 1) % 24;
-            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            data->temp_time -= 3600;
+            data->temp_time %= (24 * 3600);
+            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
             status = STATUS_TIME_M_SET;
             data->status_changed_sec = data->sec;
@@ -351,13 +352,17 @@ void draw_status_line(raw_meas_type *raw,       // current data
     case STATUS_TIME_M_SET:
         if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
-            data->minute = (data->minute + 1) % 60;
-            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            data->temp_time += 60;
+            data->temp_time %= (24 * 3600);
+            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-            data->minute = (data->minute - 1) % 60;
-            show_time(data->hour, data->minute, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            data->temp_time -= 60;
+            data->temp_time %= (24 * 3600);
+            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
+            rtc_set_time(data->temp_time);
+
             status = STATUS_TIME_T_CORR;
             data->status_changed_sec = data->sec;
             display_outputText24Line("T,corr:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
@@ -473,6 +478,8 @@ void task_update(task_data_type *data) {
         } else {
             pump_disable(data);
         }
+
+        pwm_enable();
 
         draw_status_line(&raw, data);
     
