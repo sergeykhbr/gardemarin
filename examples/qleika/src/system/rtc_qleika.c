@@ -142,6 +142,17 @@ void rtc_init() {
     bkp_set_rtc_initialized();
 }
 
+void rtc_apply_correction(int correction) {
+    RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
+    uint32_t prescaler = (uint32_t)(32767 - correction); // 1Hz tick
+    rtc_enter_config();
+    write16(&RTC->PRLH, (uint16_t)(prescaler >> 16));
+    write16(&RTC->PRLL, (uint16_t)(prescaler));
+    rtc_exit_config();
+
+    bkp_set_rtc_correction(correction);
+}
+
 uint32_t rtc_get_time() {
     RTC_registers_type *RTC = (RTC_registers_type *)RTC_BASE;
     uint32_t high1;

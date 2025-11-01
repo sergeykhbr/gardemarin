@@ -77,9 +77,8 @@ void task_init(task_data_type *data) {
     data->watering_cnt = data->watering_wait - 10;   // wait 10 seconds after water detected
     data->water_low = 0;
     data->watering_ena = 0;
-    data->t_corr = 0;
+    data->rtc_corr = bkp_get_rtc_correction();
     data->time_of_day = rtc_get_time();
-    data->light = bkp_get_light_mode();
     data->raw.lux = 9500;
     data->raw.lux_error = 0;
     data->raw.pressure = 7500;
@@ -147,22 +146,35 @@ void show_watering_mode(int w1, int w2, int line, int col, uint16_t clr, uint16_
     display_outputText24Line(tstr, line, col, clr, bkg); // clear number field
 }
 
-void show_time(uint32_t tod, int line, int col, uint16_t clr, uint16_t bkg) {
-    char tstr1[21];
+void show_time(char sel_hm, uint32_t tod, int line, int col, uint16_t clr, uint16_t bkg) {
     char tstr[21];
     int sz;
     int szmax = 20 - col;
     uint32_t h = (tod / 3600) % 24;
     uint32_t m = (tod % 3600) / 60;
-    sz = snprintf_lib(tstr1, szmax + 1, "%02d:%02d", h, m);
-    for (int i = 0; i < szmax - sz; i++) {
+    for (int i = 0; i < szmax - 5; i++) {
          tstr[i] = ' ';
+         tstr[i + 1] = '\0';
     }
-    for (int i = 0; i < sz; i++) {
-         tstr[szmax - sz + i] = tstr1[i];
-    }
-    tstr[szmax] = 0;
     display_outputText24Line(tstr, line, col, clr, bkg); // clear number field
+
+    tstr[0] = ':';
+    tstr[1] = '\0';
+    display_outputText24Line(tstr, line, 17, clr, bkg);
+
+    snprintf_lib(tstr, sizeof(tstr), "%02d", h);
+    if (sel_hm == 0) {
+        display_outputText24Line(tstr, line, 15, clr, CLR_DARK_RED); // clear number field
+    } else {
+        display_outputText24Line(tstr, line, 15, clr, bkg); // clear number field
+    }
+
+    sz = snprintf_lib(tstr, sizeof(tstr), "%02d", m);
+    if (sel_hm == 0) {
+        display_outputText24Line(tstr, line, 18, clr, bkg); // clear number field
+    } else {
+        display_outputText24Line(tstr, line, 18, clr, CLR_DARK_RED); // clear number field
+    }
 }
 
 // PM2.5 concentration:
@@ -186,20 +198,29 @@ uint16_t air_bkg_color(int val) {
 
 void udpate_raw_data(raw_meas_type *raw, int sec) {
     // Light measurement
-    update_lux();
-    while (is_i2c_busy()) {}
-    raw->lux = get_lux();
-    raw->lux_error = is_i2c_error();
+    for (int i = 0; i < 3; i++) {
+        update_lux();
+        while (is_i2c_busy()) {}
+        raw->lux = get_lux();
+        raw->lux_error = is_i2c_error();
+        if (!raw->lux_error) {
+            break;
+        }
+    }
 
     // temperature on PCB is higher than env. temperature
-    bmp280_update_temperature();
-    while (is_i2c_busy()) {}
-    raw->pressure_error = is_i2c_error();
+    for (int i = 0; i < 3; i++) {
+        //bmp280_update_temperature();
+        //while (is_i2c_busy()) {}
 
-    bmp280_update_pressure();
-    while (is_i2c_busy()) {}
-    raw->pressure = get_pressure(raw->temperature);
-    raw->pressure_error |= is_i2c_error();
+        bmp280_update_pressure();
+        while (is_i2c_busy()) {}
+        raw->pressure = get_pressure(raw->temperature);
+        raw->pressure_error = is_i2c_error();
+        if (!raw->pressure_error) {
+          break;
+        }
+    }
 
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
@@ -215,7 +236,7 @@ void udpate_raw_data(raw_meas_type *raw, int sec) {
         dht_update();
         raw->dht_error =  dht_is_error();
         if (raw->dht_error == 0) {
-            raw->temperature = dht_get_temperature();
+            raw->temperature = dht_get_temperature() + bkp_get_temperature_correction();
             raw->moisture = dht_get_moisture();
         }
     }
@@ -267,6 +288,16 @@ int is_time_to_watering(task_data_type *data) {
         data->watering_cnt = 0;
     }
     return ret;
+}
+
+int is_time_to_light(uint32_t tod) {
+    uint32_t h = (tod / 3600) % 24;
+    uint32_t m = (tod % 3600) / 60;
+    if (h >= 8 && h < 22) {
+        // 08:00 - 22:00
+        return 1;
+    }
+    return 0;
 }
 
 void pump_enable() {
@@ -333,20 +364,21 @@ void draw_status_line(raw_meas_type *raw,       // current data
         if (status != data->status) {
             display_outputText24Line("Time:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
             data->temp_time = rtc_get_time();
-            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            show_time(0, data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
             data->temp_time += 3600;
             data->temp_time %= (24 * 3600);
-            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            show_time(0, data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
             data->temp_time -= 3600;
             data->temp_time %= (24 * 3600);
-            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            show_time(0, data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
             status = STATUS_TIME_M_SET;
             data->status_changed_sec = data->sec;
+            show_time(1, data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         }
     break;
     case STATUS_TIME_M_SET:
@@ -354,30 +386,53 @@ void draw_status_line(raw_meas_type *raw,       // current data
             data->status_changed_sec = data->sec;
             data->temp_time += 60;
             data->temp_time %= (24 * 3600);
-            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            show_time(1, data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
             data->temp_time -= 60;
             data->temp_time %= (24 * 3600);
-            show_time(data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
+            show_time(1, data->temp_time, WATERING_INFO_LINE, 5, CLR_WHITE, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
             rtc_set_time(data->temp_time);
 
+            status = STATUS_TIME_RTC_CORR;
+            data->status_changed_sec = data->sec;
+            data->rtc_corr = bkp_get_rtc_correction();
+            display_outputText24Line("RTC,corr:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            show_int_x10(data->rtc_corr, WATERING_INFO_LINE, 9, CLR_VIOLET);
+        }
+    break;
+    case STATUS_TIME_RTC_CORR:
+        if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+            data->rtc_corr++;
+            show_int(data->rtc_corr, WATERING_INFO_LINE, 9, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Down) {
+            data->status_changed_sec = data->sec;
+            data->rtc_corr--;
+            show_int(data->rtc_corr, WATERING_INFO_LINE, 9, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Center) {
             status = STATUS_TIME_T_CORR;
             data->status_changed_sec = data->sec;
+            if (data->rtc_corr != bkp_get_rtc_correction()) {
+                rtc_apply_correction(data->rtc_corr);
+            }
+
             display_outputText24Line("T,corr:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
-            show_int_x10(data->t_corr, WATERING_INFO_LINE, 7, CLR_DARK_YELLOW);
-        }
+            show_int_x10(bkp_get_temperature_correction(), WATERING_INFO_LINE, 7, CLR_VIOLET);
+         }
     break;
     case STATUS_TIME_T_CORR:
         if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
-            data->t_corr++;
-            show_int_x10(data->t_corr, WATERING_INFO_LINE, 7, CLR_VIOLET);
+            t1 = bkp_get_temperature_correction() + 1;
+            bkp_set_temperature_correction(t1);
+            show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-            data->t_corr--;
-            show_int_x10(data->t_corr, WATERING_INFO_LINE, 7, CLR_VIOLET);
+            t1 = bkp_get_temperature_correction() - 1;
+            bkp_set_temperature_correction(t1);
+            show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
             // end-of-timeout
             data->status_changed_sec = data->sec - 7;
@@ -386,13 +441,31 @@ void draw_status_line(raw_meas_type *raw,       // current data
     case STATUS_LIGHT_SELECT:
         if (status != data->status) {
             display_outputText24Line("Light:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
-            show_int(data->light, WATERING_INFO_LINE, 6, CLR_VIOLET);
+            show_int(bkp_get_pwm_duty(), WATERING_INFO_LINE, 6, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+            t1 = bkp_get_pwm_duty() + 1;
+            if (t1 > 25) {
+                // duty cycle 0.25 max
+                t1 = 25;
+            } else if (t1 < 0) {
+                // PWM off
+                t1 = 0;
+            }
+            pwm_set_duty_cyle(t1);
+            show_int(t1, WATERING_INFO_LINE, 6, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-
-            data->light = (data->light + 1) & 1;
-            bkp_set_light_mode(data->light);
-            show_int(data->light, WATERING_INFO_LINE, 6, CLR_VIOLET);
+            t1 = bkp_get_pwm_duty() - 1;
+            if (t1 > 25) {
+                // duty cycle 0.25 max
+                t1 = 25;
+            } else if (t1 < 0) {
+                // PWM off
+                t1 = 0;
+            }
+            pwm_set_duty_cyle(t1);
+            show_int(t1, WATERING_INFO_LINE, 6, CLR_VIOLET);
         }
     break;
     case STATUS_STOP_IN:
@@ -479,7 +552,12 @@ void task_update(task_data_type *data) {
             pump_disable(data);
         }
 
-        pwm_enable();
+        // 08:00 .. 22:00 light is on
+        if (is_time_to_light(rtc_get_time()) && bkp_get_pwm_duty()) {
+            pwm_enable();
+        } else {
+            pwm_disable();
+        }
 
         draw_status_line(&raw, data);
     

@@ -16,13 +16,21 @@
 
 #include <mcu.h>
 #include "pwm.h"
+#include "bkp.h"
 #include "../gpio_cfg.h"
+
+uint32_t pwm_get_period() {
+    uint32_t hz = 5000;
+    return 1000000/hz;
+}
+
+uint32_t pwm_get_duty_cycle() {
+    return bkp_get_pwm_duty() * pwm_get_period() / 100;
+}
 
 void pwm_init() {
     RCC_registers_type *RCC = (RCC_registers_type *)RCC_BASE;
     TIM_registers_type *TIM = (TIM_registers_type *)TIM1_BASE;
-    uint32_t hz = 200;
-    uint32_t period = 1000000/hz;
 
     // TIM1 on APB2 = 72 MHz
     uint32_t t1 = read32(&RCC->APB2ENR);
@@ -50,8 +58,8 @@ void pwm_init() {
 
     // 0    < cnt < ccr1 => HIGH
     // ccr1 < cnt < arr  => LOW
-    write32(&TIM->ARR, period - 1);
-    write32(&TIM->CCR1, period/4);
+    write32(&TIM->ARR, pwm_get_period());
+    write32(&TIM->CCR1, pwm_get_duty_cycle());
 
     t1 = read16(&TIM->BDTR);
     t1 |= (1 << 15);  // [15] MOE: Main output enable
@@ -66,6 +74,11 @@ void pwm_init() {
 void pwm_enable() {
     TIM_registers_type *TIM = (TIM_registers_type *)TIM1_BASE;
     tim_cr1_reg_type cr1;
+
+    if (pwm_get_duty_cycle() == 0) {
+        return;
+    }
+
     write32(&TIM->CNT, 0);
 
     cr1.val = 0;
@@ -79,3 +92,13 @@ void pwm_disable() {
     write32(&TIM->CR1.val, 0);
 }
 
+void pwm_set_duty_cyle(uint32_t duty) {
+    TIM_registers_type *TIM = (TIM_registers_type *) TIM1_BASE;
+    bkp_set_pwm_duty(duty);
+    pwm_disable();
+
+    if (duty) {
+        write32(&TIM->CCR1, duty);
+        pwm_enable();
+    }
+}

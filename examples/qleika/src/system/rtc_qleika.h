@@ -24,6 +24,7 @@ extern "C" {
 void rtc_init();
 uint32_t rtc_get_time();
 void rtc_set_time(uint32_t val);
+void rtc_apply_correction(int correction);
 
 #ifdef __cplusplus
 }

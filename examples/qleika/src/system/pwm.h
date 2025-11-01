@@ -24,6 +24,7 @@ extern "C" {
 void pwm_init();
 void pwm_enable();
 void pwm_disable();
+void pwm_set_duty_cyle(uint32_t duty);
 
 #ifdef __cplusplus
 }

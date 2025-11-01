@@ -17,6 +17,8 @@
 #include "i2c_common.h"
 #include "../gpio_cfg.h"
 
+extern void system_delay_ns(int nsec);
+
 typedef enum estate_type {
     state_idle,
     state_error,
@@ -90,6 +92,39 @@ void i2c_watchdog_handler() {
     set_error(estate_, 0);
 }
 
+void i2c_reset_slaves() {
+    gpio_pin_as_output(&CFG_PIN_I2C_SCL, GPIO_OPEN_DRAIN, GPIO_FAST, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_output(&CFG_PIN_I2C_SDA, GPIO_OPEN_DRAIN, GPIO_FAST, GPIO_NO_PUSH_PULL);
+
+    gpio_pin_set(&CFG_PIN_I2C_SDA);   // output pin in Z-state, we can read input
+    gpio_pin_set(&CFG_PIN_I2C_SCL);
+    system_delay_ns(5000);  // 100 kHz => 10 us / 2
+
+    for (int i = 0; i < 9; i++) {
+        gpio_pin_clear(&CFG_PIN_I2C_SCL);
+        system_delay_ns(5000);
+        gpio_pin_set(&CFG_PIN_I2C_SCL);
+        system_delay_ns(5000);
+        if (gpio_pin_get(&CFG_PIN_I2C_SDA)) {
+            // Bus released
+            break;
+        }
+    }
+    // generate STOP condition (avoid START condition)
+    gpio_pin_set(&CFG_PIN_I2C_SCL);
+    system_delay_ns(5000);
+    gpio_pin_clear(&CFG_PIN_I2C_SDA);
+    system_delay_ns(5000);
+
+    gpio_pin_set(&CFG_PIN_I2C_SCL);
+    system_delay_ns(5000);
+    gpio_pin_set(&CFG_PIN_I2C_SDA);
+    system_delay_ns(5000);
+
+    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SCL);
+    gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SDA);
+}
+
 void i2c_reset() {
     I2C_registers_type *I2C = (I2C_registers_type *)I2C2_BASE;
     uint32_t t1;
@@ -116,6 +151,8 @@ void i2c_reset() {
 
     write32(&I2C->TRISE, 37);   // Max rise time
 
+    i2c_reset_slaves();
+
     t1 = read32(&I2C->CR1);
     t1 |= (1 << 0);            // [0] PE: enable periphery
     write32(&I2C->CR1, t1);
@@ -134,20 +171,6 @@ void i2c_init() {
     //     [PB10] I2C2 SCL (min 10 kHz - max 400 kHz)  pull-up to 3.3V  (2.2-4.7 kOhm)
     //     [PB11] I2C2 SDA                             pull-up to 3.3V  (2.2-4.7 kOhm)
     //
-    /*gpio_pin_as_output(&CFG_PIN_I2C_SCL, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_output(&CFG_PIN_I2C_SDA, GPIO_NO_OPEN_DRAIN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-
-    gpio_pin_set(&CFG_PIN_I2C_SCL);
-    gpio_pin_clear(&CFG_PIN_I2C_SCL);
-    gpio_pin_set(&CFG_PIN_I2C_SCL);
-    gpio_pin_clear(&CFG_PIN_I2C_SCL);
-
-    gpio_pin_set(&CFG_PIN_I2C_SDA);
-    gpio_pin_clear(&CFG_PIN_I2C_SDA);
-    gpio_pin_set(&CFG_PIN_I2C_SDA);
-    gpio_pin_clear(&CFG_PIN_I2C_SDA);
-    gpio_pin_set(&CFG_PIN_I2C_SDA);
-    gpio_pin_clear(&CFG_PIN_I2C_SDA);*/
     gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SCL);
     gpio_pin_as_alternate_open_drain(&CFG_PIN_I2C_SDA);
 

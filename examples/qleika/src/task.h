@@ -55,8 +55,9 @@ typedef struct raw_meas_type {
 #define STATUS_MODE_SELECT   3  // watering interval
 #define STATUS_TIME_H_SET    4
 #define STATUS_TIME_M_SET    5
-#define STATUS_TIME_T_CORR   6  // temperature correction
-#define STATUS_LIGHT_SELECT  7
+#define STATUS_TIME_RTC_CORR 6  // RTC 1Hz correction
+#define STATUS_TIME_T_CORR   7  // temperature correction
+#define STATUS_LIGHT_SELECT  8
 
 typedef struct task_data_type {
     estate_type state;
@@ -70,12 +71,11 @@ typedef struct task_data_type {
     int watering_cnt;    // 1800 seconds wait + 20 seconds watering
     int watering_wait;
     int watering_duration;
-    int t_corr;          // temperature correction 0.1 resolution
+    int rtc_corr;        // in RTC clocks relative 32768 value
     uint32_t time_of_day;
     uint32_t temp_time;  // temporary time while changing it
     char water_low;      // no water detected during watering
     char watering_ena;
-    char light;
 
     char tstr[21];     // 20 symbols of font24 per  line
 } task_data_type;
