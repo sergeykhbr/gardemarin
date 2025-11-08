@@ -208,6 +208,7 @@ void udpate_raw_data(raw_meas_type *raw, int sec) {
         }
     }
 
+#ifdef ENABLE_PRESSURE
     // temperature on PCB is higher than env. temperature
     for (int i = 0; i < 3; i++) {
         //bmp280_update_temperature();
@@ -221,6 +222,7 @@ void udpate_raw_data(raw_meas_type *raw, int sec) {
           break;
         }
     }
+#endif
 
     // water level
     raw->water_level = gpio_pin_get(&CFG_PIN_WATER_LEVEL_DATA);
@@ -538,7 +540,9 @@ void task_update(task_data_type *data) {
         display_outputText24Line("No Water            ", WATERING_INFO_LINE, 0, 0xffff, 0xa2a8);
 
         veml7700_configure();
+#ifdef ENABLE_PRESSURE
         bmp280_configure();
+#endif
         set_state(data, State_Idle);
         break;
     case State_Idle:

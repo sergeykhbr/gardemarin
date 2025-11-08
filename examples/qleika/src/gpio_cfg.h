@@ -18,6 +18,8 @@
 
 #include <gpio_drv.h>
 
+#define ENABLE_PRESSURE
+
 // DHT22(AM2302 the same in a case) Temperature Humidity sensor (sampling period 2 sec)
 //     1 VDD (3.3-6V, typical 5V)
 //     [A1] 2 DATA

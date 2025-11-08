@@ -48,8 +48,8 @@ void exti_init() {
     uint32_t t1;
 
     gpio_pin_as_input(&CFG_PIN_BTN1_UP, GPIO_SLOW, GPIO_PULL_UP);
-    gpio_pin_as_input(&CFG_PIN_BTN2_CENTER, GPIO_SLOW, GPIO_NO_PUSH_PULL);
-    gpio_pin_as_input(&CFG_PIN_BTN3_DOWN, GPIO_SLOW, GPIO_NO_PUSH_PULL);
+    gpio_pin_as_input(&CFG_PIN_BTN2_CENTER, GPIO_SLOW, GPIO_PULL_UP);
+    gpio_pin_as_input(&CFG_PIN_BTN3_DOWN, GPIO_SLOW, GPIO_PULL_UP);
 
 
     t1 = read32(&afio->EXTICR[0]);
