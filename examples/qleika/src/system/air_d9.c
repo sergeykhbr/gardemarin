@@ -21,6 +21,28 @@ static uint8_t rxbuf_[64] = {0};
 static int cnt_ = 0;
 static uint8_t *pwr_ = 0;
 static uint8_t *prd_ = 0;
+static uint16_t checksum_ = 0;
+static int delta_baud_ = 0;
+static int no_prm_cnt_ = 0;
+
+static int is_msg_valid(uint32_t checksum) {
+    if (prd_[4] != prd_[10]
+       || prd_[5] != prd_[11]
+       || prd_[6] != prd_[12]
+       || prd_[7] != prd_[13]
+       || prd_[8] != prd_[14]
+       || prd_[9] != prd_[15]) {
+        return 0;
+    }
+    return 1;
+}
+
+static void set_baudrate(int v) {
+    USART_registers_type *UART  = (USART_registers_type *)USART1_BASE;
+    uint32_t t2 = system_clock_hz() / (uint32_t)v;
+    write16(&UART->BRR, (uint16_t)t2);
+
+}
 
 void air_d9_irq_handler() {
     USART_registers_type *UART  = (USART_registers_type *)USART1_BASE;
@@ -30,15 +52,41 @@ void air_d9_irq_handler() {
     if (cnt_ || s == 0x42) {  // [0]=0x42; [1]=0x4d
         if (cnt_ == 1 && s != 0x4d) {
             cnt_ = 0;
+            checksum_ = s;
         } else {
             pwr_[cnt_++] = s;
+            checksum_ += s;
+        }
+    } else {
+        // reset auto tuning
+        if (++no_prm_cnt_ > 64) {
+            if (delta_baud_ > 0) {
+                delta_baud_ = -delta_baud_;
+            } else {
+                delta_baud_ = 0;
+            }
+            set_baudrate(9600 + delta_baud_);
+            no_prm_cnt_ = 0;
         }
     }
     if (cnt_ >= 32) {
         uint8_t *ptmp = pwr_;
         pwr_ = prd_;
         prd_ = ptmp;
+        if (is_msg_valid(checksum_) == 0) {
+            if (delta_baud_ < 4800) {
+                if (delta_baud_ > 0) {
+                    delta_baud_ = -delta_baud_;
+                } else {
+                    delta_baud_ = -delta_baud_ + 100;
+                }
+            } else {
+                delta_baud_ = 0;
+            }
+            set_baudrate(9600 + delta_baud_);
+        }
         cnt_ = 0;
+        checksum_ = 0;
     }
 
     write16(&UART->SR, 0);
