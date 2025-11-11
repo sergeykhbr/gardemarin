@@ -24,6 +24,7 @@ static uint8_t *prd_ = 0;
 static uint16_t checksum_ = 0;
 static int delta_baud_ = 0;
 static int no_prm_cnt_ = 0;
+static int baudrate_confirmed_ = 0;
 
 static int is_msg_valid(uint32_t checksum) {
     if (prd_[4] != prd_[10]
@@ -74,16 +75,25 @@ void air_d9_irq_handler() {
         pwr_ = prd_;
         prd_ = ptmp;
         if (is_msg_valid(checksum_) == 0) {
-            if (delta_baud_ < 4800) {
-                if (delta_baud_ > 0) {
-                    delta_baud_ = -delta_baud_;
-                } else {
-                    delta_baud_ = -delta_baud_ + 100;
-                }
-            } else {
-                delta_baud_ = 0;
+            if (baudrate_confirmed_) {
+                baudrate_confirmed_--;
             }
-            set_baudrate(9600 + delta_baud_);
+            if (baudrate_confirmed_ == 0) {
+                if (delta_baud_ < 4800) {
+                    if (delta_baud_ > 0) {
+                        delta_baud_ = -delta_baud_;
+                    } else {
+                        delta_baud_ = -delta_baud_ + 100;
+                    }
+                } else {
+                    delta_baud_ = 0;
+                }
+                set_baudrate(9600 + delta_baud_);
+            }
+        } else {
+            if (baudrate_confirmed_ < 3) {
+                baudrate_confirmed_++;
+            }
         }
         cnt_ = 0;
         checksum_ = 0;
