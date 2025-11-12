@@ -17,22 +17,39 @@
 #include "../gpio_cfg.h"
 #include "air_d9.h"
 
+//#define BAUDRATE_TUNE_ENA
+
 static uint8_t rxbuf_[64] = {0};
 static int cnt_ = 0;
 static uint8_t *pwr_ = 0;
 static uint8_t *prd_ = 0;
 static uint16_t checksum_ = 0;
+#ifdef BAUDRATE_TUNE_ENA
 static int delta_baud_ = 0;
 static int no_prm_cnt_ = 0;
 static int baudrate_confirmed_ = 0;
+#endif
+static int dbg_cnt_ = 0;
+
+uint32_t air_d9_debug() {
+    //uint32_t ret = prd_[10];
+    //ret = (ret << 8) | prd_[11];
+    //return 9600 + delta_baud_;
+    //return ret;
+    return dbg_cnt_;
+}
 
 static int is_msg_valid(uint32_t checksum) {
-    if (prd_[4] != prd_[10]
-       || prd_[5] != prd_[11]
-       || prd_[6] != prd_[12]
-       || prd_[7] != prd_[13]
-       || prd_[8] != prd_[14]
-       || prd_[9] != prd_[15]) {
+    if ((prd_[4] != prd_[10])
+       || (prd_[5] != prd_[11])
+       || (prd_[6] != prd_[12])
+       || (prd_[7] != prd_[13])
+       || (prd_[8] != prd_[14])
+       || (prd_[9] != prd_[15])
+//       || ((uint8_t)(checksum >> 8) != prd_[31])
+//       || ((uint8_t)(checksum) != prd_[30])
+    ) {
+        dbg_cnt_++;
         return 0;
     }
     return 1;
@@ -51,14 +68,15 @@ void air_d9_irq_handler() {
     uint8_t s = (uint8_t)read16(&UART->DR);
 
     if (cnt_ || s == 0x42) {  // [0]=0x42; [1]=0x4d
+        checksum_ += s;
         if (cnt_ == 1 && s != 0x4d) {
             cnt_ = 0;
-            checksum_ = s;
+            checksum_ = 0;
         } else {
             pwr_[cnt_++] = s;
-            checksum_ += s;
         }
     } else {
+#ifdef BAUDRATE_TUNE_ENA
         // reset auto tuning
         if (++no_prm_cnt_ > 64) {
             if (delta_baud_ > 0) {
@@ -69,31 +87,37 @@ void air_d9_irq_handler() {
             set_baudrate(9600 + delta_baud_);
             no_prm_cnt_ = 0;
         }
+#endif
     }
     if (cnt_ >= 32) {
         uint8_t *ptmp = pwr_;
         pwr_ = prd_;
         prd_ = ptmp;
         if (is_msg_valid(checksum_) == 0) {
+#ifdef BAUDRATE_TUNE_ENA
             if (baudrate_confirmed_) {
                 baudrate_confirmed_--;
             }
             if (baudrate_confirmed_ == 0) {
-                if (delta_baud_ < 4800) {
+                int t1 = delta_baud_ >= 0 ? delta_baud_: -delta_baud_;
+                if (t1 < 4800) {
                     if (delta_baud_ > 0) {
-                        delta_baud_ = -delta_baud_;
+                        delta_baud_ = -t1;
                     } else {
-                        delta_baud_ = -delta_baud_ + 100;
+                        delta_baud_ = t1 + 100;
                     }
                 } else {
                     delta_baud_ = 0;
                 }
                 set_baudrate(9600 + delta_baud_);
             }
+#endif
         } else {
+#ifdef BAUDRATE_TUNE_ENA
             if (baudrate_confirmed_ < 3) {
                 baudrate_confirmed_++;
             }
+#endif
         }
         cnt_ = 0;
         checksum_ = 0;

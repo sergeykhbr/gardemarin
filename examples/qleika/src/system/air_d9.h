@@ -26,6 +26,7 @@ void air_d9_init();
 uint32_t air_d9_get_pm1p0();
 uint32_t air_d9_get_pm2p5();
 uint32_t air_d9_get_pm10();
+uint32_t air_d9_debug();
 
 #ifdef __cplusplus
 }
