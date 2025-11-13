@@ -28,6 +28,7 @@ void bkp_set_watering_mode(int val);
 // safety range:
 //  0 = disable pwm
 //  25 is maximum to avoid overheating
+#define LED_DUTY_CYCLE_MAX 25
 uint32_t bkp_get_pwm_duty();
 void bkp_set_pwm_duty(uint32_t val);
 
@@ -39,6 +40,9 @@ void bkp_set_rtc_correction(int rtc_corr);
 
 int bkp_get_temperature_correction();
 void bkp_set_temperature_correction(int t_corr);
+
+int bkp_get_pressure_correction();
+void bkp_set_pressure_correction(int t_corr);
 
 
 #ifdef __cplusplus

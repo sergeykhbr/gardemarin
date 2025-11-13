@@ -53,11 +53,12 @@ typedef struct raw_meas_type {
 #define STATUS_WATERING_IN   1
 #define STATUS_STOP_IN       2
 #define STATUS_MODE_SELECT   3  // watering interval
-#define STATUS_TIME_H_SET    4
-#define STATUS_TIME_M_SET    5
+#define STATUS_TIME_H_SET    4  // RTC hours set
+#define STATUS_TIME_M_SET    5  // RTC minutes set
 #define STATUS_TIME_RTC_CORR 6  // RTC 1Hz correction
 #define STATUS_TIME_T_CORR   7  // temperature correction
-#define STATUS_LIGHT_SELECT  8
+#define STATUS_TIME_P_CORR   8  // pressure correction
+#define STATUS_LIGHT_SELECT  9  // LED brightness select
 
 typedef struct task_data_type {
     estate_type state;

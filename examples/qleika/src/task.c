@@ -436,6 +436,24 @@ void draw_status_line(raw_meas_type *raw,       // current data
             bkp_set_temperature_correction(t1);
             show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
+            status = STATUS_TIME_P_CORR;
+            data->status_changed_sec = data->sec;
+            display_outputText24Line("P,corr:", WATERING_INFO_LINE, 0, CLR_WHITE, CLR_VIOLET);
+            show_int_x10(bkp_get_pressure_correction(), WATERING_INFO_LINE, 7, CLR_VIOLET);
+        }
+    break;
+    case STATUS_TIME_P_CORR:
+        if (raw->btn_event & BTN_Up) {
+            data->status_changed_sec = data->sec;
+            t1 = bkp_get_pressure_correction() + 1;
+            bkp_set_pressure_correction(t1);
+            show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Down) {
+            data->status_changed_sec = data->sec;
+            t1 = bkp_get_pressure_correction() - 1;
+            bkp_set_pressure_correction(t1);
+            show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
+        } else if (raw->btn_event & BTN_Center) {
             // end-of-timeout
             data->status_changed_sec = data->sec - 7;
         }
@@ -447,9 +465,9 @@ void draw_status_line(raw_meas_type *raw,       // current data
         } else if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
             t1 = bkp_get_pwm_duty() + 1;
-            if (t1 > 25) {
+            if (t1 > LED_DUTY_CYCLE_MAX) {
                 // duty cycle 0.25 max
-                t1 = 25;
+                t1 = LED_DUTY_CYCLE_MAX;
             } else if (t1 < 0) {
                 // PWM off
                 t1 = 0;
@@ -459,9 +477,9 @@ void draw_status_line(raw_meas_type *raw,       // current data
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
             t1 = bkp_get_pwm_duty() - 1;
-            if (t1 > 25) {
+            if (t1 > LED_DUTY_CYCLE_MAX) {
                 // duty cycle 0.25 max
-                t1 = 25;
+                t1 = LED_DUTY_CYCLE_MAX;
             } else if (t1 < 0) {
                 // PWM off
                 t1 = 0;
@@ -572,6 +590,7 @@ void task_update(task_data_type *data) {
         }
 
         if (raw.pressure != data->raw.pressure) {
+            int t1 = raw.pressure + bkp_get_pressure_correction();
             show_int_x10(raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
         } else if (raw.pressure_error) {
             show_int_x10(raw.pressure, PRESSURE_INFO_LINE, 9, CLR_DARK_RED);

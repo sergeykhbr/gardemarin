@@ -51,14 +51,18 @@ void bkp_set_watering_mode(int val) {
 // 25 maximum duty cycle
 uint32_t bkp_get_pwm_duty() {
     uint32_t *BKP = (uint32_t *)BKP_BASE;
-    return (BKP[3] >> 4) & 0x1F;    // BKP_DR3[8:4] light PWM
+    uint32_t ret = (BKP[3] >> 4) & 0x1F;    // BKP_DR3[8:4] light PWM
+    if (ret > LED_DUTY_CYCLE_MAX) {
+        ret = LED_DUTY_CYCLE_MAX;
+    }
+    return ret;
 }
 
 void bkp_set_pwm_duty(uint32_t val) {
     uint32_t *BKP = (uint32_t *)BKP_BASE;
     uint32_t t = BKP[3] & ~0x1F0;
-    if (val > 25) {
-        val = 25;
+    if (val > LED_DUTY_CYCLE_MAX) {
+        val = LED_DUTY_CYCLE_MAX;
     }
     t |= val << 4;
     BKP[3] = t;
@@ -100,4 +104,18 @@ int bkp_get_temperature_correction() {
 void bkp_set_temperature_correction(int t_corr) {
     uint32_t *BKP = (uint32_t *)BKP_BASE;
     BKP[6] = t_corr;
+}
+
+int bkp_get_pressure_correction() {
+    uint32_t *BKP = (uint32_t *)BKP_BASE;
+    int t1 = BKP[7];
+    if (t1 & 0x8000) {
+        t1 |= 0xFFFF0000;
+    }
+    return t1;
+}
+
+void bkp_set_pressure_correction(int t_corr) {
+    uint32_t *BKP = (uint32_t *)BKP_BASE;
+    BKP[7] = t_corr;
 }
