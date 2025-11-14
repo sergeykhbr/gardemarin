@@ -445,12 +445,12 @@ void draw_status_line(raw_meas_type *raw,       // current data
     case STATUS_TIME_P_CORR:
         if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
-            t1 = bkp_get_pressure_correction() + 1;
+            t1 = bkp_get_pressure_correction() + 10;  // resolution 0.1*10
             bkp_set_pressure_correction(t1);
             show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Down) {
             data->status_changed_sec = data->sec;
-            t1 = bkp_get_pressure_correction() - 1;
+            t1 = bkp_get_pressure_correction() - 10;  // resolution 0.1*10
             bkp_set_pressure_correction(t1);
             show_int_x10(t1, WATERING_INFO_LINE, 7, CLR_VIOLET);
         } else if (raw->btn_event & BTN_Center) {
@@ -591,7 +591,7 @@ void task_update(task_data_type *data) {
 
         if (raw.pressure != data->raw.pressure) {
             int t1 = raw.pressure + bkp_get_pressure_correction();
-            show_int_x10(raw.pressure, PRESSURE_INFO_LINE, 9, CLR_BLACK);
+            show_int_x10(t1, PRESSURE_INFO_LINE, 9, CLR_BLACK);
         } else if (raw.pressure_error) {
             show_int_x10(raw.pressure, PRESSURE_INFO_LINE, 9, CLR_DARK_RED);
         }
