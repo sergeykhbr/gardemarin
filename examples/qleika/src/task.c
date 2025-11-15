@@ -62,6 +62,7 @@ static const watering_cycle_type WATERING_CYCLE[] = {
     {2*3600, 25},  // [5]
     {6*3600, 30},  // [6]
     {12*3600, 45}, // [7]
+    {24*3600, 45}, // [8]
 };
 
 void task_init(task_data_type *data) {
@@ -146,6 +147,7 @@ void show_watering_mode(int w1, int w2, int line, int col, uint16_t clr, uint16_
     display_outputText24Line(tstr, line, col, clr, bkg); // clear number field
 }
 
+// Time hh:mm plus switching background
 void show_time(char sel_hm, uint32_t tod, int line, int col, uint16_t clr, uint16_t bkg) {
     char tstr[21];
     int sz;
@@ -175,6 +177,30 @@ void show_time(char sel_hm, uint32_t tod, int line, int col, uint16_t clr, uint1
     } else {
         display_outputText24Line(tstr, line, 18, clr, CLR_DARK_RED); // clear number field
     }
+}
+
+// Time hh:mm:sec without selection
+void show_time_sec(uint32_t tod, int line, int col, uint16_t clr, uint16_t bkg) {
+    char tstr[21];
+    int szmax = 20 - col;
+    uint32_t h = (tod / 3600) % 24;
+    uint32_t m = (tod % 3600) / 60;
+    uint32_t s = (tod % 60);
+
+    if (h) {
+        if (h >= 10) {
+            snprintf_lib(tstr, sizeof(tstr), "%d:%02d:%02d", h, m, s);
+        } else {
+            tstr[0] = ' ';
+            snprintf_lib(&tstr[1], sizeof(tstr)-1, "%d:%02d:%02d", h, m, s);
+        }
+    } else {
+        tstr[0] = ' ';
+        tstr[1] = ' ';
+        tstr[2] = ' ';
+        snprintf_lib(&tstr[3], sizeof(tstr)-3, "%02d:%02d", m, s);
+    }        
+    display_outputText24Line(tstr, line, 12, clr, bkg);
 }
 
 // PM2.5 concentration:
@@ -352,7 +378,7 @@ void draw_status_line(raw_meas_type *raw,       // current data
         } else if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
 
-            t1 = (bkp_get_watering_mode() + 1) % 8;
+            t1 = (bkp_get_watering_mode() + 1) % 9;
             data->watering_cnt = 0;
             data->watering_wait = WATERING_CYCLE[t1].wait;
             data->watering_duration = WATERING_CYCLE[t1].duration;
@@ -503,7 +529,7 @@ void draw_status_line(raw_meas_type *raw,       // current data
             display_outputText24Line("Watering in:", WATERING_INFO_LINE, 0, 0xffff, CLR_BLACK);
         }
         t1 = data->watering_wait - data->watering_cnt;
-        show_int(t1, WATERING_INFO_LINE, 12, CLR_BLACK);
+        show_time_sec(t1, WATERING_INFO_LINE, 12, CLR_WHITE, CLR_BLACK);
     break;
     case STATUS_NO_WATER:
         if (status != data->status) {
