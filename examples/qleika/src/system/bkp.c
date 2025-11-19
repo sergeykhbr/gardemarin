@@ -37,13 +37,13 @@ void bkp_init() {
 // 0x28 BKP_DR10
 int bkp_get_watering_mode() {
     uint32_t *BKP = (uint32_t *)BKP_BASE;
-    return BKP[3] & 0x7;    // BKP_DR3[2:0] watering mode
+    return (BKP[3] & 0xF) % WATERING_CYCLE_TOTAL;
 }
 
 void bkp_set_watering_mode(int val) {
     uint32_t *BKP = (uint32_t *)BKP_BASE;
-    uint32_t t = BKP[3] & ~0x7;
-    t |= val & 0x7;
+    uint32_t t = BKP[3] & ~0xF;
+    t |= val & 0xF;
     BKP[3] = t;
 }
 

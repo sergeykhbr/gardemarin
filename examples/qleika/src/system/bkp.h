@@ -22,6 +22,26 @@ extern "C" {
 #endif
 
 void bkp_init();
+
+#define WATERING_CYCLE_TOTAL 9
+
+typedef struct watering_cycle_type {
+    int wait;
+    int duration;
+} watering_cycle_type;
+
+static const watering_cycle_type WATERING_CYCLE[WATERING_CYCLE_TOTAL] = {
+    {300, 10},     // [0] 5 minutes wait, 10 sec watering
+    {600, 10},     // [1]
+    {900, 15},     // [2]
+    {1800, 20},    // [3]
+    {3600, 20},    // [4]
+    {2*3600, 25},  // [5]
+    {6*3600, 30},  // [6]
+    {12*3600, 45}, // [7]
+    {24*3600, 45}, // [8]
+};
+
 int bkp_get_watering_mode();
 void bkp_set_watering_mode(int val);
 

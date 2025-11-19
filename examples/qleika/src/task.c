@@ -48,23 +48,6 @@
 #define CLR_DARK_YELLOW        0x4A80
 #define CLR_DARK_RED           0x50A1
 
-typedef struct watering_cycle_type {
-    int wait;
-    int duration;
-} watering_cycle_type;
-
-static const watering_cycle_type WATERING_CYCLE[] = {
-    {300, 10},     // [0] 5 minutes wait, 10 sec watering
-    {600, 10},     // [1]
-    {900, 15},     // [2]
-    {1800, 20},    // [3]
-    {3600, 20},    // [4]
-    {2*3600, 25},  // [5]
-    {6*3600, 30},  // [6]
-    {12*3600, 45}, // [7]
-    {24*3600, 45}, // [8]
-};
-
 void task_init(task_data_type *data) {
     int mode = bkp_get_watering_mode();
     data->watering_wait = WATERING_CYCLE[mode].wait;
@@ -378,7 +361,7 @@ void draw_status_line(raw_meas_type *raw,       // current data
         } else if (raw->btn_event & BTN_Up) {
             data->status_changed_sec = data->sec;
 
-            t1 = (bkp_get_watering_mode() + 1) % 9;
+            t1 = (bkp_get_watering_mode() + 1) % WATERING_CYCLE_TOTAL;
             data->watering_cnt = 0;
             data->watering_wait = WATERING_CYCLE[t1].wait;
             data->watering_duration = WATERING_CYCLE[t1].duration;
