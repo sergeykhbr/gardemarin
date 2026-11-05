@@ -37,4 +37,7 @@ producing its first peppers.
 The photo of 'Aurora' was taken when the plant was approximately 10 months old and had already
 produced an abundance of peppers.
 
+![Inside of device](docs/pics/qleika_inside.png)
+
+## Board description
 
