@@ -1,82 +1,40 @@
-# STM32 Gardemarin
+# Hydroponic System and Weather station on a single PCB
 
-The STM32 Gardemarin kit empowers users to craft their own systems with multiple motors and sensors,
-all controlled by a single board featuring the ARM Cortex M4F processor.
+After more than two years of experiments with different designs and approaches,
+I finally arrived at what I consider the most convenient and straightforward solution
+for a tabletop hydroponic system with integrated weather monitoring capabilities.
 
-Please find the brief presentation of the development board [here](docs/Gardemarin_Board.pdf).
+The device combines the following monitoring and measurements systems:
 
-![Top Side](docs/pics/topside_preview.png)
+- Atmospheric pressure
+- Air quality
+- Humidity
+- Temperature
+- Light intensisty
+- and Water Level contactless sensor
 
-## Key Features
- 
-* __Versatile Motor and Sensor Control:__ Capable of handling up to 8 motors,
-4 load cells, 2 temperature sensors, and 4 LED strips simultaneously.
-* __Connectivity Options:__ Equipped with CAN and Ethernet interfaces, facilitating seamless 
-communication with external devices.
-* __Expandability:__ Additional options are available; refer to the presentation for details.
+The entire device is built around a single custom-designed PCB:
 
-## Development Kit Components
-
-The complete setup comprises:
-
-1. Gardemarin (ARM M4F) board
-2. Vision Five 2 (RISC-V) Single Board Computer (SBC)
-3. Cyclone FX Debugger
-
-![Top Side](docs/pics/dev_setup.png)
-
-The Vision Five 2 board complements the Gardemarin by providing touchscreen control
-functions and interfacing primarily via the CAN bus.
-
-## Examples
-
-* Common code snippets reusable across applications.
-* Non-modified FreeRTOS source code for running the system.
-* Boot application initializes the system and prints 'Hello World' via UART
-* Application 'app_os_simlpe' implements the basic aeroponic system firmware
-  running FreeRTOS scheduler and basic peripheries (motors, sensors, pumps etc).
-* QtMonitor host application running on RISC-V Debian computer provides addtional
-  funcitonality, like:
-
-  - Camera to capture video stream or photo.
-  - Logging and statistic server
-  - Doxygen generated documentation
-
-## Assembled Autonomous Aeroponic System
-
-![Top Side](docs/pics/assembled_aeroponic.png)
-
-## Monitor application
-
-The qtmonitor application provides a user-friendly interface for interaction with the Gardemrin
-board using a GUI and touchscreen. This application is built on Qt6 libraries and is so compatible
-with the both Windows and Linux operating systems.
-
-![Top Side](docs/pics/sensors_1.gif)
-*qtmonitor sensors data: moisture and weights values while watering, NPK, EC, pH and temperatures*
-
-The GIF image above ilustrates how sensor data changes during the watering cycle. In this example,
-tap water without fertilizers is used. Watering cycle (~20 minutes) is split on small sub-cycles:
-20 seconds watering 1 minute pause. The scales measurements perfectly show this process.
-Oxygen saturation process is implemented at the beginning of each cycle in the water tank with the mixture.
-Oxygen saturation process increases pH value upto ~7.0 without mixing with additional components.
-
-Use cmake-gui or the following command to build _qtmonitor_ application:
-
-<b>Linux:</b>
-
-    > cd qtmonitor
-    > cmake -S . -B ./build
-    > cd build
-    > make
-    > ./bin/qtmonitor --cfg ../gardemarin.cfg
+![Top and bottom sides](docs/pics/qleika_top_btm_3d.png)
 
 
-## CAN database file (DBC)
+The board features automatic power source selection, seamlessly switching between
+the primary power supply (12/24 V) and the secondary 5 V supply.
 
-For applications involving CAN access, each example in the repository is accompanied by
-a DBC converter and a specialized software layer facilitating interaction (read/write)
-with object attributes. During startup, a list of all registered objects and attributes is
-provided. This DBC-formatted information can be saved into a _*.dbc_ file for use with third-party
-CAN software.
+It also preserves all configuration settings across power outages and provides a simple,
+intuitive user interface consisting of just three buttons and a 240x240 pixel color RGB display.
+
+## Assembeled device based on the PCB:
+
+The following pictures show two different pepper varieties, 'Black Pearl' and 'Aurora',
+grown in different locations.
+
+!['Black Pearl' (left) and 'Aurora' (right)](docs/pics/black_pearl_young_aurora_10month.png)
+
+The photo of 'Black Pearl' was taken at an early growth stage, when the plant had just started
+producing its first peppers.
+
+The photo of 'Aurora' was taken when the plant was approximately 10 months old and had already
+produced an abundance of peppers.
+
 
