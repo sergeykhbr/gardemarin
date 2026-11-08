@@ -1,11 +1,41 @@
 # Hydroponic System and Weather station on a single PCB
 
-After more than two years of experiments with different designs and approaches,
-I finally arrived at what I consider the most convenient and straightforward solution
-for a tabletop hydroponic system with integrated weather monitoring capabilities.
+I developed this universal carrier board to be a reliable, highly
+protected platform for different kinds of automation and telemetry
+applications. The main goal was to make a board that works perfectly
+on battery or external power, while staying safe from real-world
+electrical problems.
 
-The device combines the following monitoring and measurements systems:
+![Top and bottom sides](docs/pics/qleika_top_btm_3d.png)
 
+My main focus is to develop PCB with the characteristics:
+
+- Automatic dual-power switching between 9-24V main power and 5V USB
+without resetting the MCU or jumper.
+
+- The high voltage section is completely separated from the
+low-voltage schematic, so my main focus is provide a way to develop
+and debug code safely using only 5V USB power with the display and
+low-power sensors connected.
+
+- Every external sensor and connected peripheral gets power through
+a MOSFET, so the MCU can turn them completely off during sleep to save battery.
+
+- PCB contains 220V AC relais, one powerfull N-MOSFET and four P-MOSFET
+(3.3 and 5V) that could be used as the power rails or as the independent
+PWM/Control elements for a small pumps, motors or LED.
+
+- 5V port for external sensor.
+
+- Because external sensors often use long wires in noisy environments,
+I implemented maximum EMC guards including TVS diodes, filters and
+level buffers-on every single connector to protect the microcontroller
+from static, noise, and voltage spikes.
+
+
+## Example Application 'qLeika' device
+
+This device is described below and it uses initial\version of the PCB.
 
 | Sensor / Device | Interface / Protocol | Pin Function & Purpose |
 | :--- | :--- | :--- |
@@ -22,17 +52,6 @@ The device combines the following monitoring and measurements systems:
 | **BMP280 Pressure/Temperature** | I2C2 | PB[10],PB[11]: 400 kHz I2C interface. Address 0xEC. |
 | **MOSFET LED**                   | TIM1 | PB[13]: PWM LED driver. |
 | **XKC Y25 T12V** Liquide level sensor | GPIO | PB[15]: 5V tolerant buffer. |
-
-The entire device is built around a single custom-designed PCB:
-
-![Top and bottom sides](docs/pics/qleika_top_btm_3d.png)
-
-
-The board features automatic power source selection, seamlessly switching between
-the primary power supply (12/24 V) and the secondary 5 V supply.
-
-It also preserves all configuration settings across power outages and provides a simple,
-intuitive user interface consisting of just three buttons and a 240x240 pixel color RGB display.
 
 ## Assembeled device based on the PCB:
 
