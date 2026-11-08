@@ -1,4 +1,4 @@
-# Hydroponic System and Weather station on a single PCB
+# Low power consumption Univresal Controller
 
 I developed this universal carrier board to be a reliable, highly
 protected platform for different kinds of automation and telemetry
@@ -7,6 +7,8 @@ on battery or external power, while staying safe from real-world
 electrical problems.
 
 ![Top and bottom sides](docs/pics/qleika_top_btm_3d.png)
+
+*Price*: 80 Euro
 
 My main focus is to develop PCB with the characteristics:
 
@@ -21,9 +23,9 @@ low-power sensors connected.
 - Every external sensor and connected peripheral gets power through
 a MOSFET, so the MCU can turn them completely off during sleep to save battery.
 
-- PCB contains 220V AC relais, one powerfull N-MOSFET and four P-MOSFET
-(3.3 and 5V) that could be used as the power rails or as the independent
-PWM/Control elements for a small pumps, motors or LED.
+- Flexible on-board switches include 220V AC relay, one powerfull N-MOSFET
+and several P-MOSFETs (supporting 3.3 and 5V) that can be used as the power
+rails or as  independent PWM/Control lines for small pumps, motors and LEDs.
 
 - 5V port for external sensor.
 
