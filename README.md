@@ -20,6 +20,8 @@ low-voltage schematic, so my main focus is provide a way to develop
 and debug code safely using only 5V USB power with the display and
 low-power sensors connected.
 
+- 20V Li-ion Over-Discharge Protection circuit
+
 - Every external sensor and connected peripheral gets power through
 a MOSFET, so the MCU can turn them completely off during sleep to save battery.
 
